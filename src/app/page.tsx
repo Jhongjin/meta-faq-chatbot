@@ -173,7 +173,7 @@ export default function HomePage() {
   ];
 
   return (
-    <MainLayout currentPage="home">
+    <MainLayout>
       {/* Hero Section - Lovable.dev Style */}
       <motion.div 
         className="relative w-full py-24 overflow-hidden"

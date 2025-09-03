@@ -114,7 +114,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <MainLayout currentPage="history">
+    <MainLayout>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">질문 히스토리</h1>
