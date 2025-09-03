@@ -1,37 +1,84 @@
-# 메타광고FAQ챗봇 (Meta Ads FAQ AI Chatbot)
+# AdMate - Meta 광고 정책 AI 챗봇
 
-사내 메타 광고 정책과 가이드라인을 통합해 직원들이 한국어로 신속하고 정확하게 질문하고 답변받을 수 있는 RAG 기반 AI 챗봇입니다.
+## 📋 프로젝트 개요
 
-## 🚀 주요 기능
+AdMate는 Meta(Facebook·Instagram·Threads) 광고 집행 관련 내부 문서와 지정된 URL만을 근거로, 전사 직원이 한국어로 즉시 질문하고 정확한 답변을 받을 수 있는 RAG 기반 AI 챗봇입니다.
 
-- **문서 업로드 및 인덱싱**: PDF, DOCX, TXT 파일 및 URL 지원
-- **벡터 검색**: pgvector를 활용한 의미 기반 검색
-- **AI 챗봇**: RAG 기반의 정확한 답변 제공
-- **관리자 대시보드**: 문서 관리 및 사용 통계
-- **실시간 진행 상황 추적**: 업로드 및 인덱싱 과정 모니터링
+## 🎯 주요 기능
 
-## 🛠 기술 스택
+- **AI 챗봇 대화**: 자연어로 질문하면 AI가 관련 문서를 찾아 정확한 답변 제공
+- **히스토리 & 즐겨찾기**: 이전 질문과 답변을 언제든지 확인하고 자주 사용하는 답변을 즐겨찾기로 저장
+- **보안 & 권한 관리**: 사내 보안 정책에 맞춘 접근 제어와 데이터 보호
+- **실시간 동기화**: 최신 정책과 가이드라인이 실시간으로 반영되어 항상 최신 정보 제공
+- **관리자 대시보드**: 문서 업로드, 통계 확인, 로그 모니터링
 
-- **Frontend**: Next.js 15, React, TypeScript, Tailwind CSS, shadcn/ui
-- **Backend**: Next.js API Routes, Supabase
-- **AI/ML**: OpenAI Embeddings, LangChain
-- **Database**: Supabase PostgreSQL with pgvector
-- **File Processing**: pdf-parse, mammoth, cheerio
+## 🚀 기술 스택
 
-## 📋 설치 및 설정
+### Frontend
+- **Next.js 15**: 서버 사이드 렌더링 및 정적 사이트 생성
+- **TypeScript**: 정적 타입 검사를 통한 코드 안정성
+- **React**: 컴포넌트 기반 개발 및 재사용성
+- **shadcn/ui**: Tailwind CSS 기반의 재사용 가능한 UI 컴포넌트
+- **Tailwind CSS**: 유틸리티 기반 CSS 프레임워크
+- **Framer Motion**: 부드러운 애니메이션 및 전환 효과
 
-### 1. 의존성 설치
+### Backend & Database
+- **Supabase Postgres**: 안정적인 오픈 소스 관계형 데이터베이스
+- **pgvector**: Postgres 확장, 임베딩 벡터 저장 및 유사도 검색
+- **FastAPI**: 고성능 API 개발 (향후 구현 예정)
+- **LangChain**: LLM 통합 및 관리, RAG 파이프라인 구축
 
+### Authentication & State Management
+- **Supabase Auth**: 사용자 인증 및 권한 관리
+- **@tanstack/react-query**: 서버 상태 관리 및 캐싱
+- **Zustand**: 경량 글로벌 상태 관리
+
+## 📁 프로젝트 구조
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── admin/             # 관리자 페이지
+│   │   ├── docs/          # 문서 관리
+│   │   ├── logs/          # 로그 확인
+│   │   └── stats/         # 통계 대시보드
+│   ├── api/               # API 엔드포인트
+│   ├── chat/              # 챗봇 페이지
+│   ├── history/           # 히스토리 페이지
+│   └── test/              # 테스트 페이지
+├── components/             # React 컴포넌트
+│   ├── admin/             # 관리자 관련 컴포넌트
+│   ├── chat/              # 챗봇 관련 컴포넌트
+│   ├── layouts/           # 레이아웃 컴포넌트
+│   └── ui/                # shadcn/ui 컴포넌트
+├── hooks/                  # 커스텀 React 훅
+├── lib/                    # 유틸리티 함수 및 설정
+└── supabase/               # Supabase 설정 및 마이그레이션
+```
+
+## 🛠️ 설치 및 실행
+
+### 필수 요구사항
+- Node.js 18+ 
+- npm 또는 yarn
+- Supabase 계정 및 프로젝트
+
+### 1. 저장소 클론
+```bash
+git clone [repository-url]
+cd meta_faq
+```
+
+### 2. 의존성 설치
 ```bash
 npm install
 ```
 
-### 2. 환경 변수 설정
-
-`.env.local` 파일을 생성하고 다음 변수들을 설정하세요:
+### 3. 환경 변수 설정
+`.env.local` 파일을 생성하고 다음 내용을 추가하세요:
 
 ```env
-# Supabase 설정
+# Supabase 설정 (필수)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
@@ -52,188 +99,80 @@ SIMILARITY_THRESHOLD=0.7
 MAX_SEARCH_RESULTS=10
 ```
 
-### 3. Supabase 설정
-
-#### 3.1 pgvector 확장 활성화
-
-Supabase 프로젝트에서 다음 SQL을 실행하세요:
-
-```sql
--- pgvector 확장 활성화
-CREATE EXTENSION IF NOT EXISTS vector;
-```
-
-#### 3.2 데이터베이스 스키마 생성
-
-`supabase/migrations/20250102000000_create_document_tables.sql` 파일의 내용을 Supabase SQL 편집기에서 실행하세요.
-
-#### 3.3 Storage 버킷 생성
-
-Supabase Dashboard에서 `documents` Storage 버킷을 생성하고 적절한 권한을 설정하세요.
-
 ### 4. 개발 서버 실행
-
 ```bash
 npm run dev
 ```
 
-## 📁 프로젝트 구조
-
+### 5. 브라우저에서 확인
 ```
-src/
-├── app/
-│   ├── api/
-│   │   ├── admin/upload/     # 문서 업로드 API
-│   │   └── search/           # 벡터 검색 API
-│   ├── admin/                # 관리자 페이지
-│   ├── chat/                 # 챗봇 인터페이스
-│   └── history/              # 사용자 히스토리
-├── components/
-│   ├── admin/                # 관리자 컴포넌트
-│   ├── chat/                 # 챗봇 컴포넌트
-│   └── ui/                   # 공통 UI 컴포넌트
-├── lib/
-│   ├── services/
-│   │   └── FileProcessingService.ts  # 파일 처리 서비스
-│   └── supabase/             # Supabase 클라이언트
-└── hooks/                    # 커스텀 훅
+http://localhost:3000
 ```
 
-## 🔧 문서 처리 파이프라인
+## 🔐 관리자 권한
 
-### 1. 파일 업로드
-- 파일 형식 검증 (PDF, DOCX, TXT)
-- 파일 크기 검증 (기본 10MB)
-- Supabase Storage에 파일 저장
+다음 이메일을 가진 사용자만 관리자 페이지에 접근할 수 있습니다:
 
-### 2. 텍스트 추출
-- **PDF**: pdf-parse 라이브러리 사용
-- **DOCX**: mammoth 라이브러리 사용
-- **TXT**: 직접 텍스트 읽기
-- **URL**: cheerio를 사용한 HTML 파싱
+- `secho@nasmedia.co.kr`
+- `woolela@nasmedia.co.kr`
+- `dsko@nasmedia.co.kr`
+- `hjchoi@nasmedia.co.kr`
+- `sunjung@nasmedia.co.kr`
+- `sy230@nasmedia.co.kr`
+- `jeng351@nasmedia.co.kr`
 
-### 3. 텍스트 청킹
-- 최대 청크 크기: 1000자
-- 청크 간 중복: 200자
-- 문장 경계에서 자연스럽게 분할
+## 📊 주요 지표
 
-### 4. 임베딩 생성
-- OpenAI text-embedding-3-small 모델 사용
-- 벡터 차원: 1536
-- 배치 처리로 성능 최적화
+- **응답 속도**: 평균 3초 이내
+- **동시 사용자**: 최대 50명 지원
+- **데이터 보존**: 90일 후 자동 삭제
+- **사용자 만족도**: 80% 이상 목표
 
-### 5. 벡터 저장소 인덱싱
-- Supabase PostgreSQL + pgvector 사용
-- 코사인 유사도 기반 검색
-- IVFFlat 인덱스로 검색 성능 향상
+## 🔧 개발 가이드
 
-## 🔍 벡터 검색 API
+### 코드 스타일
+- TypeScript 사용
+- ESLint 규칙 준수
+- 컴포넌트는 `"use client"` 지시어 사용
+- Tailwind CSS로 스타일링
 
-### 검색 요청
-
+### 컴포넌트 추가
+새로운 shadcn/ui 컴포넌트가 필요한 경우:
 ```bash
-POST /api/search
-{
-  "query": "광고 정책 변경사항",
-  "threshold": 0.7,
-  "limit": 10
-}
+npx shadcn@latest add [component-name]
 ```
 
-### 검색 응답
-
-```json
-{
-  "success": true,
-  "query": "광고 정책 변경사항",
-  "results": [
-    {
-      "chunk_id": "file_123_chunk_0",
-      "content": "2024년 메타 광고 정책 주요 변경사항...",
-      "metadata": {...},
-      "similarity": 0.85,
-      "document": {
-        "id": "file_123",
-        "title": "2024년 메타 광고 정책 가이드라인.pdf",
-        "type": "file"
-      }
-    }
-  ],
-  "total": 1
-}
-```
+### 데이터베이스 마이그레이션
+새 테이블이 필요한 경우 `/supabase/migrations/` 디렉토리에 SQL 파일 생성
 
 ## 🚀 배포
 
-### Vercel 배포
+### Vercel 배포 (권장)
+1. Vercel 계정 생성
+2. GitHub 저장소 연결
+3. 환경 변수 설정
+4. 자동 배포
 
-1. Vercel에 프로젝트 연결
-2. 환경 변수 설정
-3. 자동 배포 활성화
+### 수동 배포
+```bash
+npm run build
+npm start
+```
 
-### 환경 변수 확인
+## 📝 라이선스
 
-배포 전 다음 환경 변수들이 설정되었는지 확인하세요:
+이 프로젝트는 내부 사용을 위한 프로젝트입니다.
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `OPENAI_API_KEY`
+## 👥 팀
 
-## 📊 성능 최적화
+- **개발**: AI Assistant
+- **기획**: Product Team
+- **디자인**: Design Team
 
-### 벡터 검색 최적화
+## �� 지원
 
-- IVFFlat 인덱스 사용
-- 적절한 `lists` 파라미터 설정
-- 정기적인 `ANALYZE` 실행
+프로젝트 관련 문의사항이 있으시면 개발팀에 연락해주세요.
 
-### 파일 처리 최적화
+---
 
-- 배치 임베딩 생성
-- 청크 크기 및 중복 최적화
-- 비동기 처리 및 진행 상황 추적
-
-## 🔒 보안 고려사항
-
-- RLS (Row Level Security) 활성화
-- 서비스 롤 키 사용으로 관리자 권한 제한
-- 파일 업로드 크기 및 형식 제한
-- URL 크롤링 시 적절한 User-Agent 설정
-
-## 🐛 문제 해결
-
-### 일반적인 문제들
-
-1. **pgvector 확장 오류**
-   - Supabase 프로젝트에서 pgvector 확장이 활성화되었는지 확인
-
-2. **임베딩 생성 실패**
-   - OpenAI API 키가 유효한지 확인
-   - API 할당량 확인
-
-3. **파일 업로드 실패**
-   - Storage 버킷 권한 설정 확인
-   - 파일 크기 제한 확인
-
-### 로그 확인
-
-- 브라우저 개발자 도구 콘솔
-- Supabase 로그
-- Vercel 함수 로그
-
-## 🤝 기여하기
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
-
-## 📞 지원
-
-문제가 있거나 질문이 있으시면 이슈를 생성해 주세요.
+**AdMate** - Meta 광고 정책을 대화로 해결하세요! 🚀
