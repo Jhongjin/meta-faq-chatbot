@@ -5,11 +5,9 @@ export function createClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // 빌드 시에는 더미 값을 사용하여 오류 방지
-    if (typeof window === 'undefined') {
-      return createBrowserClient('https://dummy.supabase.co', 'dummy-key');
-    }
-    throw new Error('Supabase URL과 Anon Key가 설정되지 않았습니다.');
+    // 환경 변수가 없을 때 더미 클라이언트 반환
+    console.warn('Supabase 환경 변수가 설정되지 않았습니다. 더미 클라이언트를 사용합니다.');
+    return createBrowserClient('https://dummy.supabase.co', 'dummy-key');
   }
 
   return createBrowserClient(supabaseUrl, supabaseAnonKey);
