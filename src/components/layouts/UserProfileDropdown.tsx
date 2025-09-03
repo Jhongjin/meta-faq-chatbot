@@ -31,7 +31,27 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
   ];
 
   // 관리자 권한 체크
-  const isAdmin = user && ADMIN_EMAILS.includes(user.email);
+  const isAdmin = user && user.email && ADMIN_EMAILS.includes(user.email);
+
+  // user가 null일 때 로그인 버튼 표시
+  if (!user) {
+    return (
+      <div className="flex items-center space-x-4">
+        <a
+          href="/login"
+          className="text-sm font-medium text-gray-300 hover:text-blue-400 transition-colors duration-200"
+        >
+          로그인
+        </a>
+        <a
+          href="/signup"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg"
+        >
+          회원가입
+        </a>
+      </div>
+    );
+  }
 
 
 
@@ -62,7 +82,7 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
           className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors duration-200 rounded-lg hover:bg-white/5 p-2"
         >
           <User className="w-4 h-4" />
-          <span className="text-sm font-medium">{user.user_metadata?.name || user.email}</span>
+          <span className="text-sm font-medium">{user?.user_metadata?.name || user?.email || '사용자'}</span>
           <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </button>
 
@@ -82,8 +102,8 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
                     <User className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-white font-medium">{user.user_metadata?.name || '사용자'}</p>
-                    <p className="text-gray-400 text-sm">{user.email}</p>
+                    <p className="text-white font-medium">{user?.user_metadata?.name || '사용자'}</p>
+                    <p className="text-gray-400 text-sm">{user?.email || '이메일 없음'}</p>
                   </div>
                 </div>
               </div>
