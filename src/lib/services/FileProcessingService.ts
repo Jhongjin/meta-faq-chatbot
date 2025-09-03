@@ -14,13 +14,16 @@ declare global {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// 환경 변수 검증
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Supabase 환경 변수가 설정되지 않았습니다. .env.local 파일을 확인해주세요.');
-}
+// 빌드 시에는 환경 변수가 없을 수 있으므로 조건부 처리
+let supabase: any = null;
 
-// Supabase 클라이언트 생성
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+if (supabaseUrl && supabaseServiceKey) {
+  // Supabase 클라이언트 생성
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+} else if (typeof window !== 'undefined') {
+  // 브라우저 환경에서만 경고 표시
+  console.warn('Supabase 환경 변수가 설정되지 않았습니다. .env.local 파일을 확인해주세요.');
+}
 
 // OpenAI 임베딩 모델 초기화
 const openaiApiKey = process.env.OPENAI_API_KEY;

@@ -3,22 +3,39 @@ import { createClient } from '@supabase/supabase-js';
 import { OpenAIEmbeddings } from '@langchain/openai';
 
 // 환경 변수에서 설정 가져오기
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const openaiApiKey = process.env.OPENAI_API_KEY;
 
-// Supabase 클라이언트 생성
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// 빌드 시에는 환경 변수가 없을 수 있으므로 조건부 처리
+let supabase: any = null;
+let embeddings: any = null;
 
-// OpenAI 임베딩 모델 초기화
-const embeddings = new OpenAIEmbeddings({
-  openAIApiKey: process.env.OPENAI_API_KEY,
-  modelName: 'text-embedding-3-small',
-  dimensions: 1536,
-});
+if (supabaseUrl && supabaseServiceKey) {
+  // Supabase 클라이언트 생성
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+}
+
+if (openaiApiKey) {
+  // OpenAI 임베딩 모델 초기화
+  embeddings = new OpenAIEmbeddings({
+    openAIApiKey: openaiApiKey,
+    modelName: 'text-embedding-3-small',
+    dimensions: 1536,
+  });
+}
 
 // 벡터 유사도 검색 API 엔드포인트
 export async function POST(request: NextRequest) {
   try {
+    // 환경 변수 체크
+    if (!supabase || !embeddings) {
+      return NextResponse.json(
+        { error: '서비스가 설정되지 않았습니다. 환경 변수를 확인해주세요.' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { query, threshold = 0.7, limit = 10 } = body;
 

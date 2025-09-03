@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FileProcessingService } from '@/lib/services/FileProcessingService';
 
 // 파일 업로드 및 인덱싱 API 엔드포인트
 export async function POST(request: NextRequest) {
@@ -62,6 +61,7 @@ async function handleFileUpload(request: NextRequest) {
     }
 
     // FileProcessingService를 통한 파일 처리 및 인덱싱
+    const { FileProcessingService } = await import('@/lib/services/FileProcessingService');
     const fileProcessingService = new FileProcessingService();
     
     const result = await fileProcessingService.uploadAndIndex({
@@ -122,6 +122,7 @@ async function handleUrlProcessing(request: NextRequest) {
     }
 
     // FileProcessingService를 통한 URL 처리 및 인덱싱
+    const { FileProcessingService } = await import('@/lib/services/FileProcessingService');
     const fileProcessingService = new FileProcessingService();
     
     const result = await fileProcessingService.uploadAndIndex({
@@ -169,6 +170,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const { FileProcessingService } = await import('@/lib/services/FileProcessingService');
     const fileProcessingService = new FileProcessingService();
     
     if (fileId) {
