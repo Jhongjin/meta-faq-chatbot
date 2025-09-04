@@ -20,41 +20,43 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header - Mobile optimized for chat */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900">
+      {/* Header - Dark theme with glassmorphism */}
+      <header className="bg-black/20 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <Link href="/" className="md:hidden">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-5 w-5" />
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-white/10">
+                  <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
               <div className="flex-shrink-0">
-                <h1 className="text-lg font-semibold text-gray-900">메타 광고 FAQ 챗봇</h1>
+                <h1 className="text-base sm:text-lg font-semibold text-white truncate">
+                  메타 광고 FAQ 챗봇
+                </h1>
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm">
-                <Settings className="h-5 w-5" />
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hidden sm:flex text-white hover:bg-white/10">
+                <Settings className="h-4 w-4" />
               </Button>
               
               {/* Mobile menu */}
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="sm" className="md:hidden">
-                    <Menu className="h-5 w-5" />
+                  <Button variant="ghost" size="sm" className="md:hidden h-8 w-8 p-0 text-white hover:bg-white/10">
+                    <Menu className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-64">
+                <SheetContent side="right" className="w-72 sm:w-80 bg-gray-900/95 backdrop-blur-md border-gray-700">
                   <nav className="flex-1 px-2 py-4 space-y-1">
                     {navigation.map((item) => (
                       <Link
                         key={item.name}
                         href={item.href}
-                        className="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        className="group flex items-center px-3 py-3 text-sm font-medium rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
                         onClick={() => setSidebarOpen(false)}
                       >
                         <span className="mr-3 text-lg">{item.icon}</span>
@@ -63,12 +65,12 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
                     ))}
                   </nav>
                   
-                  <div className="border-t border-gray-200 pt-4 mt-4">
-                    <div className="flex items-center space-x-2 px-2">
-                      <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+                  <div className="border-t border-gray-700 pt-4 mt-4">
+                    <div className="flex items-center space-x-3 px-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-medium">사</span>
                       </div>
-                      <span className="text-sm text-gray-700">사용자</span>
+                      <span className="text-sm text-gray-300">사용자</span>
                     </div>
                   </div>
                 </SheetContent>

@@ -29,9 +29,11 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 
 export default function HomePage() {
+  const router = useRouter();
   const [chatInput, setChatInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [lastQuestion, setLastQuestion] = useState("");
@@ -45,17 +47,14 @@ export default function HomePage() {
     setIsLoading(true);
     setLastQuestion(chatInput);
     
-    // TODO: 실제 채팅 API 호출
-    console.log("Chat submitted:", chatInput);
+    // 즉시 채팅 페이지로 이동 (지연 제거)
+    const encodedQuestion = encodeURIComponent(chatInput.trim());
+    router.push(`/chat?q=${encodedQuestion}`);
     
-    // 시뮬레이션을 위한 지연
+    // 성공 메시지는 잠깐 표시 후 제거
+    setShowSuccess(true);
     setTimeout(() => {
-      setIsLoading(false);
-      setChatInput("");
-      setShowSuccess(true);
-      
-      // 3초 후 성공 메시지 숨기기
-      setTimeout(() => setShowSuccess(false), 3000);
+      setShowSuccess(false);
     }, 2000);
   };
 

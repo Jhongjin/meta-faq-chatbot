@@ -43,144 +43,135 @@ export default function ChatBubble({
   const isUser = type === "user";
 
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
-      <div className={`max-w-3xl ${isUser ? "order-2" : "order-1"}`}>
-        <div
-          className={`rounded-2xl px-4 py-3 ${
-            isUser
-              ? "bg-primary-600 text-white"
-              : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-sm"
-          }`}
-        >
-          <div className="flex items-start space-x-3">
-            {!isUser && (
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-sm font-medium">AI</span>
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3 sm:mb-4`}>
+      <div className={`max-w-[85%] sm:max-w-3xl ${isUser ? "order-2" : "order-1"}`}>
+        {isUser ? (
+          <div
+            className="rounded-xl px-3 py-2 sm:px-4 sm:py-3 text-white shadow-lg"
+            style={{ backgroundColor: '#1a1a1a' }}
+          >
+            <div className="flex items-start space-x-2 sm:space-x-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm sm:text-sm leading-relaxed text-white">
+                  {content}
+                </p>
               </div>
-            )}
-            
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm ${isUser ? "text-white" : "text-gray-900 dark:text-white"}`}>
-                {content}
-              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="px-3 py-2 sm:px-4 sm:py-3">
+            <div className="flex items-start space-x-2 sm:space-x-3">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-xs sm:text-sm font-medium">AI</span>
+              </div>
               
-              {/* Sources for assistant messages */}
-              {!isUser && sources.length > 0 && (
-                <div className="mt-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowSources(!showSources)}
-                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-0 h-auto"
-                  >
-                    <FileText className="w-3 h-3 mr-1" />
-                    출처 {sources.length}개 보기
-                  </Button>
-                  
-                  {showSources && (
-                    <div className="mt-2 space-y-2">
-                      {sources.map((source) => (
-                        <Card key={source.id} className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                          <CardContent className="p-3">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1 min-w-0">
-                                <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                  {source.title}
-                                </h4>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-                                  {source.excerpt}
-                                </p>
-                                <div className="flex items-center space-x-2 mt-2">
-                                  <div className="flex items-center text-xs text-gray-400 dark:text-gray-500">
-                                    <Calendar className="w-3 h-3 mr-1" />
-                                    {source.updatedAt}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm sm:text-sm leading-relaxed text-white">
+                  {content}
+                </p>
+                
+                {/* Sources for assistant messages */}
+                {sources.length > 0 && (
+                  <div className="mt-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSources(!showSources)}
+                      className="text-xs text-gray-300 hover:text-white p-0 h-auto hover:bg-gray-700"
+                    >
+                      <FileText className="w-3 h-3 mr-1" />
+                      출처 {sources.length}개 보기
+                    </Button>
+                    
+                    {showSources && (
+                      <div className="mt-2 space-y-2">
+                        {sources.map((source) => (
+                          <Card key={source.id} className="border-gray-600/50 bg-gray-700/80 backdrop-blur-sm">
+                            <CardContent className="p-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="text-sm font-medium text-white truncate">
+                                    {source.title}
+                                  </h4>
+                                  <p className="text-xs text-gray-300 mt-1 line-clamp-2">
+                                    {source.excerpt}
+                                  </p>
+                                  <div className="flex items-center space-x-2 mt-2">
+                                    <div className="flex items-center text-xs text-gray-400">
+                                      <Calendar className="w-3 h-3 mr-1" />
+                                      {new Date(source.updatedAt).toLocaleDateString('ko-KR')}
+                                    </div>
+                                    {source.url && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-xs text-gray-300 hover:text-white p-0 h-auto hover:bg-gray-600"
+                                        onClick={() => window.open(source.url, '_blank')}
+                                      >
+                                        <ExternalLink className="w-3 h-3 mr-1" />
+                                        원문 보기
+                                      </Button>
+                                    )}
                                   </div>
-                                  {source.url && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 px-2 text-xs text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
-                                      onClick={() => window.open(source.url, "_blank")}
-                                    >
-                                      <ExternalLink className="w-3 h-3 mr-1" />
-                                      원본 보기
-                                    </Button>
-                                  )}
                                 </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            {isUser && (
-              <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-sm font-medium">사</span>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Feedback buttons for assistant messages */}
+                {feedback && onFeedback && (
+                  <div className="flex items-center space-x-2 mt-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onFeedback(true)}
+                      className={`text-xs p-1 h-auto ${
+                        feedback.helpful === true
+                          ? "text-green-400 bg-green-500/20"
+                          : "text-gray-300 hover:text-green-400 hover:bg-green-500/20"
+                      }`}
+                    >
+                      <ThumbsUp className="w-3 h-3 mr-1" />
+                      <span className="hidden sm:inline">도움됨</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onFeedback(false)}
+                      className={`text-xs p-1 h-auto ${
+                        feedback.helpful === false
+                          ? "text-red-400 bg-red-500/20"
+                          : "text-gray-300 hover:text-red-400 hover:bg-red-500/20"
+                      }`}
+                    >
+                      <ThumbsDown className="w-3 h-3 mr-1" />
+                      <span className="hidden sm:inline">도움안됨</span>
+                    </Button>
+                    {onFavorite && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onFavorite}
+                        className={`text-xs p-1 h-auto ${
+                          isFavorite
+                            ? "text-yellow-400 bg-yellow-500/20"
+                            : "text-gray-300 hover:text-yellow-400 hover:bg-yellow-500/20"
+                        }`}
+                      >
+                        <Star className={`w-3 h-3 mr-1 ${isFavorite ? "fill-current" : ""}`} />
+                        <span className="hidden sm:inline">즐겨찾기</span>
+                      </Button>
+                    )}
+                    <span className="text-xs text-gray-400">{timestamp}</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Feedback and actions for assistant messages */}
-        {!isUser && (
-          <div className="flex items-center justify-between mt-2 px-1">
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onFeedback?.(true)}
-                className={`h-8 px-2 text-xs ${
-                  feedback?.helpful === true
-                    ? "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20"
-                    : "text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400"
-                }`}
-              >
-                <ThumbsUp className="w-3 h-3 mr-1" />
-                도움됨
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onFeedback?.(false)}
-                className={`h-8 px-2 text-xs ${
-                  feedback?.helpful === false
-                    ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
-                    : "text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
-                }`}
-              >
-                <ThumbsDown className="w-3 h-3 mr-1" />
-                도움 안됨
-              </Button>
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onFavorite}
-                className={`h-8 px-2 text-xs ${
-                  isFavorite
-                    ? "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20"
-                    : "text-gray-500 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400"
-                }`}
-              >
-                <Star className={`w-3 h-3 mr-1 ${isFavorite ? "fill-current" : ""}`} />
-                즐겨찾기
-              </Button>
-              <span className="text-xs text-gray-400 dark:text-gray-500">{timestamp}</span>
-            </div>
-          </div>
-        )}
-        
-        {/* Timestamp for user messages */}
-        {isUser && (
-          <div className="text-right mt-1">
-            <span className="text-xs text-gray-400 dark:text-gray-500">{timestamp}</span>
           </div>
         )}
       </div>

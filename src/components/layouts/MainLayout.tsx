@@ -7,7 +7,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+interface MainLayoutProps {
+  children: React.ReactNode;
+  chatHeader?: React.ReactNode;
+}
+
+export default function MainLayout({ children, chatHeader }: MainLayoutProps) {
   const { user, loading, signOut } = useAuth();
   const [envError, setEnvError] = useState<string | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -93,6 +98,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           </div>
         </div>
       </header>
+
+      {/* 채팅 헤더 */}
+      {chatHeader && (
+        <div className="fixed top-16 left-0 right-0 z-40">
+          {chatHeader}
+        </div>
+      )}
 
       {/* 메인 콘텐츠 */}
       <main className="relative">
