@@ -8,7 +8,6 @@ import { X, Eye, EyeOff, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { EnvironmentSetupGuide } from "@/components/EnvironmentSetupGuide";
 
 interface PasswordChangeModalProps {
   isOpen: boolean;
@@ -188,8 +187,28 @@ export function PasswordChangeModal({ isOpen, onClose, user }: PasswordChangeMod
               </button>
             </div>
             
-            <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-              <EnvironmentSetupGuide />
+            <div className="overflow-y-auto max-h-[calc(90vh-120px)] p-6">
+              <div className="space-y-4">
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-white mb-2">환경 변수 설정 방법</h3>
+                  <p className="text-gray-300 mb-4">
+                    Supabase 연결을 위해 다음 환경 변수들을 .env.local 파일에 설정해주세요:
+                  </p>
+                  <div className="bg-gray-900 rounded p-3 font-mono text-sm">
+                    <div className="text-green-400">NEXT_PUBLIC_SUPABASE_URL=your_supabase_url</div>
+                    <div className="text-green-400">NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key</div>
+                  </div>
+                </div>
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                  <h4 className="text-blue-300 font-semibold mb-2">📋 설정 단계</h4>
+                  <ol className="text-gray-300 space-y-2 text-sm">
+                    <li>1. 프로젝트 루트에 .env.local 파일 생성</li>
+                    <li>2. Supabase 프로젝트에서 URL과 Anon Key 복사</li>
+                    <li>3. 위의 환경 변수들을 .env.local에 추가</li>
+                    <li>4. 개발 서버 재시작</li>
+                  </ol>
+                </div>
+              </div>
             </div>
           </motion.div>
         </motion.div>
