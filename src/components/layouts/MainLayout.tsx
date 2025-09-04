@@ -3,6 +3,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -29,37 +30,36 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      {/* 헤더 */}
-      <header className="bg-gray-800 border-b border-gray-700">
+    <div className="min-h-screen">
+      {/* 헤더 - Lovable.dev 스타일, 스크롤 시에도 고정 */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* 로고 */}
+          <div className="flex justify-between items-center h-16 py-3">
+            {/* AdMate 로고 */}
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-white">AdMate</h1>
+              <motion.div 
+                className="cursor-pointer"
+                whileHover={{ 
+                  scale: 1.05,
+                  rotate: [0, -2, 2, 0],
+                  transition: { duration: 0.3 }
+                }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <motion.img 
+                  src="/admate-logo.svg" 
+                  alt="AdMate" 
+                  className="h-8 w-auto"
+                  whileHover={{
+                    filter: "brightness(1.1) drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3))",
+                    transition: { duration: 0.2 }
+                  }}
+                />
+              </motion.div>
             </div>
-
-            {/* 네비게이션 */}
-            <nav className="flex items-center space-x-4">
-              <a
-                href="/"
-                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-              >
-                홈
-              </a>
-              <a
-                href="/chat"
-                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-              >
-                챗봇
-              </a>
-              <a
-                href="/history"
-                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-              >
-                히스토리
-              </a>
-            </nav>
 
             {/* 사용자 프로필 */}
             <UserProfileDropdown user={user} onSignOut={() => {}} />
@@ -68,7 +68,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </header>
 
       {/* 메인 콘텐츠 */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="relative">
         {children}
       </main>
     </div>
