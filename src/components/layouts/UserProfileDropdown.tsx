@@ -33,28 +33,7 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
   // 관리자 권한 체크
   const isAdmin = user && user.email && ADMIN_EMAILS.includes(user.email);
 
-  // user가 null일 때 로그인 버튼 표시
-  if (!user) {
-    return (
-      <div className="flex items-center space-x-4">
-        <a
-          href="/login"
-          className="text-sm font-medium text-gray-300 hover:text-blue-400 transition-colors duration-200"
-        >
-          로그인
-        </a>
-        <a
-          href="/signup"
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg"
-        >
-          회원가입
-        </a>
-      </div>
-    );
-  }
-
-
-
+  // 모든 hooks를 조건부 return 이전에 정의
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -66,13 +45,47 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-
-
   const handleSignOut = async () => {
-    await signOut();
-    onSignOut();
-    setIsOpen(false);
+    try {
+      const { error } = await signOut();
+      if (error) {
+        console.error('로그아웃 오류:', error);
+        alert('로그아웃 중 오류가 발생했습니다: ' + (error as any)?.message || '알 수 없는 오류');
+        return;
+      }
+      onSignOut();
+      setIsOpen(false);
+    } catch (error) {
+      console.error('로그아웃 오류:', error);
+      alert('로그아웃 중 오류가 발생했습니다.');
+    }
   };
+
+  // user가 null일 때 로그인 버튼 표시
+  if (!user) {
+    return (
+      <div className="flex items-center space-x-4">
+        <button
+          onClick={() => {
+            // 로그인 모달을 열기 위한 이벤트 발생
+            window.dispatchEvent(new CustomEvent('openAuthModal', { detail: { mode: 'signin' } }));
+          }}
+          className="text-sm font-medium text-gray-300 hover:text-blue-400 transition-colors duration-200"
+        >
+          로그인
+        </button>
+        <button
+          onClick={() => {
+            // 회원가입 모달을 열기 위한 이벤트 발생
+            window.dispatchEvent(new CustomEvent('openAuthModal', { detail: { mode: 'signup' } }));
+          }}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg"
+        >
+          회원가입
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>

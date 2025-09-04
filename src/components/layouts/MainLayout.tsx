@@ -2,12 +2,16 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { UserProfileDropdown } from "./UserProfileDropdown";
+import { AuthModal } from "./AuthModal";
+import { Toaster } from "@/components/ui/toaster";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const [envError, setEnvError] = useState<string | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<"signin" | "signup">("signin");
 
   // 환경 변수 검증
   useEffect(() => {
@@ -18,6 +22,29 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       console.warn('Supabase 환경 변수가 설정되지 않았습니다. 더미 클라이언트를 사용합니다.');
     }
   }, []);
+
+  // 인증 모달 이벤트 리스너
+  useEffect(() => {
+    const handleOpenAuthModal = (event: CustomEvent) => {
+      setAuthModalMode(event.detail.mode);
+      setAuthModalOpen(true);
+    };
+
+    window.addEventListener('openAuthModal', handleOpenAuthModal as EventListener);
+    
+    return () => {
+      window.removeEventListener('openAuthModal', handleOpenAuthModal as EventListener);
+    };
+  }, []);
+
+  // 로그아웃 핸들러
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('로그아웃 오류:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -62,7 +89,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </div>
 
             {/* 사용자 프로필 */}
-            <UserProfileDropdown user={user} onSignOut={() => {}} />
+            <UserProfileDropdown user={user} onSignOut={handleSignOut} />
           </div>
         </div>
       </header>
@@ -71,6 +98,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <main className="relative">
         {children}
       </main>
+
+      {/* 인증 모달 */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        mode={authModalMode}
+      />
+
+      {/* Toast 알림 */}
+      <Toaster />
     </div>
   );
 }

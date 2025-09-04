@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -24,15 +25,74 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
     confirmPassword: "",
     name: ""
   });
+  const [emailValidation, setEmailValidation] = useState({
+    isValid: true,
+    message: ""
+  });
 
-  const { signUp, signIn } = useAuth();
+  const { signUp, signIn, checkEmailExists } = useAuth();
+  const { toast } = useToast();
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isSignUp && formData.password !== formData.confirmPassword) {
-      alert("비밀번호가 일치하지 않습니다.");
+    // 입력값 검증
+    if (!formData.email || !formData.password) {
+      toast({
+        title: "입력 오류",
+        description: "이메일과 비밀번호를 입력해주세요.",
+        variant: "destructive",
+      });
       return;
+    }
+
+    // 이메일 중복 검증 (회원가입 시에만)
+    if (isSignUp && !emailValidation.isValid) {
+      toast({
+        title: "이메일 중복",
+        description: emailValidation.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isSignUp) {
+      if (!formData.name) {
+        toast({
+          title: "입력 오류",
+          description: "이름을 입력해주세요.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (formData.password !== formData.confirmPassword) {
+        toast({
+          title: "비밀번호 불일치",
+          description: "비밀번호가 일치하지 않습니다.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (formData.password.length < 6) {
+        toast({
+          title: "비밀번호 길이 오류",
+          description: "비밀번호는 최소 6자 이상이어야 합니다.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -42,9 +102,16 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
         const { data, error } = await signUp(formData.email, formData.password, formData.name);
         
         if (error) {
-          alert(`회원가입 오류: ${error.message}`);
+          toast({
+            title: "회원가입 실패",
+            description: error.message,
+            variant: "destructive",
+          });
         } else {
-          alert("회원가입이 완료되었습니다! 이메일을 확인하여 계정을 활성화해주세요.");
+          toast({
+            title: "✅ 회원가입 성공",
+            description: "회원가입이 완료되었습니다! 이메일을 확인하여 계정을 활성화해주세요.",
+          });
           onClose();
           setFormData({ email: "@nasmedia.co.kr", password: "", confirmPassword: "", name: "" });
         }
@@ -52,27 +119,84 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
         const { data, error } = await signIn(formData.email, formData.password);
         
         if (error) {
-          alert(`로그인 오류: ${error.message}`);
+          toast({
+            title: "로그인 실패",
+            description: error.message,
+            variant: "destructive",
+          });
         } else {
-          alert("로그인이 완료되었습니다!");
+          toast({
+            title: "✅ 로그인 성공",
+            description: "로그인이 완료되었습니다!",
+          });
           onClose();
           setFormData({ email: "@nasmedia.co.kr", password: "", confirmPassword: "", name: "" });
         }
       }
     } catch (error) {
-      alert(`오류가 발생했습니다: ${error}`);
+      toast({
+        title: "시스템 오류",
+        description: `예상치 못한 오류가 발생했습니다: ${error}`,
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const validateEmail = useCallback(async (email: string) => {
+    // 로그인 모드에서는 이메일 중복 검사를 하지 않음
+    if (!isSignUp) {
+      setEmailValidation({ isValid: true, message: "" });
+      return;
+    }
+    
+    if (!email || !email.includes('@nasmedia.co.kr')) {
+      setEmailValidation({ isValid: true, message: "" });
+      return;
+    }
+
+    try {
+      const exists = await checkEmailExists(email);
+      
+      if (exists) {
+        setEmailValidation({ 
+          isValid: false, 
+          message: "이미 등록된 이메일입니다." 
+        });
+      } else {
+        setEmailValidation({ isValid: true, message: "" });
+      }
+    } catch (error) {
+      console.error('이메일 검증 오류:', error);
+      setEmailValidation({ isValid: true, message: "" });
+    }
+  }, [checkEmailExists, isSignUp]);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // 이메일 필드 변경 시 디바운스된 실시간 검증 (회원가입 모드에서만)
+    if (field === 'email' && isSignUp) {
+      // 이전 타이머 취소
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+      
+      // 500ms 후에 검증 실행
+      validationTimeoutRef.current = setTimeout(() => {
+        validateEmail(value);
+      }, 500);
+    } else if (field === 'email' && !isSignUp) {
+      // 로그인 모드에서는 이메일 검증 상태 초기화
+      setEmailValidation({ isValid: true, message: "" });
+    }
   };
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
     setFormData({ email: "@nasmedia.co.kr", password: "", confirmPassword: "", name: "" });
+    setEmailValidation({ isValid: true, message: "" });
   };
 
   if (!isOpen) return null;
@@ -149,13 +273,20 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
                   placeholder="사용자명"
                   value={formData.email.replace('@nasmedia.co.kr', '')}
                   onChange={(e) => handleInputChange("email", e.target.value + '@nasmedia.co.kr')}
-                  className="pl-10 pr-24 bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                  className={`pl-10 pr-24 bg-gray-800 text-white placeholder-gray-400 focus:ring-blue-500 ${
+                    isSignUp && !emailValidation.isValid 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-gray-700 focus:border-blue-500'
+                  }`}
                   required
                 />
                 <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                   @nasmedia.co.kr
                 </span>
               </div>
+              {isSignUp && !emailValidation.isValid && emailValidation.message && (
+                <p className="text-red-400 text-sm mt-1">{emailValidation.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
