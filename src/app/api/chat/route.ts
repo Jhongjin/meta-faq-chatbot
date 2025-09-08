@@ -1,15 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ragSearchService } from '@/lib/services/RAGSearchService';
+
+// 기본 헤더 설정
+const defaultHeaders = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
 // OPTIONS 메서드 추가 (CORS 지원)
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
+    headers: defaultHeaders,
+  });
+}
+
+// GET 메서드 추가 (API 상태 확인용)
+export async function GET() {
+  return NextResponse.json({
+    success: true,
+    message: '챗봇 API가 정상적으로 작동합니다.',
+    timestamp: new Date().toISOString(),
+    methods: ['GET', 'POST', 'OPTIONS']
+  }, {
+    status: 200,
+    headers: defaultHeaders,
   });
 }
 
@@ -30,7 +46,7 @@ export async function POST(request: NextRequest) {
           error: '잘못된 요청 형식입니다.',
           details: 'JSON 형식이 올바르지 않습니다.'
         },
-        { status: 400 }
+        { status: 400, headers: defaultHeaders }
       );
     }
 
@@ -44,7 +60,7 @@ export async function POST(request: NextRequest) {
           error: '메시지가 필요합니다.',
           details: '유효한 메시지를 입력해주세요.'
         },
-        { status: 400 }
+        { status: 400, headers: defaultHeaders }
       );
     }
 
@@ -60,10 +76,25 @@ export async function POST(request: NextRequest) {
       supabaseKeyLength: supabaseKey?.length || 0
     });
 
-    // RAG 기반 답변 생성
-    console.log('🤖 RAG 서비스 호출 시작');
-    const response = await ragSearchService.generateChatResponse(message.trim());
-    console.log(`✅ 챗봇 응답 완료: ${response.processingTime}ms, 신뢰도: ${response.confidence}`);
+    // RAG 서비스 동적 import
+    let response;
+    try {
+      const { ragSearchService } = await import('@/lib/services/RAGSearchService');
+      console.log('🤖 RAG 서비스 호출 시작');
+      response = await ragSearchService.generateChatResponse(message.trim());
+      console.log(`✅ 챗봇 응답 완료: ${response.processingTime}ms, 신뢰도: ${response.confidence}`);
+    } catch (ragError) {
+      console.error('❌ RAG 서비스 오류:', ragError);
+      // Fallback 응답
+      response = {
+        answer: '죄송합니다. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있습니다. Meta 광고 정책 관련 질문은 관리자에게 직접 문의하시거나, Meta 비즈니스 도움말 센터에서 확인해주세요.',
+        sources: [],
+        confidence: 0.3,
+        processingTime: 100,
+        model: 'fallback',
+        isLLMGenerated: false
+      };
+    }
 
     const apiResponse = {
       success: true,
@@ -90,25 +121,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(apiResponse, {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
+      headers: defaultHeaders,
     });
 
   } catch (error) {
     console.error('❌ 챗봇 API 오류:', error);
     console.error('❌ 오류 스택:', error instanceof Error ? error.stack : 'No stack trace');
     
-    const errorHeaders = {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    };
-
     // 환경 변수 관련 오류인 경우 특별 처리
     if (error instanceof Error && error.message.includes('환경변수')) {
       console.log('🔧 환경 변수 오류 감지');
@@ -118,7 +137,7 @@ export async function POST(request: NextRequest) {
           error: '서비스 설정 오류',
           details: '데이터베이스 연결 설정이 올바르지 않습니다. 관리자에게 문의해주세요.'
         },
-        { status: 500, headers: errorHeaders }
+        { status: 500, headers: defaultHeaders }
       );
     }
     
@@ -131,7 +150,7 @@ export async function POST(request: NextRequest) {
           error: 'AI 서비스 일시 중단',
           details: 'AI 답변 생성 서비스가 일시적으로 중단되었습니다. 잠시 후 다시 시도해주세요.'
         },
-        { status: 503, headers: errorHeaders }
+        { status: 503, headers: defaultHeaders }
       );
     }
     
@@ -142,30 +161,9 @@ export async function POST(request: NextRequest) {
         error: '챗봇 응답 생성 중 오류가 발생했습니다.',
         details: error instanceof Error ? error.message : String(error)
       },
-      { status: 500, headers: errorHeaders }
+      { status: 500, headers: defaultHeaders }
     );
   }
 }
 
-export async function GET() {
-  try {
-    // 검색 통계 조회
-    const stats = await ragSearchService.getSearchStats();
-    
-    return NextResponse.json({
-      success: true,
-      stats
-    });
-
-  } catch (error) {
-    console.error('챗봇 통계 조회 오류:', error);
-    
-    return NextResponse.json(
-      { 
-        success: false,
-        error: '통계 조회 중 오류가 발생했습니다.'
-      },
-      { status: 500 }
-    );
-  }
-}
+// GET 메서드는 이미 위에서 정의됨 (API 상태 확인용)
