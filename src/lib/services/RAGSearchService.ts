@@ -152,9 +152,13 @@ export class RAGSearchService {
     }
 
     try {
-      // Vercel 환경에서는 Ollama가 사용 불가능하므로 fallback 응답 사용
-      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-        console.log('⚠️ 프로덕션 환경에서 Ollama 서비스가 사용 불가능합니다. 기본 답변 생성 모드로 전환합니다.');
+      // 외부 Ollama 서버가 설정되어 있는지 확인
+      const ollamaUrl = process.env.OLLAMA_BASE_URL;
+      const isExternalOllama = ollamaUrl && !ollamaUrl.includes('localhost');
+      
+      // Vercel 환경에서 외부 Ollama 서버가 없으면 fallback 응답 사용
+      if ((process.env.VERCEL || process.env.NODE_ENV === 'production') && !isExternalOllama) {
+        console.log('⚠️ 프로덕션 환경에서 외부 Ollama 서버가 설정되지 않았습니다. 기본 답변 생성 모드로 전환합니다.');
         return this.generateFallbackAnswer(query, searchResults);
       }
 
@@ -274,7 +278,9 @@ export class RAGSearchService {
       const processingTime = Date.now() - startTime;
       
       // 5. LLM 사용 여부 확인
-      const isLLMGenerated = process.env.VERCEL || process.env.NODE_ENV === 'production' ? false : await llmService.checkOllamaStatus();
+      const ollamaUrl = process.env.OLLAMA_BASE_URL;
+      const isExternalOllama = ollamaUrl && !ollamaUrl.includes('localhost');
+      const isLLMGenerated = (process.env.VERCEL || process.env.NODE_ENV === 'production') && !isExternalOllama ? false : await llmService.checkOllamaStatus();
 
       console.log(`✅ RAG 응답 생성 완료: ${processingTime}ms, 신뢰도: ${confidence}`);
 

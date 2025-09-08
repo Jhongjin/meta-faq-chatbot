@@ -23,7 +23,7 @@ export class LLMService {
   private defaultOptions: LLMOptions;
 
   constructor() {
-    // Ollama 기본 설정
+    // Ollama 설정 - 외부 서버 지원
     this.baseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
     // 더 나은 품질의 모델로 변경: qwen2.5:7b (품질과 속도의 균형)
     this.defaultModel = process.env.OLLAMA_MODEL || 'qwen2.5:7b';
@@ -33,6 +33,12 @@ export class LLMService {
       maxTokens: 2000, // 충분한 길이의 구조화된 답변을 위해 증가
       systemPrompt: this.getDefaultSystemPrompt()
     };
+    
+    console.log('🔧 LLMService 초기화:', {
+      baseUrl: this.baseUrl,
+      model: this.defaultModel,
+      isExternalServer: !this.baseUrl.includes('localhost')
+    });
   }
 
   /**
