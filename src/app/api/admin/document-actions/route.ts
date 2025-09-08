@@ -449,7 +449,7 @@ async function handleReindex(documentId: string) {
           });
 
           // 재인덱싱 수행
-          const result = await documentIndexingService.indexFile(file, documentId);
+          const result = await documentIndexingService.indexFile(file, {}, documentId);
           
           if (result.status === 'failed') {
             throw new Error(result.error || '파일 재인덱싱에 실패했습니다.');
