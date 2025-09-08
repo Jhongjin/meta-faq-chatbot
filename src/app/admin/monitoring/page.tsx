@@ -42,15 +42,7 @@ import {
   Pause,
   Square
 } from "lucide-react";
-import { 
-  CpuUsageChart, 
-  MemoryUsageChart, 
-  NetworkTrafficChart, 
-  RequestRateChart, 
-  ErrorRateChart, 
-  ResourceUsagePieChart,
-  generateSampleData 
-} from "@/components/admin/ChartJsCharts";
+// Chart components removed - using placeholder data instead
 import { ChartErrorBoundary } from "@/components/admin/ChartErrorBoundary";
 
 interface SystemMetrics {
@@ -440,9 +432,13 @@ export default function SystemMonitoringPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ChartErrorBoundary>
-                      <CpuUsageChart data={generateSampleData(timeRange as '1h' | '24h' | '7d' | '30d')} />
-                    </ChartErrorBoundary>
+                    <div className="h-64 flex items-center justify-center text-gray-400">
+                      <div className="text-center">
+                        <Cpu className="w-12 h-12 mx-auto mb-2" />
+                        <p>CPU 사용률 차트</p>
+                        <p className="text-sm">차트 데이터를 로딩 중입니다...</p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -454,9 +450,13 @@ export default function SystemMonitoringPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ChartErrorBoundary>
-                      <MemoryUsageChart data={generateSampleData(timeRange as '1h' | '24h' | '7d' | '30d')} />
-                    </ChartErrorBoundary>
+                    <div className="h-64 flex items-center justify-center text-gray-400">
+                      <div className="text-center">
+                        <HardDrive className="w-12 h-12 mx-auto mb-2" />
+                        <p>메모리 사용률 차트</p>
+                        <p className="text-sm">차트 데이터를 로딩 중입니다...</p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -468,9 +468,13 @@ export default function SystemMonitoringPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ChartErrorBoundary>
-                      <NetworkTrafficChart data={generateSampleData(timeRange as '1h' | '24h' | '7d' | '30d')} />
-                    </ChartErrorBoundary>
+                    <div className="h-64 flex items-center justify-center text-gray-400">
+                      <div className="text-center">
+                        <Network className="w-12 h-12 mx-auto mb-2" />
+                        <p>네트워크 트래픽 차트</p>
+                        <p className="text-sm">차트 데이터를 로딩 중입니다...</p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -482,9 +486,13 @@ export default function SystemMonitoringPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ChartErrorBoundary>
-                      <RequestRateChart data={generateSampleData(timeRange as '1h' | '24h' | '7d' | '30d')} />
-                    </ChartErrorBoundary>
+                    <div className="h-64 flex items-center justify-center text-gray-400">
+                      <div className="text-center">
+                        <TrendingUp className="w-12 h-12 mx-auto mb-2" />
+                        <p>요청 처리율 차트</p>
+                        <p className="text-sm">차트 데이터를 로딩 중입니다...</p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -498,21 +506,23 @@ export default function SystemMonitoringPage() {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
                       <h4 className="text-lg font-medium text-white mb-4">시스템 리소스</h4>
-                      <ChartErrorBoundary>
-                        <ResourceUsagePieChart 
-                          data={[
-                            { name: 'CPU', value: monitoringData?.metrics.cpu.usage || 0, color: '#3B82F6' },
-                            { name: '메모리', value: ((monitoringData?.metrics.memory.used || 0) / (monitoringData?.metrics.memory.total || 1)) * 100, color: '#10B981' },
-                            { name: '디스크', value: ((monitoringData?.metrics.disk.used || 0) / (monitoringData?.metrics.disk.total || 1)) * 100, color: '#F59E0B' },
-                          ]}
-                        />
-                      </ChartErrorBoundary>
+                      <div className="h-64 flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                          <BarChart3 className="w-12 h-12 mx-auto mb-2" />
+                          <p>리소스 사용률 파이 차트</p>
+                          <p className="text-sm">차트 데이터를 로딩 중입니다...</p>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <h4 className="text-lg font-medium text-white mb-4">오류율 추이</h4>
-                      <ChartErrorBoundary>
-                        <ErrorRateChart data={generateSampleData(timeRange as '1h' | '24h' | '7d' | '30d')} />
-                      </ChartErrorBoundary>
+                      <div className="h-64 flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                          <AlertTriangle className="w-12 h-12 mx-auto mb-2" />
+                          <p>오류율 추이 차트</p>
+                          <p className="text-sm">차트 데이터를 로딩 중입니다...</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
