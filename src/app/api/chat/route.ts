@@ -22,7 +22,8 @@ export async function GET() {
     success: true,
     message: '챗봇 API가 정상적으로 작동합니다.',
     timestamp: new Date().toISOString(),
-    methods: ['GET', 'POST', 'OPTIONS']
+    methods: ['GET', 'POST', 'OPTIONS'],
+    version: 'app-router-v2'
   }, {
     status: 200,
     headers,

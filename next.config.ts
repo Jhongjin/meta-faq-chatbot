@@ -16,13 +16,7 @@ const nextConfig: NextConfig = {
   // 서버 사이드 전용 패키지들을 외부화
   serverExternalPackages: ['@supabase/supabase-js', '@xenova/transformers', 'pdf-parse', 'mammoth', 'tesseract.js', 'puppeteer', 'puppeteer-extra', 'puppeteer-extra-plugin-stealth', 'xml2js', 'nodemailer'],
   
-  // API 라우트 설정
-  api: {
-    bodyParser: {
-      sizeLimit: '1mb',
-    },
-    responseLimit: '8mb',
-  },
+  // API 라우트 설정 (Next.js 15에서는 자동 처리)
   
   // 실험적 기능 설정
   experimental: {
