@@ -152,7 +152,13 @@ export class RAGSearchService {
     }
 
     try {
-      // Ollama 서비스 상태 확인
+      // Vercel 환경에서는 Ollama가 사용 불가능하므로 fallback 응답 사용
+      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+        console.log('⚠️ 프로덕션 환경에서 Ollama 서비스가 사용 불가능합니다. 기본 답변 생성 모드로 전환합니다.');
+        return this.generateFallbackAnswer(query, searchResults);
+      }
+
+      // Ollama 서비스 상태 확인 (개발 환경에서만)
       const isOllamaAvailable = await llmService.checkOllamaStatus();
       
       if (!isOllamaAvailable) {
@@ -268,7 +274,7 @@ export class RAGSearchService {
       const processingTime = Date.now() - startTime;
       
       // 5. LLM 사용 여부 확인
-      const isLLMGenerated = await llmService.checkOllamaStatus();
+      const isLLMGenerated = process.env.VERCEL || process.env.NODE_ENV === 'production' ? false : await llmService.checkOllamaStatus();
 
       console.log(`✅ RAG 응답 생성 완료: ${processingTime}ms, 신뢰도: ${confidence}`);
 
