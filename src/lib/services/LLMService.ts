@@ -85,6 +85,12 @@ export class LLMService {
   ): Promise<LLMResponse> {
     const startTime = Date.now();
     
+    // Vercel 환경에서는 Ollama가 실행되지 않으므로 fallback 응답
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+      console.warn('프로덕션 환경에서 Ollama API를 사용할 수 없습니다. Fallback 응답을 반환합니다.');
+      return this.generateFallbackResponse(prompt, options, startTime);
+    }
+    
     try {
       const requestOptions = { ...this.defaultOptions, ...options };
       
@@ -120,15 +126,50 @@ export class LLMService {
 
     } catch (error) {
       console.error('Ollama API 호출 실패:', error);
-      const processingTime = Date.now() - startTime;
-      
-      return {
-        answer: '죄송합니다. 답변을 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
-        confidence: 0,
-        processingTime,
-        model: options.model || this.defaultModel
-      };
+      return this.generateFallbackResponse(prompt, options, startTime);
     }
+  }
+
+  /**
+   * Fallback 응답 생성 (Ollama가 사용 불가능한 경우)
+   */
+  private generateFallbackResponse(
+    prompt: string, 
+    options: LLMOptions, 
+    startTime: number
+  ): LLMResponse {
+    const processingTime = Date.now() - startTime;
+    
+    // 간단한 키워드 기반 응답 생성
+    const answer = this.generateSimpleResponse(prompt);
+    
+    return {
+      answer,
+      confidence: 0.3, // 낮은 신뢰도
+      processingTime,
+      model: options.model || this.defaultModel
+    };
+  }
+
+  /**
+   * 간단한 키워드 기반 응답 생성
+   */
+  private generateSimpleResponse(prompt: string): string {
+    const lowerPrompt = prompt.toLowerCase();
+    
+    if (lowerPrompt.includes('광고') && lowerPrompt.includes('정책')) {
+      return 'Meta 광고 정책에 대한 질문이군요. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있습니다. 자세한 정보는 Meta 광고 정책 문서를 직접 확인하시거나, 관리자에게 문의해주세요.';
+    }
+    
+    if (lowerPrompt.includes('facebook') || lowerPrompt.includes('instagram')) {
+      return 'Facebook이나 Instagram 관련 질문이군요. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있습니다. Meta 비즈니스 도움말 센터에서 최신 정보를 확인하시거나, 관리자에게 문의해주세요.';
+    }
+    
+    if (lowerPrompt.includes('승인') || lowerPrompt.includes('거부')) {
+      return '광고 승인 관련 질문이군요. 광고 승인 과정은 복잡하며 여러 요인에 따라 달라집니다. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있으므로, Meta 광고 정책 문서를 직접 확인하시거나 관리자에게 문의해주세요.';
+    }
+    
+    return '죄송합니다. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있습니다. Meta 광고 정책 관련 질문은 관리자에게 직접 문의하시거나, Meta 비즈니스 도움말 센터에서 확인해주세요.';
   }
 
   /**

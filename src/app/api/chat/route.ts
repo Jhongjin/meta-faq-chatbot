@@ -39,6 +39,30 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('챗봇 API 오류:', error);
     
+    // 환경 변수 관련 오류인 경우 특별 처리
+    if (error instanceof Error && error.message.includes('환경변수')) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: '서비스 설정 오류',
+          details: '데이터베이스 연결 설정이 올바르지 않습니다. 관리자에게 문의해주세요.'
+        },
+        { status: 500 }
+      );
+    }
+    
+    // LLM 연결 오류인 경우 fallback 응답
+    if (error instanceof Error && (error.message.includes('fetch') || error.message.includes('connection'))) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'AI 서비스 일시 중단',
+          details: 'AI 답변 생성 서비스가 일시적으로 중단되었습니다. 잠시 후 다시 시도해주세요.'
+        },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
       { 
         success: false,

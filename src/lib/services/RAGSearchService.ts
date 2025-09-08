@@ -36,13 +36,6 @@ export class RAGSearchService {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      // 빌드 시에는 더미 클라이언트를 사용하여 오류 방지
-      if (process.env.NODE_ENV === 'production') {
-        console.warn('프로덕션 환경에서 Supabase 환경변수가 누락되었습니다. 더미 클라이언트를 사용합니다.');
-        this.supabase = createClient('https://dummy.supabase.co', 'dummy-key');
-        this.embeddingService = new EmbeddingService();
-        return;
-      }
       throw new Error('Supabase 환경변수가 설정되지 않았습니다.');
     }
 
