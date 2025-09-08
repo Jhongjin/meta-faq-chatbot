@@ -1,6 +1,6 @@
 // Playwright 대신 간단한 HTTP 요청 사용
 import Tesseract from 'tesseract.js';
-import * as pdf from 'pdf-parse';
+import pdf from 'pdf-parse';
 import * as mammoth from 'mammoth';
 
 // Next.js 환경에서 Buffer 사용을 위한 polyfill
