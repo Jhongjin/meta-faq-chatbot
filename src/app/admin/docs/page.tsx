@@ -59,7 +59,7 @@ export default function DocumentManagementPage() {
     setSearchQuery('');
   };
   const [deletingDocument, setDeletingDocument] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState<{[key: string]: string}>({});
+  const [actionLoading, setActionLoading] = useState<{[key: string]: boolean}>({});
   const [sortField, setSortField] = useState<keyof Document>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [filterType, setFilterType] = useState<string>('all');
@@ -68,7 +68,7 @@ export default function DocumentManagementPage() {
 
   // 문서 다운로드 함수
   const handleDownloadDocument = async (documentId: string, documentTitle: string) => {
-    setActionLoading(prev => ({ ...prev, [`${documentId}_download`]: 'loading' }));
+    setActionLoading(prev => ({ ...prev, [`${documentId}_download`]: true }));
     try {
       const response = await fetch(`/api/admin/document-actions?action=download&documentId=${documentId}`);
       
@@ -113,7 +113,7 @@ export default function DocumentManagementPage() {
 
   // 문서 미리보기 함수
   const handlePreviewDocument = async (documentId: string) => {
-    setActionLoading(prev => ({ ...prev, [`${documentId}_preview`]: 'loading' }));
+    setActionLoading(prev => ({ ...prev, [`${documentId}_preview`]: true }));
     try {
       const response = await fetch(`/api/admin/document-actions?action=preview&documentId=${documentId}`);
       const result = await response.json();
@@ -154,7 +154,7 @@ export default function DocumentManagementPage() {
       return;
     }
 
-    setActionLoading(prev => ({ ...prev, [`${documentId}_reindex`]: 'loading' }));
+    setActionLoading(prev => ({ ...prev, [`${documentId}_reindex`]: true }));
     try {
       console.log(`🔄 재인덱싱 시작: ${documentTitle} (${documentId})`);
       
