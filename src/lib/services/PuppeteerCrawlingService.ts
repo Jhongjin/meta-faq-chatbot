@@ -141,7 +141,7 @@ export class PuppeteerCrawlingService {
         ];
         
         for (const selector of titleSelectors) {
-          const element = document.querySelector(selector);
+          const element = (document as any).querySelector(selector);
           if (element && element.textContent?.trim()) {
             return element.textContent.trim();
           }
@@ -155,8 +155,8 @@ export class PuppeteerCrawlingService {
       console.log(`📄 콘텐츠 추출 중...`);
       const content = await page.evaluate(() => {
         // 불필요한 요소 제거
-        const elementsToRemove = document.querySelectorAll('script, style, nav, footer, header, aside');
-        elementsToRemove.forEach(el => el.remove());
+        const elementsToRemove = (document as any).querySelectorAll('script, style, nav, footer, header, aside');
+        elementsToRemove.forEach((el: any) => el.remove());
 
         // 콘텐츠 영역 찾기
         const contentSelectors = [
@@ -170,7 +170,7 @@ export class PuppeteerCrawlingService {
         
         let contentElement = null;
         for (const selector of contentSelectors) {
-          const element = document.querySelector(selector);
+          const element = (document as any).querySelector(selector);
           if (element) {
             contentElement = element;
             break;
@@ -178,7 +178,7 @@ export class PuppeteerCrawlingService {
         }
         
         if (!contentElement) {
-          contentElement = document.body;
+          contentElement = (document as any).body;
         }
         
         if (contentElement) {
