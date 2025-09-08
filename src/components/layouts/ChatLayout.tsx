@@ -5,6 +5,7 @@ import { ArrowLeft, Menu, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 interface ChatLayoutProps {
   children: React.ReactNode;
@@ -26,12 +27,27 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <Link href="/" className="md:hidden">
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-white/10">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
+              <Link href="/" className="block">
+                <motion.div 
+                  className="cursor-pointer"
+                  whileHover={{ 
+                    scale: 1.05,
+                    transition: { duration: 0.3 }
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <motion.img 
+                    src="/admate-logo.png" 
+                    alt="AdMate" 
+                    className="h-11 w-auto"
+                    whileHover={{
+                      filter: "brightness(1.1) drop-shadow(0 4px 8px rgba(255, 107, 53, 0.3))",
+                      transition: { duration: 0.2 }
+                    }}
+                  />
+                </motion.div>
               </Link>
-              <div className="flex-shrink-0">
+              <div className="hidden sm:block">
                 <h1 className="text-base sm:text-lg font-semibold text-white truncate">
                   메타 광고 FAQ 챗봇
                 </h1>

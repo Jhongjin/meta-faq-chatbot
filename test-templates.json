@@ -1,0 +1,11 @@
+{
+  "templates": {
+    "Facebook Business (한국어)": ["https://ko-kr.facebook.com/business"],
+    "Instagram Business (한국어)": ["https://business.instagram.com/help/ko/"],
+    "Meta 개발자 문서 (한국어)": ["https://developers.facebook.com/docs/marketing-api/ko/"],
+    "Facebook Help (영어)": ["https://www.facebook.com/help/"],
+    "Facebook Business (영어)": ["https://www.facebook.com/business/help/"],
+    "Instagram Business (영어)": ["https://business.instagram.com/help/"],
+    "Meta 개발자 문서 (영어)": ["https://developers.facebook.com/docs/marketing-api/"]
+  }
+}

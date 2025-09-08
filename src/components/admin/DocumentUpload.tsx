@@ -1,12 +1,24 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Upload, FileText, Link, X, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Upload, FileText, Link, X, CheckCircle, AlertCircle, AlertTriangle, Plus, File, Globe, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { 
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentFile {
@@ -17,18 +29,24 @@ interface DocumentFile {
   status: "pending" | "uploading" | "indexing" | "success" | "error";
   progress: number;
   error?: string;
+  file?: File; // 실제 File 객체 저장
 }
 
 interface DocumentUploadProps {
-  onUpload?: (files: File[], urls: string[]) => void;
+  onUpload?: (files: File[]) => void;
 }
 
 export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
   const [files, setFiles] = useState<DocumentFile[]>([]);
   const [urls, setUrls] = useState<string[]>([]);
-  const [urlInput, setUrlInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [duplicateFile, setDuplicateFile] = useState<{
+    file: File;
+    existingDocument: any;
+    existingDocumentId: string;
+  } | null>(null);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const { toast } = useToast();
 
   // 파일 드래그 앤 드롭 핸들러
@@ -54,6 +72,8 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
   }, []);
 
   const handleFileSelect = (selectedFiles: File[]) => {
+    console.log('선택된 파일들:', selectedFiles.map(f => ({ name: f.name, size: f.size, type: f.type })));
+    
     const validFiles = selectedFiles.filter(file => {
       // PDF, DOCX, 텍스트 파일 허용
       const validTypes = [
@@ -82,21 +102,14 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       type: file.type,
       status: "pending" as const,
       progress: 0,
+      file: file, // 실제 File 객체 저장
     }));
+
+    console.log('생성된 DocumentFile 객체들:', newFiles.map(f => ({ id: f.id, name: f.name, hasFile: !!f.file })));
 
     setFiles(prev => [...prev, ...newFiles]);
   };
 
-  const handleUrlAdd = () => {
-    if (urlInput.trim() && !urls.includes(urlInput.trim())) {
-      setUrls(prev => [...prev, urlInput.trim()]);
-      setUrlInput("");
-    }
-  };
-
-  const handleUrlRemove = (urlToRemove: string) => {
-    setUrls(prev => prev.filter(url => url !== urlToRemove));
-  };
 
   const handleFileRemove = (fileId: string) => {
     setFiles(prev => prev.filter(file => file.id !== fileId));
@@ -106,7 +119,7 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
     try {
       // 1단계: 파일 업로드
       setFiles(prev => prev.map(f => 
-        f.id === fileId ? { ...f, status: "uploading", progress: 0 } : f
+        f.id === fileId ? { ...f, status: "uploading", progress: 10 } : f
       ));
 
       const formData = new FormData();
@@ -118,13 +131,31 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         body: formData,
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        throw new Error('파일 업로드 실패');
+        // 중복 파일인 경우
+        if (result.isDuplicate) {
+          setDuplicateFile({
+            file,
+            existingDocument: result.data.existingDocument,
+            existingDocumentId: result.data.existingDocumentId
+          });
+          setShowDuplicateDialog(true);
+          
+          // 파일 상태를 대기로 변경
+          setFiles(prev => prev.map(f => 
+            f.id === fileId ? { ...f, status: "pending", progress: 0 } : f
+          ));
+          return;
+        }
+        
+        throw new Error(result.error || '파일 업로드 실패');
       }
 
       // 2단계: 인덱싱 진행
       setFiles(prev => prev.map(f => 
-        f.id === fileId ? { ...f, status: "indexing", progress: 50 } : f
+        f.id === fileId ? { ...f, status: "indexing", progress: 60 } : f
       ));
 
       // 3단계: 완료
@@ -132,12 +163,21 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         f.id === fileId ? { ...f, status: "success", progress: 100 } : f
       ));
 
+      console.log(`파일 처리 완료: ${file.name}`);
+      
+      // 성공 토스트 표시
       toast({
         title: "업로드 완료",
         description: `${file.name} 파일이 성공적으로 업로드되고 인덱싱되었습니다.`,
       });
+      
+      // 부모 컴포넌트에 업로드 완료 알림
+      if (onUpload) {
+        onUpload([file]);
+      }
 
     } catch (error) {
+      console.error(`파일 처리 오류 (${file.name}):`, error);
       setFiles(prev => prev.map(f => 
         f.id === fileId ? { 
           ...f, 
@@ -145,12 +185,7 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
           error: error instanceof Error ? error.message : "알 수 없는 오류"
         } : f
       ));
-
-      toast({
-        title: "업로드 실패",
-        description: `${file.name} 파일 업로드 중 오류가 발생했습니다.`,
-        variant: "destructive",
-      });
+      throw error; // 상위에서 처리하도록
     }
   };
 
@@ -182,6 +217,62 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
     }
   };
 
+  // 중복 파일 덮어쓰기 처리
+  const handleOverwriteFile = async () => {
+    if (!duplicateFile) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', duplicateFile.file);
+      formData.append('existingDocumentId', duplicateFile.existingDocumentId);
+
+      const response = await fetch('/api/admin/upload?action=overwrite-file', {
+        method: 'PUT',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('파일 덮어쓰기 실패');
+      }
+
+      // 파일 상태를 성공으로 변경
+      setFiles(prev => prev.map(f => 
+        f.name === duplicateFile.file.name ? { ...f, status: "success", progress: 100 } : f
+      ));
+
+      toast({
+        title: "덮어쓰기 완료",
+        description: `${duplicateFile.file.name} 파일이 성공적으로 덮어쓰기되었습니다.`,
+      });
+
+      setShowDuplicateDialog(false);
+      setDuplicateFile(null);
+
+    } catch (error) {
+      toast({
+        title: "덮어쓰기 실패",
+        description: `${duplicateFile.file.name} 파일 덮어쓰기 중 오류가 발생했습니다.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // 중복 파일 건너뛰기 처리
+  const handleSkipFile = () => {
+    if (!duplicateFile) return;
+
+    // 파일을 목록에서 제거
+    setFiles(prev => prev.filter(f => f.name !== duplicateFile.file.name));
+
+    toast({
+      title: "파일 건너뛰기",
+      description: `${duplicateFile.file.name} 파일을 건너뛰었습니다.`,
+    });
+
+    setShowDuplicateDialog(false);
+    setDuplicateFile(null);
+  };
+
   const handleSubmit = async () => {
     if (files.length === 0 && urls.length === 0) return;
 
@@ -192,29 +283,77 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       const uploadPromises = files
         .filter(file => file.status === "pending")
         .map(async (file) => {
-          // 실제 파일 객체를 찾아서 업로드
-          const actualFile = await findActualFile(file.name);
-          if (actualFile) {
-            return uploadAndIndexDocument(actualFile, file.id);
-          } else {
-            throw new Error(`파일을 찾을 수 없습니다: ${file.name}`);
+          try {
+            console.log(`파일 처리 시작: ${file.name}`, { hasFile: !!file.file, fileId: file.id });
+            
+            // 저장된 File 객체 사용
+            if (file.file) {
+              console.log(`저장된 File 객체 사용: ${file.name}`);
+              return await uploadAndIndexDocument(file.file, file.id);
+            } else {
+              console.log(`백업 방법으로 파일 찾기: ${file.name}`);
+              // 백업: 파일 입력 요소에서 찾기
+              const actualFile = await findActualFile(file.name);
+              if (actualFile) {
+                console.log(`백업 방법으로 파일 찾음: ${file.name}`);
+                return await uploadAndIndexDocument(actualFile, file.id);
+              } else {
+                console.error(`파일을 찾을 수 없음: ${file.name}`);
+                throw new Error(`파일을 찾을 수 없습니다: ${file.name}`);
+              }
+            }
+          } catch (error) {
+            console.error(`파일 처리 오류 (${file.name}):`, error);
+            // 개별 파일 오류는 상태 업데이트로 처리
+            setFiles(prev => prev.map(f => 
+              f.id === file.id ? { 
+                ...f, 
+                status: "error", 
+                error: error instanceof Error ? error.message : "알 수 없는 오류"
+              } : f
+            ));
+            throw error; // Promise.all에서 catch되도록
           }
         });
 
-      // URL 처리 및 인덱싱
-      const urlPromises = urls.map(url => uploadAndIndexUrl(url));
+      // 모든 파일을 순차적으로 처리하여 오류 추적 개선
+      const results = await Promise.allSettled(uploadPromises);
+      
+      const failedCount = results.filter(result => result.status === 'rejected').length;
+      const successCount = results.filter(result => result.status === 'fulfilled').length;
 
-      await Promise.all([...uploadPromises, ...urlPromises]);
+      if (failedCount > 0) {
+        toast({
+          title: "일부 파일 처리 실패",
+          description: `${successCount}개 성공, ${failedCount}개 실패`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "모든 파일 처리 완료",
+          description: `${successCount}개 파일이 성공적으로 처리되었습니다.`,
+        });
+      }
 
       // 성공 시 상태 초기화
-      if (onUpload) {
-        onUpload([], urls);
+      if (successCount > 0) {
+        // 성공한 파일들을 제거
+        setFiles(prev => prev.filter(f => f.status !== "success"));
+        
+        // 부모 컴포넌트에 업로드 완료 알림
+        if (onUpload) {
+          const successfulFiles = files.filter(f => f.status === "success" && f.file);
+          if (successfulFiles.length > 0) {
+            onUpload(successfulFiles.map(f => f.file!));
+          }
+        }
       }
 
     } catch (error) {
+      console.error('일괄 처리 오류:', error);
       toast({
         title: "일괄 처리 실패",
-        description: "일부 파일 또는 URL 처리 중 오류가 발생했습니다.",
+        description: "파일 처리 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -222,7 +361,7 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
     }
   };
 
-  // 실제 파일 객체를 찾는 함수
+  // 실제 파일 객체를 찾는 함수 (백업용)
   const findActualFile = async (fileName: string): Promise<File | null> => {
     // 파일 입력 요소에서 실제 파일 찾기
     const fileInput = document.getElementById('file-upload') as HTMLInputElement;
@@ -230,7 +369,10 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       const fileArray = Array.from(fileInput.files);
       return fileArray.find(file => file.name === fileName) || null;
     }
-    return null;
+    
+    // 현재 상태에서 파일 찾기 (드래그 앤 드롭으로 추가된 파일)
+    const existingFile = files.find(f => f.name === fileName);
+    return existingFile?.file || null;
   };
 
   const formatFileSize = (bytes: number) => {
@@ -244,15 +386,15 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
   const getStatusIcon = (status: DocumentFile["status"]) => {
     switch (status) {
       case "pending":
-        return <div className="w-4 h-4 border-2 border-gray-300 dark:border-gray-500 border-t-transparent rounded-full" />;
+        return <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-pulse" />;
       case "uploading":
-        return <div className="w-4 h-4 border-2 border-primary-600 dark:border-primary-500 border-t-transparent rounded-full animate-spin" />;
+        return <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />;
       case "indexing":
-        return <div className="w-4 h-4 border-2 border-yellow-600 dark:border-yellow-500 border-t-transparent rounded-full animate-spin" />;
+        return <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />;
       case "success":
-        return <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />;
+        return <CheckCircle className="w-4 h-4 text-green-400" />;
       case "error":
-        return <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />;
+        return <AlertCircle className="w-4 h-4 text-red-400" />;
     }
   };
 
@@ -272,157 +414,245 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Upload className="w-5 h-5" />
-          <span>문서 업로드 및 인덱싱</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* File Upload */}
-        <div className="space-y-3">
-          <Label htmlFor="file-upload">파일 업로드</Label>
-          <div 
-            className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${
-              dragActive 
-                ? 'border-primary-500 bg-primary-50' 
-                : 'border-gray-300 hover:border-primary-400'
-            }`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-          >
-            <Upload className={`mx-auto h-12 w-12 ${dragActive ? 'text-primary-500' : 'text-gray-400'}`} />
-            <div className="mt-4">
-              <Label htmlFor="file-upload" className="cursor-pointer">
-                <span className="text-primary-600 hover:text-primary-500 font-medium">
-                  파일 선택
-                </span>
-                <span className="text-gray-500"> 또는 드래그 앤 드롭</span>
-              </Label>
-              <Input
-                id="file-upload"
-                type="file"
-                multiple
-                accept=".pdf,.docx,.txt"
-                onChange={(e) => handleFileSelect(Array.from(e.target.files || []))}
-                className="hidden"
-              />
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Card className="w-full bg-gray-800/80 backdrop-blur-sm border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-3 text-white">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+              <Upload className="w-5 h-5 text-white" />
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              PDF(.pdf), Word(.docx), 텍스트(.txt) 파일 지원 (최대 10MB)
-            </p>
-          </div>
-        </div>
-
-        {/* URL Input */}
-        <div className="space-y-3">
-          <Label htmlFor="url-input">URL 추가</Label>
-          <div className="flex space-x-2">
-            <Input
-              id="url-input"
-              type="url"
-              placeholder="https://example.com/document"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleUrlAdd()}
-            />
-            <Button onClick={handleUrlAdd} disabled={!urlInput.trim()}>
-              추가
-            </Button>
-          </div>
-        </div>
-
-        {/* File List */}
-        {files.length > 0 && (
-          <div className="space-y-2">
-            <Label>업로드 중인 파일</Label>
-            <div className="space-y-2">
-              {files.map((file) => (
-                <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <FileText className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                      <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(file.status)}
-                      <span className="text-xs text-gray-600">{getStatusText(file.status)}</span>
-                    </div>
-                    
-                    {(file.status === "uploading" || file.status === "indexing") && (
-                      <div className="w-20 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${file.progress}%` }}
-                        />
-                      </div>
-                    )}
-                    
-                    {file.status === "error" && (
-                      <div className="flex items-center space-x-1 text-red-600">
-                        <AlertTriangle className="w-4 h-4" />
-                        <span className="text-xs">{file.error}</span>
-                      </div>
-                    )}
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleFileRemove(file.id)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+            <div>
+              <span className="text-xl font-semibold">문서 업로드 및 인덱싱</span>
+              <p className="text-sm text-gray-400 font-normal">새로운 문서를 시스템에 추가하고 AI가 학습할 수 있도록 인덱싱합니다</p>
             </div>
-          </div>
-        )}
-
-        {/* URL List */}
-        {urls.length > 0 && (
-          <div className="space-y-2">
-            <Label>추가된 URL</Label>
-            <div className="space-y-2">
-              {urls.map((url, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <Link className="w-5 h-5 text-blue-400 flex-shrink-0" />
-                    <p className="text-sm text-blue-900 truncate">{url}</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleUrlRemove(url)}
-                    className="text-blue-400 hover:text-blue-600"
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-8">
+          {/* File Upload */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <File className="w-5 h-5 text-blue-400" />
+              <Label htmlFor="file-upload" className="text-white font-medium">파일 업로드</Label>
+            </div>
+            <motion.div 
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
+                dragActive 
+                  ? 'border-blue-400 bg-blue-500/10 shadow-lg scale-[1.02]' 
+                  : 'border-gray-600 hover:border-gray-500 hover:bg-gray-700/30'
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+            >
+              <motion.div
+                animate={{ 
+                  scale: dragActive ? 1.1 : 1,
+                  rotate: dragActive ? [0, -5, 5, 0] : 0
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                <Upload className={`mx-auto h-16 w-16 ${dragActive ? 'text-blue-400' : 'text-gray-500'}`} />
+              </motion.div>
+              <div className="mt-6">
+                <Label htmlFor="file-upload" className="cursor-pointer group">
+                  <motion.span 
+                    className="text-blue-400 hover:text-blue-300 font-semibold text-lg group-hover:underline"
+                    whileHover={{ scale: 1.05 }}
                   >
-                    <X className="w-4 h-4" />
-                  </Button>
+                    파일 선택
+                  </motion.span>
+                  <span className="text-gray-400 ml-2">또는 드래그 앤 드롭</span>
+                </Label>
+                <Input
+                  id="file-upload"
+                  type="file"
+                  multiple
+                  accept=".pdf,.docx,.txt"
+                  onChange={(e) => handleFileSelect(Array.from(e.target.files || []))}
+                  className="hidden"
+                />
+              </div>
+              <div className="mt-4 flex items-center justify-center space-x-4 text-sm text-gray-400">
+                <div className="flex items-center space-x-1">
+                  <FileText className="w-4 h-4" />
+                  <span>PDF</span>
                 </div>
-              ))}
-            </div>
+                <div className="flex items-center space-x-1">
+                  <FileText className="w-4 h-4" />
+                  <span>DOCX</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <FileText className="w-4 h-4" />
+                  <span>TXT</span>
+                </div>
+                <span className="text-gray-500">• 최대 10MB</span>
+              </div>
+            </motion.div>
           </div>
-        )}
 
-        {/* Submit Button */}
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSubmit}
-            disabled={files.length === 0 && urls.length === 0 || isUploading}
-            className="min-w-[120px]"
+
+          {/* File List */}
+          <AnimatePresence>
+            {files.length > 0 && (
+              <motion.div 
+                className="space-y-3"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="flex items-center space-x-2">
+                  <FileText className="w-5 h-5 text-blue-400" />
+                  <Label className="text-white font-medium">업로드 중인 파일</Label>
+                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                    {files.length}개
+                  </Badge>
+                </div>
+                <div className="space-y-3">
+                  {files.map((file, index) => (
+                    <motion.div 
+                      key={file.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      className="flex items-center justify-between p-4 bg-gray-700/50 rounded-xl border border-gray-600/50 hover:bg-gray-700/70 transition-all duration-200 group"
+                    >
+                      <div className="flex items-center space-x-4 flex-1 min-w-0">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                          <FileText className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white truncate">{file.name}</p>
+                          <div className="flex items-center space-x-3 mt-1">
+                            <p className="text-xs text-gray-400">{formatFileSize(file.size)}</p>
+                            <div className="flex items-center space-x-2">
+                              {getStatusIcon(file.status)}
+                              <span className="text-xs text-gray-300">{getStatusText(file.status)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-4">
+                        {(file.status === "uploading" || file.status === "indexing") && (
+                          <div className="w-24">
+                            <Progress 
+                              value={file.progress} 
+                              className="h-2 bg-gray-600"
+                            />
+                            <p className="text-xs text-gray-400 mt-1 text-center">{file.progress}%</p>
+                          </div>
+                        )}
+                        
+                        {file.status === "error" && (
+                          <div className="flex items-center space-x-2 text-red-400 bg-red-500/10 px-3 py-1 rounded-lg">
+                            <AlertTriangle className="w-4 h-4" />
+                            <span className="text-xs">{file.error}</span>
+                          </div>
+                        )}
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleFileRemove(file.id)}
+                          className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+
+          {/* Submit Button */}
+          <motion.div 
+            className="flex justify-end pt-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
           >
-            {isUploading ? "처리 중..." : "업로드 및 인덱싱 시작"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            <Button
+              onClick={handleSubmit}
+              disabled={files.length === 0 || isUploading}
+              className="min-w-[180px] h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  처리 중...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  업로드 및 인덱싱 시작
+                </>
+              )}
+            </Button>
+          </motion.div>
+        </CardContent>
+      </Card>
+
+      {/* 중복 파일 알럿 다이얼로그 */}
+      <AlertDialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <AlertDialogContent className="bg-gray-800 border-gray-600">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-400" />
+              <span>중복 파일 발견</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              <span className="block">
+                <strong className="text-white">{duplicateFile?.file.name}</strong> 파일이 이미 존재합니다.
+              </span>
+              {duplicateFile?.existingDocument && (
+                <span className="block bg-gray-700/50 p-3 rounded-lg mt-3">
+                  <span className="block text-sm text-gray-300">
+                    <strong>기존 파일 정보:</strong>
+                  </span>
+                  <span className="block text-xs text-gray-400 mt-1">
+                    상태: {duplicateFile.existingDocument.status === 'indexed' ? '완료' : duplicateFile.existingDocument.status}
+                  </span>
+                  <span className="block text-xs text-gray-400">
+                    크기: {formatFileSize(duplicateFile.existingDocument.size)}
+                  </span>
+                  <span className="block text-xs text-gray-400">
+                    업로드일: {new Date(duplicateFile.existingDocument.created_at).toLocaleString('ko-KR')}
+                  </span>
+                </span>
+              )}
+              <span className="block text-sm mt-3">
+                기존 파일을 덮어쓰시겠습니까, 아니면 이 파일을 건너뛰시겠습니까?
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="space-x-2">
+            <AlertDialogCancel 
+              onClick={handleSkipFile}
+              className="bg-gray-600 hover:bg-gray-500 text-white border-gray-500"
+            >
+              건너뛰기
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleOverwriteFile}
+              className="bg-red-600 hover:bg-red-500 text-white"
+            >
+              덮어쓰기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </motion.div>
   );
 }

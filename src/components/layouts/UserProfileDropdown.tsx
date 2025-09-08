@@ -19,19 +19,40 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { signOut } = useAuth();
 
-  // 관리자 이메일 목록
-  const ADMIN_EMAILS = [
-    "secho@nasmedia.co.kr",
-    "woolela@nasmedia.co.kr",
-    "dsko@nasmedia.co.kr",
-    "hjchoi@nasmedia.co.kr",
-    "sunjung@nasmedia.co.kr",
-    "sy230@nasmedia.co.kr",
-    "jeng351@nasmedia.co.kr"
-  ];
+  // 관리자 권한 상태
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(true);
 
   // 관리자 권한 체크
-  const isAdmin = user && user.email && ADMIN_EMAILS.includes(user.email);
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user?.email) {
+        setIsAdmin(false);
+        setAdminLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/admin/users/check-admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: user.email })
+        });
+
+        const data = await response.json();
+        setIsAdmin(data.success && data.isAdmin);
+      } catch (error) {
+        console.error('관리자 권한 확인 오류:', error);
+        setIsAdmin(false);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user?.email]);
 
   // 모든 hooks를 조건부 return 이전에 정의
   useEffect(() => {

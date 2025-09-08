@@ -220,3 +220,4 @@ export function DeleteAccountModal({ isOpen, onClose, user, onSignOut }: DeleteA
     </AnimatePresence>
   );
 }
+

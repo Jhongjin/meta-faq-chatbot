@@ -6,6 +6,7 @@ import { AuthModal } from "./AuthModal";
 import { Toaster } from "@/components/ui/toaster";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -69,28 +70,29 @@ export default function MainLayout({ children, chatHeader }: MainLayoutProps) {
           <div className="flex justify-between items-center h-16 py-3">
             {/* AdMate 로고 */}
             <div className="flex items-center">
-              <motion.div 
-                className="cursor-pointer"
-                whileHover={{ 
-                  scale: 1.05,
-                  rotate: [0, -2, 2, 0],
-                  transition: { duration: 0.3 }
-                }}
-                whileTap={{ scale: 0.95 }}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <motion.img 
-                  src="/admate-logo.svg" 
-                  alt="AdMate" 
-                  className="h-8 w-auto"
-                  whileHover={{
-                    filter: "brightness(1.1) drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3))",
-                    transition: { duration: 0.2 }
+              <Link href="/" className="block">
+                <motion.div 
+                  className="cursor-pointer"
+                  whileHover={{ 
+                    scale: 1.05,
+                    transition: { duration: 0.3 }
                   }}
-                />
-              </motion.div>
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <motion.img 
+                    src="/admate-logo.png" 
+                    alt="AdMate" 
+                    className="h-14 w-auto"
+                    whileHover={{
+                      filter: "brightness(1.1) drop-shadow(0 4px 8px rgba(255, 107, 53, 0.3))",
+                      transition: { duration: 0.2 }
+                    }}
+                  />
+                </motion.div>
+              </Link>
             </div>
 
             {/* 사용자 프로필 */}
