@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 이메일 발송 설정 (실제 환경에서는 환경변수로 설정)
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: false,
