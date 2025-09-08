@@ -1,14 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// 환경 변수 검증 및 조건부 클라이언트 생성
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+let supabase: any = null;
+
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+}
 
 export async function GET(request: NextRequest) {
   try {
     console.log('🚀 최신 업데이트 정보 조회 시작...');
+
+    // Supabase 클라이언트 확인
+    if (!supabase) {
+      console.warn('Supabase 클라이언트가 초기화되지 않았습니다. 기본값을 반환합니다.');
+      return NextResponse.json({
+        success: true,
+        data: {
+          lastUpdateDate: new Date().toISOString(),
+          recentUpdates: [],
+          newDocuments: [],
+          hasNewFeatures: false,
+          updateCount: 0,
+          newDocumentCount: 0,
+          message: "메타 광고 정책이 최신 상태로 유지되고 있습니다. 궁금한 사항이 있으시면 AI 챗봇에게 물어보세요.",
+          displayDate: new Date().toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          isRecent: false,
+          hasUpdates: false
+        }
+      });
+    }
 
     // 1. 최근 업데이트된 문서 조회
     const { data: recentDocuments, error: documentsError } = await supabase

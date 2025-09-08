@@ -12,21 +12,24 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  output: 'standalone',
-  serverExternalPackages: ['@supabase/supabase-js', '@xenova/transformers', 'pdf-parse', 'mammoth', 'tesseract.js', 'puppeteer', 'puppeteer-extra', 'puppeteer-extra-plugin-stealth', 'xml2js'],
-  // CSS 로딩 문제 해결을 위한 설정
+  // output: 'standalone', // 임시로 비활성화
+  // 서버 사이드 전용 패키지들을 외부화
+  serverExternalPackages: ['@supabase/supabase-js', '@xenova/transformers', 'pdf-parse', 'mammoth', 'tesseract.js', 'puppeteer', 'puppeteer-extra', 'puppeteer-extra-plugin-stealth', 'xml2js', 'nodemailer'],
+  
+  // 실험적 기능 설정
   experimental: {
     optimizeCss: false,
   },
+  
+  // Webpack 설정 단순화
   webpack: (config, { isServer }) => {
-    // Transformers.js 관련 바이너리 파일 처리
+    // .node 파일 처리
     config.module.rules.push({
       test: /\.node$/,
       use: 'node-loader',
     });
 
-
-    // 서버 사이드에서만 사용되는 패키지들을 클라이언트 번들에서 제외
+    // 클라이언트 사이드에서 서버 전용 모듈 제외
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -44,6 +47,7 @@ const nextConfig: NextConfig = {
         'puppeteer-extra': false,
         'puppeteer-extra-plugin-stealth': false,
         xml2js: false,
+        nodemailer: false,
       };
     }
 

@@ -84,3 +84,4 @@ async function createTemplatesTable() {
 
 // 스크립트 실행
 createTemplatesTable();
+

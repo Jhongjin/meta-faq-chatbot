@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer-extra';
+import { Browser } from 'puppeteer';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { parseStringPromise } from 'xml2js';
 
@@ -23,7 +24,7 @@ export interface DiscoveryOptions {
 }
 
 export class SitemapDiscoveryService {
-  private browser: puppeteer.Browser | null = null;
+  private browser: Browser | null = null;
   private defaultOptions: DiscoveryOptions = {
     maxDepth: 3,
     maxUrls: 100,

@@ -10,3 +10,4 @@ ON document_metadata USING GIN (metadata);
 UPDATE document_metadata 
 SET metadata = '{}' 
 WHERE metadata IS NULL;
+

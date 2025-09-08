@@ -39,3 +39,4 @@ CREATE TRIGGER trigger_update_log_alerts_updated_at
     BEFORE UPDATE ON log_alerts
     FOR EACH ROW
     EXECUTE FUNCTION update_log_alerts_updated_at();
+

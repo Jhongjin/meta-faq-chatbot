@@ -39,6 +39,12 @@ export class VectorStorageService {
     if (!supabaseUrl || !supabaseKey) {
       console.error('Supabase 환경변수가 설정되지 않았습니다.');
       console.error('필요한 환경변수: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
+      // 빌드 시에는 더미 클라이언트를 사용하여 오류 방지
+      if (process.env.NODE_ENV === 'production') {
+        console.warn('프로덕션 환경에서 Supabase 환경변수가 누락되었습니다. 더미 클라이언트를 사용합니다.');
+        this.supabase = createClient('https://dummy.supabase.co', 'dummy-key');
+        return;
+      }
       throw new Error('Supabase 환경변수가 설정되지 않았습니다. .env.local 파일을 확인해주세요.');
     }
 

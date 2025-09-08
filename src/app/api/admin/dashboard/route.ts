@@ -1,14 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// 환경 변수 확인 및 조건부 클라이언트 생성
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+let supabase: any = null;
+
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+}
 
 export async function GET(request: NextRequest) {
   try {
     console.log('🚀 대시보드 통계 API 시작...');
+
+    // Supabase 클라이언트 확인
+    if (!supabase) {
+      console.warn('Supabase 클라이언트가 초기화되지 않았습니다. 기본값을 반환합니다.');
+      return NextResponse.json({
+        success: true,
+        data: {
+          documents: {
+            total: 0,
+            byType: {},
+            byStatus: {}
+          },
+          chunks: {
+            total: 0
+          },
+          conversations: {
+            total: 0,
+            recent: []
+          },
+          feedback: {
+            total: 0,
+            positive: 0,
+            negative: 0,
+            positiveRate: 0
+          },
+          system: {
+            status: 'offline',
+            lastUpdate: new Date().toISOString(),
+            version: '1.0.0'
+          }
+        }
+      });
+    }
 
     // 1. 문서 통계 조회
     const { data: documents, error: documentsError } = await supabase

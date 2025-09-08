@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import MainLayout from "@/components/layouts/MainLayout";
@@ -36,7 +36,7 @@ interface Message {
   };
 }
 
-export default function ChatPage() {
+function ChatPageContent() {
   const { user, loading } = useAuth();
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1007,5 +1007,13 @@ export default function ChatPage() {
     </div>
     
     </MainLayout>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ChatPageContent />
+    </Suspense>
   );
 }
