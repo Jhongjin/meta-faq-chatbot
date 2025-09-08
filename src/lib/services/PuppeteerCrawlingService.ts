@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { Browser, Page } from 'puppeteer';
 import { documentIndexingService } from './DocumentIndexingService';
 
 // Stealth 플러그인 추가 (봇 탐지 우회)
@@ -21,7 +22,7 @@ export interface CrawledDocument {
 }
 
 export class PuppeteerCrawlingService {
-  private browser: puppeteer.Browser | null = null;
+  private browser: Browser | null = null;
 
   constructor() {
     // documentIndexingService는 싱글톤 인스턴스를 사용
