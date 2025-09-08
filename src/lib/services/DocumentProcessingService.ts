@@ -114,12 +114,7 @@ export class DocumentProcessingService {
       console.log(`Buffer 생성 완료: ${buffer.length} bytes`);
       
       // DOCX 파싱
-      const result = await mammoth.extractRawText({ 
-        buffer,
-        // 추가 옵션들
-        includeEmbeddedStyleMap: true,
-        includeDefaultStyleMap: true
-      });
+      const result = await mammoth.extractRawText({ buffer });
 
       const content = result.value.trim();
       
