@@ -1,25 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// 환경 변수 확인 및 조건부 클라이언트 생성
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-let supabase: any = null;
-
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
-}
+import { createPureClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
-    // Supabase 클라이언트 확인
-    if (!supabase) {
-      return NextResponse.json(
-        { error: '데이터베이스 연결이 설정되지 않았습니다.' },
-        { status: 500 }
-      );
-    }
   try {
+    // Supabase 클라이언트 생성
+    const supabase = await createPureClient();
+    
     console.log('문서 상태 동기화 시작...');
 
     // "Introduction to the Advertising Standards" 문서들 조회
@@ -146,6 +132,18 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('동기화 오류:', error);
+    
+    // 환경 변수 관련 에러인 경우 특별 처리
+    if (error instanceof Error && error.message.includes('환경 변수')) {
+      return NextResponse.json(
+        { 
+          error: '데이터베이스 연결 설정 오류',
+          details: 'Supabase 환경 변수가 올바르게 설정되지 않았습니다.'
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { 
         error: '문서 상태 동기화 중 오류가 발생했습니다.',
