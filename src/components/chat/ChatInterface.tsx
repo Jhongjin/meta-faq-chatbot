@@ -78,6 +78,8 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
     setIsLoading(true);
 
     try {
+      console.log('🚀 챗봇 API 호출 시작:', inputMessage.trim());
+      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -86,7 +88,32 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
         body: JSON.stringify({ message: inputMessage.trim() }),
       });
 
-      const data = await response.json();
+      console.log('📡 API 응답 상태:', response.status, response.statusText);
+
+      // 응답이 비어있는지 확인
+      if (!response.ok) {
+        console.error('❌ API 응답 오류:', response.status, response.statusText);
+        throw new Error(`서버 오류: ${response.status} ${response.statusText}`);
+      }
+
+      // 응답 본문이 비어있는지 확인
+      const responseText = await response.text();
+      console.log('📝 응답 본문 길이:', responseText.length);
+      
+      if (!responseText || responseText.trim().length === 0) {
+        console.error('❌ 빈 응답 본문');
+        throw new Error('서버에서 빈 응답을 받았습니다.');
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('✅ JSON 파싱 성공:', { success: data.success, hasResponse: !!data.response });
+      } catch (parseError) {
+        console.error('❌ JSON 파싱 실패:', parseError);
+        console.error('❌ 응답 본문:', responseText);
+        throw new Error('서버 응답 형식이 올바르지 않습니다.');
+      }
 
       if (data.success) {
         const botMessage: Message = {
@@ -100,17 +127,33 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
         };
 
         setMessages(prev => [...prev, botMessage]);
+        console.log('✅ 챗봇 메시지 추가 완료');
       } else {
-        throw new Error(data.error || '알 수 없는 오류가 발생했습니다.');
+        console.error('❌ API 오류 응답:', data);
+        throw new Error(data.error || data.details || '알 수 없는 오류가 발생했습니다.');
       }
 
     } catch (error) {
-      console.error('챗봇 응답 오류:', error);
+      console.error('❌ 챗봇 응답 오류:', error);
+      
+      let errorContent = '죄송합니다. 답변을 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('서버 오류')) {
+          errorContent = '서버에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        } else if (error.message.includes('빈 응답')) {
+          errorContent = '서버 응답에 문제가 있습니다. 관리자에게 문의해주세요.';
+        } else if (error.message.includes('JSON 파싱')) {
+          errorContent = '서버 응답 형식에 문제가 있습니다. 관리자에게 문의해주세요.';
+        } else {
+          errorContent = `오류: ${error.message}`;
+        }
+      }
       
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: '죄송합니다. 답변을 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        content: errorContent,
         timestamp: new Date()
       };
 

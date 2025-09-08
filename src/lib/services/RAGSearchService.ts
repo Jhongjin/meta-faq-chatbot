@@ -351,4 +351,29 @@ export class RAGSearchService {
   }
 }
 
-export const ragSearchService = new RAGSearchService();
+// 지연 초기화를 위한 싱글톤 패턴
+let ragSearchServiceInstance: RAGSearchService | null = null;
+
+export function getRAGSearchService(): RAGSearchService {
+  if (!ragSearchServiceInstance) {
+    try {
+      ragSearchServiceInstance = new RAGSearchService();
+    } catch (error) {
+      console.error('RAGSearchService 초기화 실패:', error);
+      throw error;
+    }
+  }
+  return ragSearchServiceInstance;
+}
+
+// 기존 호환성을 위한 export (deprecated)
+export const ragSearchService = {
+  generateChatResponse: async (message: string) => {
+    const service = getRAGSearchService();
+    return service.generateChatResponse(message);
+  },
+  getSearchStats: async () => {
+    const service = getRAGSearchService();
+    return service.getSearchStats();
+  }
+};
