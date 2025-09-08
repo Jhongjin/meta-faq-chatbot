@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     const responseData = {
       ...latestUpdate,
       message: updateMessage,
-      displayDate: lastUpdate.toLocaleDateString('ko-KR', {
+      displayDate: latestUpdate.toLocaleDateString('ko-KR', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
