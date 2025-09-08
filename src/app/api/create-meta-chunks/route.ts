@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
         // 임베딩 생성
         const embedding = await embeddingService.generateEmbedding(dummyContent);
-        console.log(`✅ 문서 ${doc.id}: 임베딩 생성 완료 (${embedding.length}차원)`);
+        console.log(`✅ 문서 ${doc.id}: 임베딩 생성 완료 (${embedding.embedding.length}차원)`);
 
         // 청크 데이터베이스에 저장
         const { error: insertError } = await supabase
