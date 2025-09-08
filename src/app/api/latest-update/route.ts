@@ -45,11 +45,11 @@ export async function GET(request: NextRequest) {
     };
 
     // 4. 업데이트 메시지 생성
+    const now = new Date();
+    const lastUpdate = new Date(latestUpdate.lastUpdateDate);
+    const daysDiff = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
+    
     const generateUpdateMessage = () => {
-      const now = new Date();
-      const lastUpdate = new Date(latestUpdate.lastUpdateDate);
-      const daysDiff = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
-      
       if (daysDiff === 0) {
         return "오늘 메타 광고 정책이 업데이트되었습니다. 새로운 정책에 대한 질문을 AI 챗봇에게 물어보세요.";
       } else if (daysDiff === 1) {
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     const responseData = {
       ...latestUpdate,
       message: updateMessage,
-      displayDate: latestUpdate.toLocaleDateString('ko-KR', {
+      displayDate: new Date(latestUpdate.lastUpdateDate).toLocaleDateString('ko-KR', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
