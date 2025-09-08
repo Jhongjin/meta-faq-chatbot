@@ -462,7 +462,6 @@ export class RAGSearchService {
       'Quality': '품질',
       'To help': '도움을 위해',
       'you': '귀하',
-      'compliant': '준수하는',
       'and': '및',
       'friendly': '친화적인',
       'ads': '광고',
