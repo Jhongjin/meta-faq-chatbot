@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
             };
           }
         } catch (e) {
-          similarityTest = { error: e.message };
+          similarityTest = { error: e instanceof Error ? e.message : String(e) };
         }
       }
     }
