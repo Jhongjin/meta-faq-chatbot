@@ -361,7 +361,6 @@ export class RAGSearchService {
       'guidance': '지침',
       'types': '유형',
       'content': '콘텐츠',
-      'place': '배치',
       'order': '주문',
       'against': '대상',
       'behavior': '행동',
