@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ragSearchService } from '@/lib/services/RAGSearchService';
 
+// OPTIONS 메서드 추가 (CORS 지원)
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   console.log('🚀 챗봇 API 요청 시작');
   
@@ -76,12 +88,27 @@ export async function POST(request: NextRequest) {
       sourcesCount: apiResponse.response.sources.length
     });
 
-    return NextResponse.json(apiResponse);
+    return NextResponse.json(apiResponse, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    });
 
   } catch (error) {
     console.error('❌ 챗봇 API 오류:', error);
     console.error('❌ 오류 스택:', error instanceof Error ? error.stack : 'No stack trace');
     
+    const errorHeaders = {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    };
+
     // 환경 변수 관련 오류인 경우 특별 처리
     if (error instanceof Error && error.message.includes('환경변수')) {
       console.log('🔧 환경 변수 오류 감지');
@@ -91,7 +118,7 @@ export async function POST(request: NextRequest) {
           error: '서비스 설정 오류',
           details: '데이터베이스 연결 설정이 올바르지 않습니다. 관리자에게 문의해주세요.'
         },
-        { status: 500 }
+        { status: 500, headers: errorHeaders }
       );
     }
     
@@ -104,7 +131,7 @@ export async function POST(request: NextRequest) {
           error: 'AI 서비스 일시 중단',
           details: 'AI 답변 생성 서비스가 일시적으로 중단되었습니다. 잠시 후 다시 시도해주세요.'
         },
-        { status: 503 }
+        { status: 503, headers: errorHeaders }
       );
     }
     
@@ -115,7 +142,7 @@ export async function POST(request: NextRequest) {
         error: '챗봇 응답 생성 중 오류가 발생했습니다.',
         details: error instanceof Error ? error.message : String(error)
       },
-      { status: 500 }
+      { status: 500, headers: errorHeaders }
     );
   }
 }
