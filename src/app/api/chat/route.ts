@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // 기본 헤더 설정
-const defaultHeaders = {
+const headers = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-// OPTIONS 메서드 추가 (CORS 지원)
+// OPTIONS 메서드
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
-    headers: defaultHeaders,
+    headers,
   });
 }
 
-// GET 메서드 추가 (API 상태 확인용)
+// GET 메서드 - API 상태 확인
 export async function GET() {
   return NextResponse.json({
     success: true,
@@ -25,64 +25,48 @@ export async function GET() {
     methods: ['GET', 'POST', 'OPTIONS']
   }, {
     status: 200,
-    headers: defaultHeaders,
+    headers,
   });
 }
 
+// POST 메서드 - 챗봇 응답
 export async function POST(request: NextRequest) {
-  console.log('🚀 챗봇 API 요청 시작');
+  console.log('🚀 POST 요청 시작');
   
   try {
     // 요청 본문 파싱
-    let requestBody;
-    try {
-      requestBody = await request.json();
-      console.log('📝 요청 본문 파싱 성공:', { hasMessage: !!requestBody.message });
-    } catch (parseError) {
-      console.error('❌ 요청 본문 파싱 실패:', parseError);
-      return NextResponse.json(
-        { 
-          success: false,
-          error: '잘못된 요청 형식입니다.',
-          details: 'JSON 형식이 올바르지 않습니다.'
-        },
-        { status: 400, headers: defaultHeaders }
-      );
-    }
-
-    const { message } = requestBody;
+    const body = await request.json();
+    const { message } = body;
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
-      console.log('❌ 메시지 검증 실패:', { message, type: typeof message });
-      return NextResponse.json(
-        { 
-          success: false,
-          error: '메시지가 필요합니다.',
-          details: '유효한 메시지를 입력해주세요.'
-        },
-        { status: 400, headers: defaultHeaders }
-      );
+      return NextResponse.json({
+        success: false,
+        error: '메시지가 필요합니다.',
+        details: '유효한 메시지를 입력해주세요.'
+      }, {
+        status: 400,
+        headers,
+      });
     }
 
-    console.log(`💬 챗봇 API 요청: "${message}"`);
+    console.log(`💬 메시지 수신: "${message}"`);
 
     // 환경 변수 확인
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
     console.log('🔧 환경 변수 상태:', { 
       hasSupabaseUrl: !!supabaseUrl, 
-      hasSupabaseKey: !!supabaseKey,
-      supabaseUrlLength: supabaseUrl?.length || 0,
-      supabaseKeyLength: supabaseKey?.length || 0
+      hasSupabaseKey: !!supabaseKey
     });
 
-    // RAG 서비스 동적 import
+    // RAG 서비스 동적 import 시도
     let response;
     try {
       const { ragSearchService } = await import('@/lib/services/RAGSearchService');
-      console.log('🤖 RAG 서비스 호출 시작');
+      console.log('🤖 RAG 서비스 호출');
       response = await ragSearchService.generateChatResponse(message.trim());
-      console.log(`✅ 챗봇 응답 완료: ${response.processingTime}ms, 신뢰도: ${response.confidence}`);
+      console.log('✅ RAG 응답 완료');
     } catch (ragError) {
       console.error('❌ RAG 서비스 오류:', ragError);
       // Fallback 응답
@@ -96,6 +80,7 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    // 응답 구성
     const apiResponse = {
       success: true,
       response: {
@@ -113,57 +98,22 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    console.log('📤 API 응답 준비 완료:', { 
-      success: apiResponse.success,
-      messageLength: apiResponse.response.message.length,
-      sourcesCount: apiResponse.response.sources.length
-    });
-
+    console.log('📤 응답 전송');
     return NextResponse.json(apiResponse, {
       status: 200,
-      headers: defaultHeaders,
+      headers,
     });
 
   } catch (error) {
-    console.error('❌ 챗봇 API 오류:', error);
-    console.error('❌ 오류 스택:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('❌ POST 요청 오류:', error);
     
-    // 환경 변수 관련 오류인 경우 특별 처리
-    if (error instanceof Error && error.message.includes('환경변수')) {
-      console.log('🔧 환경 변수 오류 감지');
-      return NextResponse.json(
-        { 
-          success: false,
-          error: '서비스 설정 오류',
-          details: '데이터베이스 연결 설정이 올바르지 않습니다. 관리자에게 문의해주세요.'
-        },
-        { status: 500, headers: defaultHeaders }
-      );
-    }
-    
-    // LLM 연결 오류인 경우 fallback 응답
-    if (error instanceof Error && (error.message.includes('fetch') || error.message.includes('connection'))) {
-      console.log('🌐 네트워크 오류 감지');
-      return NextResponse.json(
-        { 
-          success: false,
-          error: 'AI 서비스 일시 중단',
-          details: 'AI 답변 생성 서비스가 일시적으로 중단되었습니다. 잠시 후 다시 시도해주세요.'
-        },
-        { status: 503, headers: defaultHeaders }
-      );
-    }
-    
-    console.log('⚠️ 일반 오류 처리');
-    return NextResponse.json(
-      { 
-        success: false,
-        error: '챗봇 응답 생성 중 오류가 발생했습니다.',
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500, headers: defaultHeaders }
-    );
+    return NextResponse.json({
+      success: false,
+      error: '챗봇 응답 생성 중 오류가 발생했습니다.',
+      details: error instanceof Error ? error.message : String(error)
+    }, {
+      status: 500,
+      headers,
+    });
   }
 }
-
-// GET 메서드는 이미 위에서 정의됨 (API 상태 확인용)
