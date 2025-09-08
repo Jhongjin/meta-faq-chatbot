@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
     optimizeCss: false,
   },
   
+  // 캐시 무효화를 위한 설정
+  generateBuildId: async () => {
+    return `build-${Date.now()}`;
+  },
+  
   // Webpack 설정 단순화
   webpack: (config, { isServer }) => {
     // .node 파일 처리
