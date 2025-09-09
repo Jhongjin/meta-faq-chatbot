@@ -1,96 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { EmbeddingService } from '@/lib/services/EmbeddingService';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ error: 'Supabase 환경변수가 설정되지 않았습니다.' }, { status: 500 });
+      return NextResponse.json({
+        success: false,
+        error: 'Supabase 환경변수가 설정되지 않았습니다.'
+      }, { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const embeddingService = new EmbeddingService();
 
-    // 1. 모든 청크 조회
-    const { data: chunks, error: chunksError } = await supabase
+    // 잘못된 임베딩 데이터 조회
+    const { data: chunks, error: fetchError } = await supabase
       .from('document_chunks')
-      .select('id, embedding')
-      .limit(100);
+      .select('id, document_id, content, embedding')
+      .not('embedding', 'is', null)
+      .limit(10);
 
-    if (chunksError) {
-      return NextResponse.json({ error: '청크 조회 실패', details: chunksError }, { status: 500 });
+    if (fetchError) {
+      throw new Error(`청크 조회 실패: ${fetchError.message}`);
     }
 
-    console.log(`📊 총 ${chunks?.length || 0}개 청크 발견`);
+    console.log(`🔍 수정할 청크 수: ${chunks?.length || 0}`);
 
     let fixedCount = 0;
     let errorCount = 0;
 
-    // 2. 각 청크의 임베딩 형식 수정
     for (const chunk of chunks || []) {
       try {
-        let embedding = chunk.embedding;
-        
-        // 문자열인 경우 배열로 변환
-        if (typeof embedding === 'string') {
-          try {
-            embedding = JSON.parse(embedding);
-            console.log(`✅ 청크 ${chunk.id}: 문자열 → 배열 변환 성공`);
-          } catch (parseError) {
-            console.error(`❌ 청크 ${chunk.id}: JSON 파싱 실패`, parseError);
+        // 임베딩이 배열이 아닌 경우 재생성
+        if (!Array.isArray(chunk.embedding)) {
+          console.log(`🔄 임베딩 재생성: ${chunk.document_id}`);
+          
+          const embeddingResult = await embeddingService.generateEmbedding(chunk.content);
+          
+          const { error: updateError } = await supabase
+            .from('document_chunks')
+            .update({ 
+              embedding: embeddingResult.embedding,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', chunk.id);
+
+          if (updateError) {
+            console.error(`❌ 임베딩 업데이트 실패: ${updateError.message}`);
             errorCount++;
-            continue;
+          } else {
+            console.log(`✅ 임베딩 수정 완료: ${chunk.document_id}`);
+            fixedCount++;
           }
         }
-
-        // 배열인지 확인
-        if (!Array.isArray(embedding)) {
-          console.error(`❌ 청크 ${chunk.id}: 배열이 아님`, typeof embedding);
-          errorCount++;
-          continue;
-        }
-
-        // 배열 길이 확인 (1024차원이어야 함)
-        if (embedding.length !== 1024) {
-          console.error(`❌ 청크 ${chunk.id}: 차원 수 오류 (${embedding.length}/1024)`);
-          errorCount++;
-          continue;
-        }
-
-        // 데이터베이스 업데이트
-        const { error: updateError } = await supabase
-          .from('document_chunks')
-          .update({ embedding: embedding })
-          .eq('id', chunk.id);
-
-        if (updateError) {
-          console.error(`❌ 청크 ${chunk.id}: 업데이트 실패`, updateError);
-          errorCount++;
-        } else {
-          console.log(`✅ 청크 ${chunk.id}: 업데이트 성공`);
-          fixedCount++;
-        }
-
-      } catch (error) {
-        console.error(`❌ 청크 ${chunk.id}: 처리 중 오류`, error);
+      } catch (chunkError) {
+        console.error(`❌ 청크 처리 오류: ${chunkError}`);
         errorCount++;
       }
     }
 
     return NextResponse.json({
       success: true,
-      summary: {
+      message: '임베딩 데이터 수정 완료',
+      data: {
         totalChunks: chunks?.length || 0,
         fixedCount,
         errorCount
-      },
-      message: `임베딩 형식 수정 완료: ${fixedCount}개 성공, ${errorCount}개 실패`
+      }
     });
 
   } catch (error) {
-    console.error('임베딩 수정 API 오류:', error);
-    return NextResponse.json({ error: '서버 오류', details: error }, { status: 500 });
+    console.error('임베딩 수정 오류:', error);
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    }, { status: 500 });
   }
 }
-
