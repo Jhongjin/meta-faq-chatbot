@@ -168,8 +168,7 @@ export class RAGSearchService {
         `질문: ${query}\n\n관련 문서 내용:\n${context}`,
         {
           temperature: 0.3,
-          maxTokens: 1500,
-          systemPrompt: this.getSystemPrompt()
+          maxTokens: 1500
         }
       );
 
