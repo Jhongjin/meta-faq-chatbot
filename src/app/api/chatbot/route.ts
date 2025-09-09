@@ -83,22 +83,33 @@ export async function POST(request: NextRequest) {
     }
 
     // 응답 구성
+    console.log('📊 RAG 응답 데이터:', {
+      answer: response.answer,
+      sourcesCount: response.sources?.length || 0,
+      sources: response.sources
+    });
+
     const apiResponse = {
       success: true,
       response: {
         message: response.answer,
-        sources: response.sources.map(source => ({
-          title: source.documentTitle,
-          content: source.content.substring(0, 200) + '...',
-          similarity: Math.round(source.similarity * 100),
-          url: source.documentUrl
+        sources: (response.sources || []).map(source => ({
+          title: source.documentTitle || '제목 없음',
+          content: source.content?.substring(0, 200) + '...' || '내용 없음',
+          similarity: Math.round((source.similarity || 0) * 100),
+          url: source.documentUrl || null
         })),
-        confidence: Math.round(response.confidence * 100),
-        processingTime: response.processingTime,
-        model: response.model,
-        isLLMGenerated: response.isLLMGenerated
+        confidence: Math.round((response.confidence || 0) * 100),
+        processingTime: response.processingTime || 0,
+        model: response.model || 'unknown',
+        isLLMGenerated: response.isLLMGenerated || false
       }
     };
+
+    console.log('📤 최종 API 응답:', {
+      sourcesCount: apiResponse.response.sources.length,
+      sources: apiResponse.response.sources
+    });
 
     console.log('📤 Chatbot API 응답 전송');
     return NextResponse.json(apiResponse, {
