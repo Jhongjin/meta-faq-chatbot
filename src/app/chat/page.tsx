@@ -262,7 +262,7 @@ function ChatPageContent() {
     setMessages(currentMessages);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -389,7 +389,7 @@ function ChatPageContent() {
     setMessages(currentMessages);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

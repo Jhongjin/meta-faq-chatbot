@@ -113,7 +113,7 @@ export function useChatStats() {
     queryKey: ['chat-stats'],
     queryFn: async () => {
       try {
-        const response = await fetch('/api/chat');
+        const response = await fetch('/api/chatbot');
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: Failed to fetch chat stats`);
         }
