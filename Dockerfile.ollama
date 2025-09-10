@@ -1,8 +1,8 @@
 # Ollama 서버용 Dockerfile (Render 프리플랜 최적화)
 FROM ollama/ollama:latest
 
-# Ollama 서버 포트 설정
-EXPOSE 11434
+# Ollama 서버 포트 설정 (Render 기본 포트 10000 사용)
+EXPOSE 10000
 
 # 환경 변수 설정
 ENV OLLAMA_HOST=0.0.0.0
@@ -10,33 +10,34 @@ ENV OLLAMA_ORIGINS=*
 ENV OLLAMA_KEEP_ALIVE=24h
 ENV OLLAMA_NUM_PARALLEL=1
 ENV OLLAMA_MAX_LOADED_MODELS=1
+ENV PORT=10000
 
 # 시작 스크립트 생성
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
-echo "Starting Ollama server..."\n\
-ollama serve &\n\
+echo "Starting Ollama server on port 10000..."\n\
+OLLAMA_HOST=0.0.0.0:10000 ollama serve &\n\
 OLLAMA_PID=$!\n\
 \n\
 echo "Waiting for Ollama server to start..."\n\
 sleep 15\n\
 \n\
 echo "Downloading qwen2.5:1.5b model..."\n\
-ollama pull qwen2.5:1.5b\n\
+OLLAMA_HOST=0.0.0.0:10000 ollama pull qwen2.5:1.5b\n\
 \n\
 echo "Downloading nomic-embed-text model..."\n\
-ollama pull nomic-embed-text\n\
+OLLAMA_HOST=0.0.0.0:10000 ollama pull nomic-embed-text\n\
 \n\
 echo "All models downloaded successfully!"\n\
-echo "Ollama server is ready at http://0.0.0.0:11434"\n\
+echo "Ollama server is ready at http://0.0.0.0:10000"\n\
 \n\
 # 서버 유지\n\
 wait $OLLAMA_PID' > /start.sh && chmod +x /start.sh
 
 # 헬스체크 추가
 HEALTHCHECK --interval=60s --timeout=30s --start-period=120s --retries=2 \
-  CMD curl -f http://localhost:11434/api/tags || exit 1
+  CMD curl -f http://localhost:10000/api/tags || exit 1
 
 # ENTRYPOINT를 오버라이드하여 bash로 실행
 ENTRYPOINT ["/bin/bash"]
