@@ -157,15 +157,45 @@ export async function POST(request: NextRequest) {
           isLLMGenerated: false
         };
       } else {
-        // 기타 오류에 대한 Fallback 응답
-        response = {
-          answer: '죄송합니다. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있습니다. Meta 광고 정책 관련 질문은 관리자에게 직접 문의하시거나, Meta 비즈니스 도움말 센터에서 확인해주세요.',
-          sources: [],
-          confidence: 0.3,
-          processingTime: 100,
-          model: 'fallback',
-          isLLMGenerated: false
-        };
+        // 기타 오류에 대한 Fallback 응답 - 검색 결과 기반 답변 시도
+        console.log('⚠️ RAG 서비스 오류로 인한 fallback 모드 활성화');
+        
+        // 간단한 검색 시도
+        try {
+          const { getRAGSearchService } = await import('@/lib/services/RAGSearchService');
+          const ragService = getRAGSearchService();
+          const searchResults = await ragService.searchSimilarChunks(message.trim(), 3, 0.01);
+          
+          if (searchResults.length > 0) {
+            response = {
+              answer: `검색된 정보에 따르면:\n\n${searchResults[0].content.substring(0, 500)}...\n\n이 정보가 도움이 되었나요?`,
+              sources: searchResults,
+              confidence: 0.6,
+              processingTime: 1000,
+              model: 'search-fallback',
+              isLLMGenerated: false
+            };
+          } else {
+            response = {
+              answer: '죄송합니다. 현재 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+              sources: [],
+              confidence: 0.1,
+              processingTime: 100,
+              model: 'error',
+              isLLMGenerated: false
+            };
+          }
+        } catch (searchError) {
+          console.error('Fallback 검색도 실패:', searchError);
+          response = {
+            answer: '죄송합니다. 현재 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+            sources: [],
+            confidence: 0.1,
+            processingTime: 100,
+            model: 'error',
+            isLLMGenerated: false
+          };
+        }
       }
     }
 

@@ -231,6 +231,10 @@ export class RAGSearchService {
    * LLM 없이 기본 답변 생성
    */
   private generateFallbackAnswer(query: string, searchResults: SearchResult[]): string {
+    if (searchResults.length === 0) {
+      return '죄송합니다. 질문과 관련된 정보를 찾을 수 없습니다. 다른 질문을 시도해보시거나 관리자에게 문의해주세요.';
+    }
+
     const topResult = searchResults[0];
     const content = this.extractRelevantContent(topResult.content, query);
     
