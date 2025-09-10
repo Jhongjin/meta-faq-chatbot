@@ -125,11 +125,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. RAG 서비스 테스트
+    const testQuery = "메타 광고 정책";
     try {
       const { getRAGSearchService } = await import('@/lib/services/RAGSearchService');
       
       const ragService = getRAGSearchService();
-      const testQuery = "메타 광고 정책";
       
       const response = await ragService.generateChatResponse(testQuery);
       
