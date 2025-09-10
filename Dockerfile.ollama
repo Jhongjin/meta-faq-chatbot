@@ -36,4 +36,4 @@ echo "All models downloaded successfully!"\n\
 wait' > /start.sh && chmod +x /start.sh
 
 # 시작 스크립트 실행
-CMD ["/start.sh"]
+CMD ["/bin/bash", "/start.sh"]
