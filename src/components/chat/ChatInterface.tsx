@@ -66,6 +66,13 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
   const handleSendMessage = useCallback(async () => {
     if (!inputMessage.trim() || isLoading) return;
 
+    // 중복 요청 방지: 마지막 메시지가 같은 내용인지 확인
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.type === 'user' && lastMessage.content === inputMessage.trim()) {
+      console.log('⚠️ 중복 요청 방지: 동일한 메시지가 이미 전송되었습니다.');
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
@@ -122,6 +129,13 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
       }
 
       if (data.success) {
+        // 중복 응답 방지: 마지막 봇 메시지와 같은 내용인지 확인
+        const lastBotMessage = messages.filter(m => m.type === 'bot').pop();
+        if (lastBotMessage && lastBotMessage.content === data.response.message) {
+          console.log('⚠️ 중복 응답 방지: 동일한 봇 메시지가 이미 표시되었습니다.');
+          return;
+        }
+
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
           type: 'bot',
