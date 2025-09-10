@@ -206,10 +206,7 @@ export class RAGSearchService {
       // Ollama를 통한 답변 생성
       const llmResponse = await llmService.generateFastAnswer(
         `질문: ${query}\n\n관련 문서 내용:\n${context}`,
-        {
-          temperature: 0.3,
-          maxTokens: 1500
-        }
+        context
       );
 
       console.log(`✅ Ollama 답변 생성 완료: ${llmResponse.processingTime}ms, 신뢰도: ${llmResponse.confidence}`);
