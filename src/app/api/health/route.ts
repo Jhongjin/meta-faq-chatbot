@@ -10,7 +10,8 @@ export async function GET(request: NextRequest) {
       uptime: process.uptime(),
       memory: process.memoryUsage(),
       environment: process.env.NODE_ENV,
-      services: {} as any
+      services: {} as any,
+      responseTime: 0
     };
 
     // Ollama 서비스 상태 확인
