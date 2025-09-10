@@ -158,10 +158,7 @@ export async function POST(request: NextRequest) {
         const isAvailable = await llmService.checkOllamaStatus();
         if (isAvailable) {
           const startTime = Date.now();
-          const response = await llmService.generateFastAnswer(query, {
-            model: 'qwen2.5:1.5b',
-            temperature: 0.3
-          });
+          const response = await llmService.generateFastAnswer(query, '상세한 RAG 테스트를 위한 컨텍스트입니다.');
           const processingTime = Date.now() - startTime;
           
           llmResult = {

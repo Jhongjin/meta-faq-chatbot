@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       if (isAvailable) {
         const response = await llmService.generateFastAnswer(
           `사용자 질문: "${message}"\n\n이 질문에 대해 간단히 답변해주세요.`,
-          { temperature: 0.3, maxTokens: 200 }
+          '간단한 채팅 테스트를 위한 컨텍스트입니다.'
         );
         
         ollamaStatus = 'working';
