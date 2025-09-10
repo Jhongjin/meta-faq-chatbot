@@ -13,11 +13,6 @@ services:
         value: 0.0.0.0
       - key: OLLAMA_ORIGINS
         value: "*"
-    # 프리플랜 최적화 설정
-    scaling:
-      minInstances: 0
-      maxInstances: 1
-    # 자동 스핀다운 방지 (가능한 경우)
     autoDeploy: true
 
   # Next.js 앱
@@ -42,8 +37,4 @@ services:
         value: qwen2.5:1.5b
       - key: OLLAMA_EMBEDDING_MODEL
         value: nomic-embed-text
-    # 프리플랜 최적화 설정
-    scaling:
-      minInstances: 0
-      maxInstances: 1
     autoDeploy: true
