@@ -7,7 +7,8 @@ export async function POST(request: NextRequest) {
     environment: {},
     services: {} as any,
     database: {},
-    errors: [] as string[]
+    errors: [] as string[],
+    overallStatus: {} as any
   };
 
   try {
