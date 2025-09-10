@@ -70,6 +70,8 @@
     "server-only": "0.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.5.2",
+    "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7",
     "tesseract.js": "^6.0.1",
     "ts-pattern": "^5",
     "xml2js": "^0.6.2",
@@ -87,8 +89,6 @@
     "eslint-config-next": "15.1.0",
     "node-loader": "^2.1.0",
     "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5"
   }
 }
