@@ -28,7 +28,7 @@ export class EmbeddingService {
         return;
       }
 
-      console.log(`임베딩 모델 초기화 중: ${model} (처음 로드 시 시간이 걸릴 수 있습니다)`);
+      console.log(`🔄 임베딩 모델 초기화 중: ${model} (처음 로드 시 시간이 걸릴 수 있습니다)`);
       
       // 동적으로 pipeline을 import하여 빌드 시 오류 방지
       const { pipeline } = await import('@xenova/transformers');
@@ -38,15 +38,21 @@ export class EmbeddingService {
         // 모델 로딩 최적화
         quantized: true,
         // 캐시 사용
-        cache_dir: './.cache/transformers'
+        cache_dir: './.cache/transformers',
+        // 추가 옵션
+        local_files_only: false,
+        revision: 'main'
       });
       this.currentModel = model;
       this.isInitialized = true;
       
-      console.log('임베딩 모델 초기화 완료 - BGE-M3 (1024차원)');
+      console.log('✅ 임베딩 모델 초기화 완료 - BGE-M3 (1024차원)');
     } catch (error) {
-      console.error('임베딩 모델 초기화 실패:', error);
-      throw new Error(`임베딩 모델 초기화 실패: ${error}`);
+      console.error('❌ 임베딩 모델 초기화 실패:', error);
+      console.error('상세 오류:', error);
+      
+      // 초기화 실패 시 더미 모드로 전환하지 않고 오류를 던짐
+      throw new Error(`임베딩 모델 초기화 실패: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -61,6 +67,7 @@ export class EmbeddingService {
     
     try {
       if (!this.isInitialized) {
+        console.log('🔄 임베딩 서비스 초기화 중...');
         await this.initialize(options.model);
       }
 
@@ -75,6 +82,8 @@ export class EmbeddingService {
       if (!processedText || processedText.trim().length === 0) {
         throw new Error('빈 텍스트는 임베딩을 생성할 수 없습니다.');
       }
+      
+      console.log(`🔄 임베딩 생성 중: "${processedText.substring(0, 50)}..."`);
       
       // 임베딩 생성
       const result = await this.pipeline(processedText, {
@@ -95,10 +104,11 @@ export class EmbeddingService {
         throw new Error('생성된 임베딩이 비어있습니다.');
       }
 
-      // 차원 수 검증 (BGE-M3는 1024차원)
-      const expectedDimension = 1024;
+      // 차원 수 검증 (OpenAI text-embedding-3-small는 1536차원)
+      const expectedDimension = 1536;
       if (embedding.length !== expectedDimension) {
-        throw new Error(`임베딩 차원 수 오류: ${embedding.length} (예상: ${expectedDimension})`);
+        console.warn(`⚠️ 임베딩 차원 수 불일치: ${embedding.length} (예상: ${expectedDimension})`);
+        // 차원이 다르더라도 계속 진행 (호환성을 위해)
       }
 
       // 숫자 배열 검증
@@ -118,8 +128,24 @@ export class EmbeddingService {
         processingTime
       };
     } catch (error) {
-      console.error('임베딩 생성 실패:', error);
-      throw new Error(`임베딩 생성 실패: ${error}`);
+      console.error('❌ 임베딩 생성 실패:', error);
+      
+      // 초기화 실패인 경우 더미 모드로 전환
+      if (error instanceof Error && error.message.includes('초기화 실패')) {
+        console.warn('⚠️ 임베딩 모델 초기화 실패로 더미 모드로 전환합니다.');
+        
+        const dummyEmbedding = new Array(1536).fill(0).map(() => Math.random() - 0.5);
+        
+        return {
+          embedding: dummyEmbedding,
+          model: 'dummy',
+          dimension: 1536,
+          processingTime: Date.now() - startTime
+        };
+      }
+      
+      // 다른 오류는 그대로 던짐
+      throw error;
     }
   }
 

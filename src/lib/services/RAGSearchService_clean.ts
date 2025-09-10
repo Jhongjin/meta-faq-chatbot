@@ -5,7 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { EmbeddingService } from './EmbeddingService';
-import { llmService, LLMResponse } from './LLMService';
+import { geminiService, GeminiResponse } from './GeminiService';
 
 export interface SearchResult {
   id: string;
@@ -159,30 +159,28 @@ export class RAGSearchService {
     }
 
     try {
-      // Ollama 서비스 상태 확인
-      const isOllamaAvailable = await llmService.checkOllamaStatus();
+      // Gemini 서비스 상태 확인
+      const isGeminiAvailable = await geminiService.checkGeminiStatus();
       
-      if (!isOllamaAvailable) {
-        console.log('⚠️ Ollama 서비스가 사용 불가능합니다. 기본 답변 생성 모드로 전환합니다.');
+      if (!isGeminiAvailable) {
+        console.log('⚠️ Gemini 서비스가 사용 불가능합니다. 기본 답변 생성 모드로 전환합니다.');
         return this.generateFallbackAnswer(query, searchResults);
       }
 
       // 검색 결과를 컨텍스트로 구성
       const context = this.buildContextFromSearchResults(searchResults);
       
-      // LLM을 통한 빠른 답변 생성
-      const llmResponse = await llmService.generateFastAnswer(query, context);
-      
-      // 답변 품질 검증
-      const validation = llmService.validateAnswer(llmResponse.answer, query);
-      
-      if (!validation.isValid) {
-        console.log('⚠️ LLM 답변 품질이 낮습니다. 기본 답변으로 대체합니다.');
-        return this.generateFallbackAnswer(query, searchResults);
-      }
+      // Gemini를 통한 답변 생성
+      const geminiResponse = await geminiService.generateAnswer(
+        `질문: ${query}\n\n관련 문서 내용:\n${context}`,
+        {
+          temperature: 0.3,
+          maxTokens: 1500
+        }
+      );
 
-      console.log(`✅ LLM 답변 생성 완료: ${llmResponse.processingTime}ms, 신뢰도: ${llmResponse.confidence}`);
-      return llmResponse.answer;
+      console.log(`✅ Gemini 답변 생성 완료: ${geminiResponse.processingTime}ms, 신뢰도: ${geminiResponse.confidence}`);
+      return geminiResponse.answer;
 
     } catch (error) {
       console.error('LLM 답변 생성 실패:', error);
@@ -275,7 +273,7 @@ export class RAGSearchService {
       const processingTime = Date.now() - startTime;
       
       // 5. LLM 사용 여부 확인
-      const isLLMGenerated = await llmService.checkOllamaStatus();
+      const isLLMGenerated = await geminiService.checkGeminiStatus();
 
       console.log(`✅ RAG 응답 생성 완료: ${processingTime}ms, 신뢰도: ${confidence}`);
 
@@ -284,7 +282,7 @@ export class RAGSearchService {
         sources: searchResults,
         confidence,
         processingTime,
-        model: isLLMGenerated ? 'qwen2.5:7b' : 'fallback',
+        model: isLLMGenerated ? 'gemini-1.5-flash' : 'fallback',
         isLLMGenerated
       };
 

@@ -93,6 +93,12 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
       // 응답이 비어있는지 확인
       if (!response.ok) {
         console.error('❌ API 응답 오류:', response.status, response.statusText);
+        
+        // 500 오류인 경우 서비스 설정 오류로 처리
+        if (response.status === 500) {
+          throw new Error('서비스 설정 오류: 데이터베이스 연결이 필요합니다. 관리자에게 문의해주세요.');
+        }
+        
         throw new Error(`서버 오류: ${response.status} ${response.statusText}`);
       }
 
@@ -102,7 +108,7 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
       
       if (!responseText || responseText.trim().length === 0) {
         console.error('❌ 빈 응답 본문');
-        throw new Error('서버에서 빈 응답을 받았습니다.');
+        throw new Error('서버에서 빈 응답을 받았습니다. 잠시 후 다시 시도해주세요.');
       }
 
       let data;
@@ -112,7 +118,7 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
       } catch (parseError) {
         console.error('❌ JSON 파싱 실패:', parseError);
         console.error('❌ 응답 본문:', responseText);
-        throw new Error('서버 응답 형식이 올바르지 않습니다.');
+        throw new Error('서버 응답 형식이 올바르지 않습니다. 잠시 후 다시 시도해주세요.');
       }
 
       if (data.success) {

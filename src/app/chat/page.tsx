@@ -977,7 +977,7 @@ function ChatPageContent() {
                   <RelatedResources 
                     userQuestion={messages[messages.length - 2]?.content}
                     aiResponse={messages[messages.length - 1]?.content}
-                    sources={messages[messages.length - 1]?.sources as any || []}
+                    sources={messages[messages.length - 1]?.sources || []}
                   />
                   
                   {/* 빠른 질문 컴포넌트 - 하단 배치 */}

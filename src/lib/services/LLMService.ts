@@ -23,10 +23,10 @@ export class LLMService {
   private defaultOptions: LLMOptions;
 
   constructor() {
-    // Ollama 설정 - 외부 서버 지원
+    // Ollama 설정 - Render 서버 지원
     this.baseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-    // 더 나은 품질의 모델로 변경: qwen2.5:7b (품질과 속도의 균형)
-    this.defaultModel = process.env.OLLAMA_MODEL || 'qwen2.5:7b';
+    // Render 무료 티어 최적화 모델: qwen2.5:1.5b (메모리 효율성과 성능의 균형)
+    this.defaultModel = process.env.OLLAMA_MODEL || 'qwen2.5:1.5b';
     this.defaultOptions = {
       model: this.defaultModel,
       temperature: 0.3, // 창의성과 일관성의 균형

@@ -4,8 +4,9 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { EmbeddingService } from './EmbeddingService';
-import { geminiService, GeminiResponse } from './GeminiService';
+import { OllamaEmbeddingService } from './OllamaEmbeddingService';
+import { SimpleEmbeddingService } from './SimpleEmbeddingService';
+import { llmService, LLMResponse } from './LLMService';
 
 export interface SearchResult {
   id: string;
@@ -29,29 +30,45 @@ export interface ChatResponse {
 
 export class RAGSearchService {
   private supabase;
-  private embeddingService: EmbeddingService;
+  private embeddingService: OllamaEmbeddingService | SimpleEmbeddingService;
 
   constructor() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase 환경변수가 설정되지 않았습니다.');
+      console.error('❌ Supabase 환경변수가 설정되지 않았습니다.');
+      console.error('필요한 환경변수: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
+      throw new Error('Supabase 환경변수가 설정되지 않았습니다. .env.local 파일을 확인해주세요.');
     }
 
-    this.supabase = createClient(supabaseUrl, supabaseKey);
-    this.embeddingService = new EmbeddingService();
+    try {
+      this.supabase = createClient(supabaseUrl, supabaseKey);
+      
+      // 먼저 Ollama 임베딩 서비스 시도
+      try {
+        this.embeddingService = new OllamaEmbeddingService();
+        console.log('✅ RAGSearchService 초기화 완료 (Ollama 임베딩 서비스)');
+      } catch (error) {
+        console.warn('⚠️ Ollama 임베딩 서비스 실패, 간단한 임베딩 서비스로 전환:', error);
+        this.embeddingService = new SimpleEmbeddingService();
+        console.log('✅ RAGSearchService 초기화 완료 (간단한 임베딩 서비스)');
+      }
+    } catch (error) {
+      console.error('❌ RAGSearchService 초기화 실패:', error);
+      throw new Error(`RAGSearchService 초기화 실패: ${error}`);
+    }
   }
 
   /**
    * 질문에 대한 유사한 문서 청크 검색
    */
   async searchSimilarChunks(
-    query: string, 
+    query: string,
     limit: number = 5,
-    similarityThreshold: number = 0.7
+    similarityThreshold: number = 0.1  // 임계값을 낮춰서 더 많은 결과 검색
   ): Promise<SearchResult[]> {
-    
+    try {
       console.log(`🔍 RAG 검색 시작: "${query}"`);
       
       // 질문을 임베딩으로 변환
@@ -59,70 +76,83 @@ export class RAGSearchService {
       const queryEmbedding = queryEmbeddingResult.embedding;
       console.log(`📊 질문 임베딩 생성 완료: ${queryEmbedding.length}차원`);
 
-      // 직접 벡터 검색 (함수 없이)
-      const { data: chunksData, error } = await this.supabase
+      // 직접 SQL 쿼리 사용 (RPC 함수 문제 우회)
+      const queryVectorString = `[${queryEmbedding.join(',')}]`;
+      
+      const { data: searchResults, error } = await this.supabase
         .from('document_chunks')
         .select(`
-          document_id,
+          chunk_id,
           content,
           metadata,
           embedding
         `)
-        .limit(100); // 충분한 수의 청크를 가져와서 클라이언트에서 필터링
+        .limit(limit * 2); // 더 많은 결과를 가져와서 클라이언트에서 필터링
 
       if (error) {
         console.error('벡터 검색 오류:', error);
         throw error;
       }
 
-      // 클라이언트에서 유사도 계산 및 정렬
-      console.log(`📊 가져온 청크 수: ${chunksData.length}`);
-      
-      const filteredResults = chunksData
-        .map((chunk: any) => {
-          try {
-            // 임베딩이 문자열인 경우 배열로 변환
-            let embedding: number[];
-            if (typeof chunk.embedding === 'string') {
-              embedding = JSON.parse(chunk.embedding);
-            } else {
-              embedding = chunk.embedding;
-            }
+      console.log(`📊 데이터베이스 조회 결과: ${searchResults?.length || 0}개`);
 
-            // 유사도 계산 (코사인 유사도)
-            const similarity = this.calculateCosineSimilarity(queryEmbedding, embedding);
-            
-            return {
-              id: chunk.document_id,
-              content: chunk.content,
-              similarity,
-              documentId: chunk.document_id,
-              documentTitle: chunk.metadata?.title || 'Unknown',
-              documentUrl: chunk.metadata?.url,
-              chunkIndex: chunk.metadata?.chunkIndex || 0,
-              metadata: chunk.metadata
-            };
+      // 클라이언트에서 유사도 계산 및 필터링
+      const filteredResults = (searchResults || [])
+        .map((result: any) => {
+          // 임베딩 데이터 파싱
+          let storedEmbedding: number[];
+          try {
+            if (typeof result.embedding === 'string') {
+              storedEmbedding = JSON.parse(result.embedding);
+            } else if (Array.isArray(result.embedding)) {
+              storedEmbedding = result.embedding;
+            } else {
+              console.warn(`알 수 없는 임베딩 형식: ${typeof result.embedding}`);
+              return null;
+            }
           } catch (error) {
-            console.error('청크 처리 오류:', error);
+            console.warn(`임베딩 파싱 실패: ${error}`);
             return null;
           }
-        })
-        .filter(item => item !== null) // null 값 제거
-        .filter(item => item!.similarity >= similarityThreshold) // 임계값 필터링
-        .sort((a, b) => b!.similarity - a!.similarity) // 유사도 순 정렬
-        .slice(0, limit); // 상위 N개만 선택
 
-      console.log(`✅ 검색 완료: ${filteredResults.length}개 결과`);
+          // 유사도 계산 (코사인 유사도)
+          const similarity = this.calculateCosineSimilarity(queryEmbedding, storedEmbedding);
+          console.log(`🔍 유사도 계산: ${result.chunk_id} = ${similarity.toFixed(4)}`);
+          
+          return {
+            id: result.chunk_id,
+            content: result.content,
+            similarity: similarity,
+            documentId: result.chunk_id.split('_chunk_')[0],
+            documentTitle: result.metadata?.title || 'Unknown',
+            documentUrl: result.metadata?.url,
+            chunkIndex: parseInt(result.chunk_id.split('_chunk_')[1]) || 0,
+            metadata: result.metadata
+          };
+        })
+        .filter((result: any) => result !== null && result.similarity > 0.01)
+        .sort((a: any, b: any) => b.similarity - a.similarity)
+        .slice(0, limit);
+
+      console.log(`✅ 검색 완료: ${filteredResults.length}개 결과 (임계값: ${similarityThreshold})`);
       return filteredResults as SearchResult[];
 
+    } catch (error) {
+      console.error('❌ RAG 검색 실패:', error);
+      throw error;
     }
+  }
 
   /**
-   * 코사인 유사도 계산
+   * 코사인 유사도 계산 (개선된 버전)
    */
   private calculateCosineSimilarity(vecA: number[], vecB: number[]): number {
     if (vecA.length !== vecB.length) {
       console.warn('벡터 차원이 다릅니다:', vecA.length, vecB.length);
+      return 0;
+    }
+
+    if (vecA.length === 0 || vecB.length === 0) {
       return 0;
     }
 
@@ -131,16 +161,26 @@ export class RAGSearchService {
     let normB = 0;
 
     for (let i = 0; i < vecA.length; i++) {
-      dotProduct += vecA[i] * vecB[i];
-      normA += vecA[i] * vecA[i];
-      normB += vecB[i] * vecB[i];
+      const a = Number(vecA[i]) || 0;
+      const b = Number(vecB[i]) || 0;
+      
+      dotProduct += a * b;
+      normA += a * a;
+      normB += b * b;
     }
 
     if (normA === 0 || normB === 0) {
       return 0;
     }
 
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    const similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    
+    // NaN이나 Infinity 체크
+    if (!isFinite(similarity)) {
+      return 0;
+    }
+
+    return Math.max(0, Math.min(1, similarity)); // 0-1 범위로 제한
   }
 
   /**
@@ -152,19 +192,19 @@ export class RAGSearchService {
     }
 
     try {
-      // Gemini 서비스 상태 확인
-      const isGeminiAvailable = await geminiService.checkGeminiStatus();
+      // Ollama 서비스 상태 확인
+      const isOllamaAvailable = await llmService.checkOllamaStatus();
       
-      if (!isGeminiAvailable) {
-        console.log('⚠️ Gemini 서비스가 사용 불가능합니다. 기본 답변 생성 모드로 전환합니다.');
+      if (!isOllamaAvailable) {
+        console.log('⚠️ Ollama 서비스가 사용 불가능합니다. 기본 답변 생성 모드로 전환합니다.');
         return this.generateFallbackAnswer(query, searchResults);
       }
 
       // 검색 결과를 컨텍스트로 구성
       const context = this.buildContextFromSearchResults(searchResults);
       
-      // Gemini를 통한 답변 생성
-      const geminiResponse = await geminiService.generateAnswer(
+      // Ollama를 통한 답변 생성
+      const llmResponse = await llmService.generateFastAnswer(
         `질문: ${query}\n\n관련 문서 내용:\n${context}`,
         {
           temperature: 0.3,
@@ -172,8 +212,8 @@ export class RAGSearchService {
         }
       );
 
-      console.log(`✅ Gemini 답변 생성 완료: ${geminiResponse.processingTime}ms, 신뢰도: ${geminiResponse.confidence}`);
-      return geminiResponse.answer;
+      console.log(`✅ Ollama 답변 생성 완료: ${llmResponse.processingTime}ms, 신뢰도: ${llmResponse.confidence}`);
+      return llmResponse.answer;
 
     } catch (error) {
       console.error('LLM 답변 생성 실패:', error);
@@ -252,8 +292,8 @@ export class RAGSearchService {
     try {
       console.log(`🚀 RAG 챗봇 응답 생성 시작: "${query}"`);
 
-      // 1. 유사한 문서 청크 검색
-      const searchResults = await this.searchSimilarChunks(query, 5, 0.7);
+      // 1. 유사한 문서 청크 검색 (임계값을 더 낮춰서 더 많은 결과 검색)
+      const searchResults = await this.searchSimilarChunks(query, 5, 0.01);
       console.log(`📊 검색 결과: ${searchResults.length}개`);
 
       // 2. 답변 생성
@@ -266,7 +306,7 @@ export class RAGSearchService {
       const processingTime = Date.now() - startTime;
       
       // 5. LLM 사용 여부 확인
-      const isLLMGenerated = await geminiService.checkGeminiStatus();
+      const isLLMGenerated = await llmService.checkOllamaStatus();
 
       console.log(`✅ RAG 응답 생성 완료: ${processingTime}ms, 신뢰도: ${confidence}`);
 
@@ -275,12 +315,24 @@ export class RAGSearchService {
         sources: searchResults,
         confidence,
         processingTime,
-        model: isLLMGenerated ? 'gemini-1.5-flash' : 'fallback',
+        model: isLLMGenerated ? 'qwen2.5:1.5b' : 'fallback',
         isLLMGenerated
       };
 
     } catch (error) {
       console.error('RAG 응답 생성 실패:', error);
+      
+      // Supabase 연결 오류인 경우 특별한 메시지 제공
+      if (error instanceof Error && error.message.includes('Supabase')) {
+        return {
+          answer: '죄송합니다. 현재 데이터베이스 연결 설정이 완료되지 않았습니다. 관리자에게 문의하시거나 잠시 후 다시 시도해주세요.\n\n임시로 Meta 광고 정책 관련 질문은 Meta 비즈니스 도움말 센터에서 확인하실 수 있습니다.',
+          sources: [],
+          confidence: 0,
+          processingTime: Date.now() - startTime,
+          model: 'error',
+          isLLMGenerated: false
+        };
+      }
       
       return {
         answer: '죄송합니다. 현재 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',

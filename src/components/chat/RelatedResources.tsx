@@ -101,6 +101,7 @@ export default function RelatedResources({
   // 실제 소스 데이터를 기반으로 리소스 생성 (중복 제거)
   const generateResourcesFromSources = (): ResourceItem[] => {
     console.log('RelatedResources - sources:', sources); // 디버깅용
+    console.log('RelatedResources - sources length:', sources?.length); // 디버깅용
     
     if (!sources || sources.length === 0) {
       console.log('RelatedResources - sources가 없어서 샘플 데이터 사용');
