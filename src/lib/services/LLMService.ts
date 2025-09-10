@@ -92,13 +92,17 @@ export class LLMService {
     const startTime = Date.now();
     
     // Vercel 환경에서는 Ollama가 실행되지 않으므로 fallback 응답
-    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-      console.warn('프로덕션 환경에서 Ollama API를 사용할 수 없습니다. Fallback 응답을 반환합니다.');
+    // 하지만 Render나 다른 외부 서버를 사용하는 경우는 제외
+    if (process.env.VERCEL && !process.env.OLLAMA_BASE_URL?.includes('render.com')) {
+      console.warn('Vercel 환경에서 외부 Ollama 서버가 설정되지 않았습니다. Fallback 응답을 반환합니다.');
       return this.generateFallbackResponse(prompt, options, startTime);
     }
     
     try {
       const requestOptions = { ...this.defaultOptions, ...options };
+      
+      console.log(`🚀 Ollama API 호출 시작: ${this.baseUrl}/api/generate`);
+      console.log(`📝 모델: ${requestOptions.model}, 프롬프트 길이: ${prompt.length}`);
       
       const response = await fetch(`${this.baseUrl}/api/generate`, {
         method: 'POST',
@@ -113,15 +117,21 @@ export class LLMService {
             temperature: requestOptions.temperature,
             num_predict: requestOptions.maxTokens,
           }
-        })
+        }),
+        // 타임아웃 설정 (30초)
+        signal: AbortSignal.timeout(30000)
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Ollama API 오류: ${response.status} ${response.statusText}`, errorText);
         throw new Error(`Ollama API 오류: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
       const processingTime = Date.now() - startTime;
+
+      console.log(`✅ Ollama API 응답 완료: ${processingTime}ms, 답변 길이: ${data.response?.length || 0}`);
 
       return {
         answer: data.response || '답변을 생성할 수 없습니다.',
@@ -158,24 +168,76 @@ export class LLMService {
   }
 
   /**
-   * 간단한 키워드 기반 응답 생성
+   * 간단한 키워드 기반 응답 생성 (개선된 버전)
    */
   private generateSimpleResponse(prompt: string): string {
     const lowerPrompt = prompt.toLowerCase();
     
     if (lowerPrompt.includes('광고') && lowerPrompt.includes('정책')) {
-      return 'Meta 광고 정책에 대한 질문이군요. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있습니다. 자세한 정보는 Meta 광고 정책 문서를 직접 확인하시거나, 관리자에게 문의해주세요.';
+      return `**Meta 광고 정책 안내**
+
+Meta 광고 정책에 대한 질문이군요. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있어, 기본 정보를 제공해드립니다.
+
+**주요 광고 정책:**
+- 광고는 정확하고 진실된 정보를 포함해야 합니다
+- 금지된 콘텐츠(폭력, 성인 콘텐츠, 허위 정보 등)는 광고에 사용할 수 없습니다
+- 개인정보 보호 및 데이터 사용에 대한 정책을 준수해야 합니다
+
+**더 자세한 정보:**
+- Meta 비즈니스 도움말 센터: https://www.facebook.com/business/help
+- 광고 정책 센터: https://www.facebook.com/policies/ads
+
+관리자에게 문의하시면 더 구체적인 답변을 받으실 수 있습니다.`;
     }
     
     if (lowerPrompt.includes('facebook') || lowerPrompt.includes('instagram')) {
-      return 'Facebook이나 Instagram 관련 질문이군요. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있습니다. Meta 비즈니스 도움말 센터에서 최신 정보를 확인하시거나, 관리자에게 문의해주세요.';
+      return `**Facebook/Instagram 광고 안내**
+
+Facebook이나 Instagram 관련 질문이군요. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있어, 기본 정보를 제공해드립니다.
+
+**주요 플랫폼 특징:**
+- Facebook: 광범위한 타겟팅 옵션과 다양한 광고 형식
+- Instagram: 시각적 콘텐츠 중심의 광고와 스토리 광고
+- 두 플랫폼 모두 Meta 광고 관리자에서 통합 관리 가능
+
+**더 자세한 정보:**
+- Meta 비즈니스 도움말 센터에서 최신 정보를 확인하시거나, 관리자에게 문의해주세요.`;
     }
     
     if (lowerPrompt.includes('승인') || lowerPrompt.includes('거부')) {
-      return '광고 승인 관련 질문이군요. 광고 승인 과정은 복잡하며 여러 요인에 따라 달라집니다. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있으므로, Meta 광고 정책 문서를 직접 확인하시거나 관리자에게 문의해주세요.';
+      return `**광고 승인 관련 안내**
+
+광고 승인 관련 질문이군요. 광고 승인 과정은 복잡하며 여러 요인에 따라 달라집니다.
+
+**광고 승인 과정:**
+1. 광고 콘텐츠 검토 (자동 + 수동)
+2. 정책 위반 여부 확인
+3. 승인/거부 결정 (보통 24시간 이내)
+4. 거부 시 수정 후 재제출 가능
+
+**승인률 향상 팁:**
+- Meta 광고 정책을 철저히 숙지
+- 명확하고 정확한 광고 콘텐츠 작성
+- 금지된 콘텐츠 사용 금지
+
+현재 AI 답변 생성 서비스가 일시적으로 중단되어 있으므로, Meta 광고 정책 문서를 직접 확인하시거나 관리자에게 문의해주세요.`;
     }
     
-    return '죄송합니다. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있습니다. Meta 광고 정책 관련 질문은 관리자에게 직접 문의하시거나, Meta 비즈니스 도움말 센터에서 확인해주세요.';
+    return `**Meta 광고 FAQ 안내**
+
+죄송합니다. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있습니다.
+
+**대안 방법:**
+1. Meta 비즈니스 도움말 센터에서 직접 검색
+2. 광고 정책 센터에서 관련 문서 확인
+3. 관리자에게 직접 문의
+
+**유용한 링크:**
+- Meta 비즈니스 도움말: https://www.facebook.com/business/help
+- 광고 정책: https://www.facebook.com/policies/ads
+- 광고 관리자: https://business.facebook.com
+
+더 구체적인 도움이 필요하시면 관리자에게 문의해주세요.`;
   }
 
   /**
@@ -183,16 +245,31 @@ export class LLMService {
    */
   async checkOllamaStatus(): Promise<boolean> {
     try {
+      console.log(`🔍 Ollama 서비스 상태 확인: ${this.baseUrl}`);
+      
       const response = await fetch(`${this.baseUrl}/api/tags`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        // 타임아웃 설정 (10초로 증가)
+        signal: AbortSignal.timeout(10000)
       });
 
-      return response.ok;
+      const isOk = response.ok;
+      console.log(`📊 Ollama 서비스 상태: ${isOk ? '사용 가능' : '사용 불가능'} (${response.status})`);
+      
+      if (!isOk) {
+        const errorText = await response.text();
+        console.error(`❌ Ollama 서버 오류: ${response.status} ${response.statusText}`, errorText);
+      }
+      
+      return isOk;
     } catch (error) {
       console.error('Ollama 서비스 상태 확인 실패:', error);
+      if (error.name === 'AbortError') {
+        console.error('⏰ Ollama 서버 응답 타임아웃 - 서버가 실행되지 않거나 느립니다');
+      }
       return false;
     }
   }

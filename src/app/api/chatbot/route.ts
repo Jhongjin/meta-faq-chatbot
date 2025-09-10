@@ -134,9 +134,10 @@ export async function POST(request: NextRequest) {
     // RAG 서비스 동적 import 시도
     let response;
     try {
-      const { ragSearchService } = await import('@/lib/services/RAGSearchService');
+      const { getRAGSearchService } = await import('@/lib/services/RAGSearchService');
       console.log('🤖 RAG 서비스 호출');
-      response = await ragSearchService.generateChatResponse(message.trim());
+      const ragService = getRAGSearchService();
+      response = await ragService.generateChatResponse(message.trim());
       
       // 검색 결과에 문서 메타데이터 추가 (임시 폴더와 동일한 방식)
       const enrichedSources = await enrichSearchResults(response.sources);

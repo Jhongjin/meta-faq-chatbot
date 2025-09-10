@@ -129,13 +129,6 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
       }
 
       if (data.success) {
-        // 중복 응답 방지: 마지막 봇 메시지와 같은 내용인지 확인
-        const lastBotMessage = messages.filter(m => m.type === 'bot').pop();
-        if (lastBotMessage && lastBotMessage.content === data.response.message) {
-          console.log('⚠️ 중복 응답 방지: 동일한 봇 메시지가 이미 표시되었습니다.');
-          return;
-        }
-
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
           type: 'bot',
@@ -146,8 +139,16 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
           processingTime: data.response.processingTime
         };
 
-        setMessages(prev => [...prev, botMessage]);
-        console.log('✅ 챗봇 메시지 추가 완료');
+        // 중복 응답 방지: 상태 업데이트 시점에서 확인
+        setMessages(prev => {
+          const lastBotMessage = prev.filter(m => m.type === 'bot').pop();
+          if (lastBotMessage && lastBotMessage.content === botMessage.content) {
+            console.log('⚠️ 중복 응답 방지: 동일한 봇 메시지가 이미 표시되었습니다.');
+            return prev; // 상태 변경하지 않음
+          }
+          console.log('✅ 챗봇 메시지 추가 완료');
+          return [...prev, botMessage];
+        });
       } else {
         console.error('❌ API 오류 응답:', data);
         throw new Error(data.error || data.details || '알 수 없는 오류가 발생했습니다.');

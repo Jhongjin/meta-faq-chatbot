@@ -291,7 +291,16 @@ function ChatPageContent() {
         feedback: { helpful: null, count: 0 },
       };
 
-      setMessages(prev => [...prev, aiResponse]);
+      // 중복 응답 방지: 상태 업데이트 시점에서 확인
+      setMessages(prev => {
+        const lastBotMessage = prev.filter(m => m.type === 'assistant').pop();
+        if (lastBotMessage && lastBotMessage.content === aiResponse.content) {
+          console.log('⚠️ 중복 응답 방지: 동일한 봇 메시지가 이미 표시되었습니다.');
+          return prev; // 상태 변경하지 않음
+        }
+        console.log('✅ 챗봇 메시지 추가 완료');
+        return [...prev, aiResponse];
+      });
       
       // 대화 자동 저장
       if (user) {
@@ -418,7 +427,16 @@ function ChatPageContent() {
         feedback: { helpful: null, count: 0 },
       };
 
-      setMessages(prev => [...prev, aiResponse]);
+      // 중복 응답 방지: 상태 업데이트 시점에서 확인
+      setMessages(prev => {
+        const lastBotMessage = prev.filter(m => m.type === 'assistant').pop();
+        if (lastBotMessage && lastBotMessage.content === aiResponse.content) {
+          console.log('⚠️ 중복 응답 방지: 동일한 봇 메시지가 이미 표시되었습니다.');
+          return prev; // 상태 변경하지 않음
+        }
+        console.log('✅ 챗봇 메시지 추가 완료');
+        return [...prev, aiResponse];
+      });
       
       // 대화 자동 저장
       if (user) {
