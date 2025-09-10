@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   const debugInfo = {
     timestamp: new Date().toISOString(),
     environment: {},
-    services: {},
+    services: {} as any,
     database: {},
     errors: [] as string[]
   };
