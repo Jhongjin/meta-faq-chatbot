@@ -11,29 +11,33 @@ ENV OLLAMA_KEEP_ALIVE=24h
 ENV OLLAMA_NUM_PARALLEL=1
 ENV OLLAMA_MAX_LOADED_MODELS=1
 
+# 시작 스크립트 생성
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+echo "Starting Ollama server..."\n\
+ollama serve &\n\
+OLLAMA_PID=$!\n\
+\n\
+echo "Waiting for Ollama server to start..."\n\
+sleep 15\n\
+\n\
+echo "Downloading qwen2.5:1.5b model..."\n\
+ollama pull qwen2.5:1.5b\n\
+\n\
+echo "Downloading nomic-embed-text model..."\n\
+ollama pull nomic-embed-text\n\
+\n\
+echo "All models downloaded successfully!"\n\
+echo "Ollama server is ready at http://0.0.0.0:11434"\n\
+\n\
+# 서버 유지\n\
+wait $OLLAMA_PID' > /start.sh && chmod +x /start.sh
+
 # 헬스체크 추가
 HEALTHCHECK --interval=60s --timeout=30s --start-period=120s --retries=2 \
   CMD curl -f http://localhost:11434/api/tags || exit 1
 
-# 시작 스크립트 생성
-RUN echo '#!/bin/bash\n\
-# Ollama 서버 시작\n\
-ollama serve &\n\
-\n\
-# 서버 시작 대기\n\
-sleep 10\n\
-\n\
-# 모델 다운로드\n\
-echo "Downloading qwen2.5:1.5b..."\n\
-ollama pull qwen2.5:1.5b\n\
-\n\
-echo "Downloading nomic-embed-text..."\n\
-ollama pull nomic-embed-text\n\
-\n\
-echo "All models downloaded successfully!"\n\
-\n\
-# 서버 유지\n\
-wait' > /start.sh && chmod +x /start.sh
-
-# 시작 스크립트 실행
-CMD ["/bin/bash", "/start.sh"]
+# ENTRYPOINT를 오버라이드하여 bash로 실행
+ENTRYPOINT ["/bin/bash"]
+CMD ["/start.sh"]
