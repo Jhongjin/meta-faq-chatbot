@@ -267,7 +267,7 @@ Facebook이나 Instagram 관련 질문이군요. 현재 AI 답변 생성 서비�
       return isOk;
     } catch (error) {
       console.error('Ollama 서비스 상태 확인 실패:', error);
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         console.error('⏰ Ollama 서버 응답 타임아웃 - 서버가 실행되지 않거나 느립니다');
       }
       return false;
