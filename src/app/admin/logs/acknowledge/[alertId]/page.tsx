@@ -29,7 +29,7 @@ interface AlertData {
 export default function AcknowledgeAlertPage() {
   const params = useParams();
   const router = useRouter();
-  const alertId = params.alertId as string;
+  const alertId = params?.alertId as string;
   
   const [alertData, setAlertData] = useState<AlertData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
