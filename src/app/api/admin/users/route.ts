@@ -172,14 +172,14 @@ export async function GET(request: NextRequest) {
         // 관리자 권한 조회 실패해도 계속 진행
       } else {
         // 이메일별 관리자 권한 매핑
-        adminData?.forEach(admin => {
+        adminData?.forEach((admin: any) => {
           adminUsers[admin.email] = admin.is_active;
         });
       }
     }
 
     // 6. 데이터 변환
-    let users: User[] = profiles?.map(profile => {
+    let users: User[] = profiles?.map((profile: any) => {
       const authUser = authUsers[profile.id];
       const isAdmin = adminUsers[profile.email] || false;
       const isActive = !!authUser?.email_confirmed_at;
