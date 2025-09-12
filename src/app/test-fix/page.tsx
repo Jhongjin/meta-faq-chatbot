@@ -17,7 +17,7 @@ export default function TestFixPage() {
         }
       });
       const data = await response.json();
-      setResults(prev => ({ ...prev, embeddings: data }));
+      setResults((prev: any) => ({ ...prev, embeddings: data }));
       console.log('임베딩 수정 결과:', data);
     } catch (error) {
       console.error('오류:', error);
