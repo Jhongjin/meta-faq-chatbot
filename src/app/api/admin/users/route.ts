@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     console.log(`✅ 사용자 프로필 조회 완료: ${profiles?.length || 0}개`);
 
     // 2. 각 사용자의 대화 수 조회
-    const profileUserIds = profiles?.map(p => p.id) || [];
+    const profileUserIds = profiles?.map((p: any) => p.id) || [];
     let conversationCounts: { [key: string]: number } = {};
 
     if (profileUserIds.length > 0) {
