@@ -3,9 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import AdminLayout from "@/components/layouts/AdminLayout";
-import DocumentUpload from "@/components/admin/DocumentUpload";
-import HybridCrawlingManager from "@/components/admin/HybridCrawlingManager";
-import GroupedDocumentList from "@/components/admin/GroupedDocumentList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -561,11 +558,19 @@ export default function DocumentManagementPage() {
           </TabsList>
           
           <TabsContent value="upload" className="mt-6">
-            <DocumentUpload onUpload={handleUpload} />
+            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700/50 shadow-lg">
+              <CardContent className="p-6">
+                <p className="text-gray-300">문서 업로드 기능은 준비 중입니다.</p>
+              </CardContent>
+            </Card>
           </TabsContent>
           
           <TabsContent value="crawling" className="mt-6">
-            <HybridCrawlingManager onCrawlingComplete={loadDocuments} />
+            <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700/50 shadow-lg">
+              <CardContent className="p-6">
+                <p className="text-gray-300">URL 크롤링 기능은 준비 중입니다.</p>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </motion.div>
@@ -668,20 +673,6 @@ export default function DocumentManagementPage() {
             <h3 className="text-lg font-medium mb-2">문서가 없습니다</h3>
             <p className="text-sm">새로운 문서를 업로드해보세요.</p>
           </div>
-        ) : activeTab === 'crawling' ? (
-          // URL 크롤링 탭: 그룹화된 뷰 사용
-          <GroupedDocumentList
-            groups={documentGroups}
-            onToggleGroupExpansion={handleToggleGroupExpansion}
-            onToggleSubPageSelection={handleToggleSubPageSelection}
-            onToggleAllSubPages={handleToggleAllSubPages}
-            onReindexDocument={handleReindexDocument}
-            onDownloadDocument={handleDownloadDocument}
-            onPreviewDocument={handlePreviewDocument}
-            onDeleteDocument={handleDeleteDocument}
-            actionLoading={actionLoading}
-            deletingDocument={deletingDocument}
-          />
         ) : (
           // 파일 업로드 탭: 기존 테이블 뷰 사용
           <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700/50 shadow-lg rounded-xl">
