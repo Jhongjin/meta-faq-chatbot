@@ -144,7 +144,7 @@ async function handleDownload(documentId: string) {
       }
 
       // 청크들을 합쳐서 텍스트 문서로 제공
-      const fullContent = chunks?.map(chunk => chunk.content).join('\n\n') || '';
+      const fullContent = chunks?.map((chunk: any) => chunk.content).join('\n\n') || '';
       
       let mimeType = 'text/plain; charset=utf-8';
       let extension = 'txt';
