@@ -155,11 +155,11 @@ async function getSystemStatus() {
       .from('documents')
       .select('status');
 
-    const errorCount = documents?.filter(doc => 
+    const errorCount = documents?.filter((doc: any) => 
       doc.status === 'error' || doc.status === 'failed'
     ).length || 0;
 
-    const processingCount = documents?.filter(doc => 
+    const processingCount = documents?.filter((doc: any) => 
       doc.status === 'processing' || doc.status === 'indexing'
     ).length || 0;
 
