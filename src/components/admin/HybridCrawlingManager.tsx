@@ -421,7 +421,7 @@ export default function HybridCrawlingManager({ onCrawlingComplete }: HybridCraw
               ...p, 
               status: 'completed' as const, 
               message: '크롤링 완료',
-              discoveredUrls: document?.discoveredUrls?.map(discovered => ({
+              discoveredUrls: document?.discoveredUrls?.map((discovered: any) => ({
                 url: discovered.url,
                 title: discovered.title,
                 source: discovered.source
