@@ -161,6 +161,9 @@ export class EmbeddingValidationService {
       errors: []
     };
 
+    const issues: string[] = [];
+    const recommendations: string[] = [];
+
     try {
       // 1. 모든 청크 조회
       if (!this.supabase) {
