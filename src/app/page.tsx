@@ -255,12 +255,12 @@ export default function HomePage() {
             <form onSubmit={handleChatSubmit} className="w-full">
               <div className="relative w-full">
                 {/* Main Chat Input Container - Lovable.dev Style */}
-                <div className="bg-white/10 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+                <div className="card-enhanced rounded-3xl shadow-2xl overflow-hidden">
                   {/* Input Field with Submit Button */}
                   <div className="p-6">
                     <div className="flex items-center space-x-4">
                       <div className="flex-1 relative">
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-300 w-5 h-5" />
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -270,7 +270,7 @@ export default function HomePage() {
                                 placeholder="메타 광고 정책에 대해 질문해보세요... (예: 인스타그램 광고 정책 변경사항이 있나요?)"
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}
-                                className="pl-12 pr-4 py-4 text-base border-0 bg-transparent text-white placeholder-gray-400 focus:ring-0 focus:outline-none rounded-none w-full"
+                                className="pl-12 pr-4 py-4 text-base border-0 bg-transparent text-enhanced placeholder-gray-300 focus:ring-0 focus:outline-none rounded-none w-full"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
@@ -337,7 +337,7 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 rounded-2xl blur-xl animate-enhanced-pulse"></div>
             
             {/* Main container */}
-            <div className="relative bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 backdrop-blur-sm border border-blue-400/30 rounded-2xl p-6 shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 hover:scale-[1.02] group">
+            <div className="relative card-enhanced rounded-2xl p-6 shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 hover:scale-[1.02] group">
               {/* Animated border */}
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400/20 via-indigo-400/20 to-purple-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
@@ -352,8 +352,8 @@ export default function HomePage() {
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white font-nanum">최신 업데이트</h3>
-                      <Badge className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 text-blue-300 border-blue-400/30 font-nanum">
+                      <h3 className="text-xl font-bold text-enhanced font-nanum">최신 업데이트</h3>
+                      <Badge className="bg-gradient-to-r from-blue-500/30 to-indigo-500/30 text-blue-200 border-blue-400/50 font-nanum shadow-lg">
                         중요
                       </Badge>
                     </div>
@@ -361,10 +361,10 @@ export default function HomePage() {
                   
                   {/* Date indicator */}
                   <div className="text-right">
-                    <div className="text-sm text-blue-300 font-nanum">
+                    <div className="text-sm text-enhanced font-nanum">
                       {updateLoading ? "로딩 중..." : latestUpdate?.displayDate || "최근"}
                     </div>
-                    <div className="text-xs text-blue-400/70 font-nanum">업데이트</div>
+                    <div className="text-xs text-muted-enhanced font-nanum">업데이트</div>
                   </div>
                 </div>
                 
@@ -445,19 +445,19 @@ export default function HomePage() {
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-white/10">
-                      <TableHead className="text-white font-semibold">지표</TableHead>
-                      <TableHead className="text-white font-semibold">현재 값</TableHead>
-                      <TableHead className="text-white font-semibold">변화율</TableHead>
-                      <TableHead className="text-white font-semibold">상태</TableHead>
+                    <TableRow className="border-white/20">
+                      <TableHead className="text-enhanced font-semibold">지표</TableHead>
+                      <TableHead className="text-enhanced font-semibold">현재 값</TableHead>
+                      <TableHead className="text-enhanced font-semibold">변화율</TableHead>
+                      <TableHead className="text-enhanced font-semibold">상태</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {performanceData.map((item, index) => (
-                      <TableRow key={index} className="border-white/10">
-                        <TableCell className="text-gray-300 font-medium">{item.metric}</TableCell>
-                        <TableCell className="text-white font-semibold">{item.value}</TableCell>
-                        <TableCell className="text-green-400">{item.trend}</TableCell>
+                      <TableRow key={index} className="border-white/10 hover:bg-white/5">
+                        <TableCell className="text-muted-enhanced font-medium">{item.metric}</TableCell>
+                        <TableCell className="text-enhanced font-semibold">{item.value}</TableCell>
+                        <TableCell className="text-green-300">{item.trend}</TableCell>
                         <TableCell>
                           <Badge 
                             variant={item.status === 'excellent' ? 'default' : 'secondary'}
@@ -517,14 +517,14 @@ export default function HomePage() {
                     <div className="w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                       <div className="text-3xl">{feature.icon}</div>
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-3 font-nanum">{feature.title}</h3>
-                    <p className="text-gray-300 leading-relaxed text-sm mb-4 flex-grow font-nanum">{feature.description}</p>
+                    <h3 className="text-xl font-bold text-enhanced mb-3 font-nanum">{feature.title}</h3>
+                    <p className="text-muted-enhanced leading-relaxed text-sm mb-4 flex-grow font-nanum">{feature.description}</p>
                     <div className="flex flex-wrap gap-2">
                       {feature.badges.map((badge, badgeIndex) => (
                         <Badge 
                           key={badgeIndex} 
                           variant="secondary" 
-                          className="bg-white/10 text-white border-white/20 font-nanum"
+                          className="bg-white/20 text-white border-white/30 font-nanum shadow-sm"
                         >
                           {badge}
                         </Badge>
@@ -579,8 +579,8 @@ export default function HomePage() {
                         <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                           <div className="text-3xl">{stat.icon}</div>
                         </div>
-                        <h3 className="text-2xl font-bold text-white mb-2 font-nanum">{stat.value}</h3>
-                        <p className="text-gray-300 font-semibold mb-2 font-nanum">{stat.label}</p>
+                        <h3 className="text-2xl font-bold text-enhanced mb-2 font-nanum">{stat.value}</h3>
+                        <p className="text-muted-enhanced font-semibold mb-2 font-nanum">{stat.label}</p>
                         <p className="text-sm text-gray-400 font-nanum">{stat.description}</p>
                       </CardContent>
                     </Card>
@@ -608,10 +608,10 @@ export default function HomePage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 font-nanum">
+            <h2 className="text-3xl md:text-4xl font-bold text-enhanced mb-4 font-nanum">
               지금 바로 시작해보세요
             </h2>
-            <p className="text-base text-gray-300 mb-6 max-w-3xl mx-auto font-nanum">
+            <p className="text-base text-muted-enhanced mb-6 max-w-3xl mx-auto font-nanum">
               Meta 광고 정책에 대한 궁금증을 AI 챗봇에게 물어보고, 업무 효율성을 극대화하세요
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
