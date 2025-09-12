@@ -36,7 +36,7 @@ export default function TestFixPage() {
         }
       });
       const data = await response.json();
-      setResults(prev => ({ ...prev, chunks: data }));
+      setResults((prev: any) => ({ ...prev, chunks: data }));
       console.log('Meta 청크 생성 결과:', data);
     } catch (error) {
       console.error('오류:', error);
