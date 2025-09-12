@@ -415,8 +415,8 @@ export default function HomePage() {
             </p>
           </div>
           
-          <Card className="border-0 shadow-lg bg-white/5 backdrop-blur-sm border border-white/10">
-            <CardContent className="p-6">
+                <Card className="card-enhanced">
+                  <CardContent className="p-6">
               {dashboardLoading || chatLoading ? (
                 <div className="space-y-4">
                   {[...Array(5)].map((_, index) => (
@@ -512,7 +512,7 @@ export default function HomePage() {
                 transition={{ duration: 0.8, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/5 backdrop-blur-sm h-full group hover:-translate-y-1 border border-white/10">
+                <Card className="card-enhanced h-full group hover:-translate-y-1">
                   <CardContent className="p-6 h-full flex flex-col">
                     <div className="w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                       <div className="text-3xl">{feature.icon}</div>
@@ -574,7 +574,7 @@ export default function HomePage() {
                     transition={{ duration: 0.8, delay: index * 0.1 }}
                     viewport={{ once: true }}
                   >
-                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/5 backdrop-blur-sm group hover:-translate-y-1 border border-white/10">
+                    <Card className="card-enhanced group hover:-translate-y-1">
                       <CardContent className="p-6 text-center">
                         <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                           <div className="text-3xl">{stat.icon}</div>

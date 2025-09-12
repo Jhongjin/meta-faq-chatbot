@@ -693,8 +693,8 @@ export default function DocumentManagementPage() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-gray-700">
-                    <TableHead className="text-white font-semibold w-24">상태</TableHead>
+                  <TableRow className="border-white/20">
+                    <TableHead className="text-enhanced font-semibold w-24">상태</TableHead>
                     <TableHead 
                       className="text-white font-semibold cursor-pointer hover:bg-gray-700/50 select-none"
                       onClick={() => handleSort('title')}
@@ -755,7 +755,7 @@ export default function DocumentManagementPage() {
                 </TableHeader>
                 <TableBody>
                   {getFilteredAndSortedDocuments().map((doc, index) => (
-                    <TableRow key={doc.id} className="border-gray-700 hover:bg-gray-700/50">
+                    <TableRow key={doc.id} className="border-white/10 hover:bg-white/5">
                       <TableCell>
                         <div className="flex items-center space-x-2 min-w-0">
                           {getStatusIcon(doc.status)}

@@ -84,17 +84,17 @@ export default function GroupedDocumentList({
     switch (status) {
       case "indexed":
       case "completed":
-        return <CheckCircle className="w-4 h-4 text-green-400" />;
+        return <CheckCircle className="w-4 h-4 text-green-300" />;
       case "indexing":
       case "crawling":
       case "processing":
-        return <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />;
+        return <RefreshCw className="w-4 h-4 text-blue-300 animate-spin" />;
       case "error":
-        return <AlertTriangle className="w-4 h-4 text-yellow-400" />;
+        return <AlertTriangle className="w-4 h-4 text-yellow-300" />;
       case "failed":
-        return <XCircle className="w-4 h-4 text-red-400" />;
+        return <XCircle className="w-4 h-4 text-red-300" />;
       default:
-        return <Clock className="w-4 h-4 text-gray-400" />;
+        return <Clock className="w-4 h-4 text-gray-300" />;
     }
   };
 

@@ -99,6 +99,96 @@
     font-family: 'Nanum Barun Gothic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
+  /* 가독성 개선을 위한 카드 스타일 */
+  .card-enhanced {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .card-enhanced:hover {
+    @apply bg-white/15 border-white/30;
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+  }
+
+  /* 토글 버튼 개선 */
+  .toggle-enhanced {
+    @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors;
+    background: linear-gradient(90deg, #374151 0%, #4b5563 100%);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .toggle-enhanced.active {
+    background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.2),
+      0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+
+  .toggle-knob {
+    @apply inline-block h-4 w-4 transform rounded-full bg-white transition-transform;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .toggle-knob.active {
+    @apply translate-x-6;
+  }
+
+  /* 버튼 가시성 개선 */
+  .btn-primary-enhanced {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary-enhanced:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+  }
+
+  .btn-secondary-enhanced {
+    @apply bg-gray-600 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg;
+    background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .btn-secondary-enhanced:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  /* 텍스트 가독성 개선 */
+  .text-enhanced {
+    @apply text-white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .text-muted-enhanced {
+    @apply text-gray-300;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  /* 상태 표시 개선 */
+  .status-completed {
+    @apply bg-green-500/20 text-green-300 border border-green-500/30;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(22, 163, 74, 0.1) 100%);
+  }
+
+  .status-processing {
+    @apply bg-yellow-500/20 text-yellow-300 border border-yellow-500/30;
+    background: linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(202, 138, 4, 0.1) 100%);
+  }
+
+  .status-error {
+    @apply bg-red-500/20 text-red-300 border border-red-500/30;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%);
+  }
+
   /* Lovable.dev Style Background for sections */
   .lovable-bg {
     background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
