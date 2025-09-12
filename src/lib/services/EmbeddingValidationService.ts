@@ -43,7 +43,7 @@ export class EmbeddingValidationService {
       // 1. 데이터베이스 스키마 확인
       if (!this.supabase) {
         issues.push('Supabase 클라이언트가 초기화되지 않았습니다.');
-        return { isValid: false, issues, recommendations };
+        return { isValid: false, issues, recommendations, canBeFixed: false };
       }
       
       const { data: schemaData, error: schemaError } = await this.supabase
