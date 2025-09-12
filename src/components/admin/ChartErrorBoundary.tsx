@@ -42,3 +42,4 @@ export class ChartErrorBoundary extends React.Component<ChartErrorBoundaryProps,
   }
 }
 
+

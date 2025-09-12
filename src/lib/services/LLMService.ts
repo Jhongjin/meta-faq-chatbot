@@ -93,12 +93,8 @@ export class LLMService {
     
     // Vercel 환경에서는 Ollama가 실행되지 않으므로 fallback 응답
     // 하지만 Render나 다른 외부 서버를 사용하는 경우는 제외
-    // 로컬 개발 환경에서는 항상 Ollama를 사용
-    const isVercelProduction = process.env.VERCEL === '1' && process.env.NODE_ENV === 'production';
-    const hasExternalOllama = process.env.OLLAMA_BASE_URL && !process.env.OLLAMA_BASE_URL.includes('localhost');
-    
-    if (isVercelProduction && !hasExternalOllama) {
-      console.warn('Vercel 프로덕션 환경에서 외부 Ollama 서버가 설정되지 않았습니다. Fallback 응답을 반환합니다.');
+    if (process.env.VERCEL && !process.env.OLLAMA_BASE_URL?.includes('render.com')) {
+      console.warn('Vercel 환경에서 외부 Ollama 서버가 설정되지 않았습니다. Fallback 응답을 반환합니다.');
       return this.generateFallbackResponse(prompt, options, startTime);
     }
     

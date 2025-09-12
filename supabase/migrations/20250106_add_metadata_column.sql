@@ -11,3 +11,4 @@ UPDATE document_metadata
 SET metadata = '{}' 
 WHERE metadata IS NULL;
 
+

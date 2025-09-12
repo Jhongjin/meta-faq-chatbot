@@ -91,3 +91,4 @@ function calculateSimilarity(text1: string, text2: string): number {
   
   return intersection.length / union.length;
 }
+
