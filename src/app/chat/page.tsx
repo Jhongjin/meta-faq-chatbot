@@ -140,7 +140,7 @@ function ChatPageContent() {
   }, [loading, user]);
 
   useEffect(() => {
-    const question = searchParams.get('q');
+    const question = searchParams?.get('q');
     if (question && question.trim() && isInitialized && messages.length === 1 && user && !hasProcessedInitialQuestion) {
       // 초기화 완료 후 초기 메시지만 있을 때만 실행 (중복 방지)
       setHasProcessedInitialQuestion(true);
