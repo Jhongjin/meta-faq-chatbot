@@ -150,14 +150,14 @@ export async function GET(request: NextRequest) {
         // 인증 사용자 조회 실패해도 계속 진행
       } else {
         // 사용자별 인증 정보 매핑
-        authData?.users?.forEach(user => {
+        authData?.users?.forEach((user: any) => {
           authUsers[user.id] = user;
         });
       }
     }
 
     // 5. 관리자 권한 정보 조회
-    const adminEmails = profiles?.map(p => p.email) || [];
+    const adminEmails = profiles?.map((p: any) => p.email) || [];
     let adminUsers: { [key: string]: boolean } = {};
 
     if (adminEmails.length > 0) {
