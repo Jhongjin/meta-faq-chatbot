@@ -54,10 +54,10 @@ export class MetaCrawlingService {
 
       // 1. 공개 Wikipedia 페이지는 일반 처리
       if (url.includes('wikipedia.org')) {
-        const processedDoc = await this.documentProcessingService.processURL(url);
+        const processedDoc = await this.documentProcessingService.processUrl(url);
         return {
           title: processedDoc.metadata.title,
-          content: processedDoc.chunks.map(chunk => chunk.content).join('\n'),
+          content: processedDoc.content,
           url: url,
           type: 'guide',
           lastUpdated: new Date().toISOString()
@@ -70,10 +70,10 @@ export class MetaCrawlingService {
       }
 
       // 3. 기타 URL은 일반 처리
-      const processedDoc = await this.documentProcessingService.processURL(url);
+      const processedDoc = await this.documentProcessingService.processUrl(url);
       return {
         title: processedDoc.metadata.title,
-        content: processedDoc.chunks.map(chunk => chunk.content).join('\n'),
+        content: processedDoc.content,
         url: url,
         type: 'guide',
         lastUpdated: new Date().toISOString()

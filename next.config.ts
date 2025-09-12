@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   },
   // output: 'standalone', // 임시로 비활성화
   // 서버 사이드 전용 패키지들을 외부화
-  serverExternalPackages: ['@supabase/supabase-js', '@xenova/transformers', 'pdf-parse', 'mammoth', 'tesseract.js', 'puppeteer', 'puppeteer-extra', 'puppeteer-extra-plugin-stealth', 'xml2js', 'nodemailer'],
+  serverExternalPackages: ['@supabase/supabase-js', '@xenova/transformers'],
   
   // API 라우트 설정 (Next.js 15에서는 자동 처리)
   
@@ -47,14 +47,6 @@ const nextConfig: NextConfig = {
         net: false,
         tls: false,
         dns: false,
-        'pdf-parse': false,
-        mammoth: false,
-        'tesseract.js': false,
-        puppeteer: false,
-        'puppeteer-extra': false,
-        'puppeteer-extra-plugin-stealth': false,
-        xml2js: false,
-        nodemailer: false,
       };
     }
 

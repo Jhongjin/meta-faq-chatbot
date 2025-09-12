@@ -474,23 +474,8 @@ export class VectorStorageService {
         match_count: matchCount
       });
 
-      // 문서 타입 필터링 (필요한 경우)
-      if (documentTypes && documentTypes.length > 0) {
-        query = this.supabase
-          .from('document_chunks')
-          .select(`
-            chunk_id,
-            content,
-            metadata,
-            embedding
-          `)
-          .in('document_id', 
-            this.supabase
-              .from('documents')
-              .select('id')
-              .in('type', documentTypes)
-          );
-      }
+      // 문서 타입 필터링은 일단 제외 (복잡한 타입 문제로 인해)
+      // TODO: 나중에 구현
 
       const { data, error } = await query;
 

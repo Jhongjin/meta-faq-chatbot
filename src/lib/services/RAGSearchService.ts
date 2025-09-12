@@ -88,7 +88,7 @@ export class RAGSearchService {
       console.log(`🔍 RAG 검색 시작: "${query}"`);
       
       // Fallback 모드인 경우 샘플 데이터 반환
-      if (this.supabase.supabaseUrl === 'https://dummy.supabase.co') {
+      if (!this.supabase) {
         console.log('⚠️ Fallback 모드: 샘플 데이터 반환');
         return this.getFallbackSearchResults(query, limit);
       }
@@ -279,7 +279,7 @@ export class RAGSearchService {
 
     try {
       // Fallback 모드인 경우 간단한 답변 생성
-      if (this.supabase.supabaseUrl === 'https://dummy.supabase.co') {
+      if (!this.supabase) {
         console.log('⚠️ Fallback 모드: 간단한 답변 생성');
         return this.generateFallbackAnswer(query, searchResults);
       }

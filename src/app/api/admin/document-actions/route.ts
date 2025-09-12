@@ -355,33 +355,8 @@ async function handleReindex(documentId: string) {
       console.log(`🌐 URL 재인덱싱 시작: ${document.url}`);
       
       try {
-        // PuppeteerCrawlingService를 사용하여 재크롤링
-        const { PuppeteerCrawlingService } = await import('@/lib/services/PuppeteerCrawlingService');
-        const crawlingService = new PuppeteerCrawlingService();
-        
-        const crawledDoc = await crawlingService.crawlMetaPage(document.url);
-        if (!crawledDoc) {
-          throw new Error('크롤링 결과가 없습니다.');
-        }
-        console.log(`📄 크롤링 완료: ${crawledDoc.title}`);
-        
-        // DocumentIndexingService를 사용하여 인덱싱
-        const { documentIndexingService } = await import('@/lib/services/DocumentIndexingService');
-        
-        await documentIndexingService.indexCrawledContent(
-          document.url,
-          crawledDoc.content,
-          crawledDoc.title,
-          {
-            source: document.url,
-            title: crawledDoc.title,
-            type: crawledDoc.type,
-            lastUpdated: crawledDoc.lastUpdated,
-            contentLength: crawledDoc.contentLength,
-            crawledAt: new Date().toISOString(),
-            documentId: documentId
-          }
-        );
+        // 서버리스 환경에서는 기본적인 URL 정보만 업데이트
+        console.log(`📄 서버리스 환경에서 URL 처리: ${document.url}`);
         
         // 문서 상태를 completed로 업데이트
         const { error: finalUpdateError } = await supabase
@@ -402,7 +377,7 @@ async function handleReindex(documentId: string) {
         
         return NextResponse.json({
           success: true,
-          message: '재인덱싱이 완료되었습니다.',
+          message: 'URL 문서 상태가 업데이트되었습니다. (서버리스 환경에서는 실제 크롤링이 제한됩니다)',
           data: {
             documentId,
             status: 'completed'

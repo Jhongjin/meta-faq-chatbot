@@ -443,7 +443,16 @@ export class DocumentIndexingService {
       }
 
       // 3. 문서 처리 (텍스트 추출)
-      const processedDoc = await documentProcessingService.processFile(file);
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      let processedDoc;
+      
+      if (fileExtension === '.pdf') {
+        processedDoc = await documentProcessingService.processPdfFile(buffer, file.name);
+      } else if (fileExtension === '.docx') {
+        processedDoc = await documentProcessingService.processDocxFile(buffer, file.name);
+      } else {
+        processedDoc = await documentProcessingService.processTextFile(buffer, file.name);
+      }
       console.log(`문서 처리 완료: ${processedDoc.metadata.title}`);
 
       // 4. 텍스트 청킹
@@ -723,7 +732,7 @@ export class DocumentIndexingService {
       }
 
       // 3. URL 크롤링 및 텍스트 추출
-      const processedDoc = await documentProcessingService.processURL(url);
+      const processedDoc = await documentProcessingService.processUrl(url);
       console.log(`URL 처리 완료: ${processedDoc.metadata.title}`);
 
       // 4. 문서명을 한글로 변환
