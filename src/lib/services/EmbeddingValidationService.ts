@@ -163,6 +163,11 @@ export class EmbeddingValidationService {
 
     try {
       // 1. 모든 청크 조회
+      if (!this.supabase) {
+        issues.push('Supabase 클라이언트가 초기화되지 않았습니다.');
+        return { isValid: false, issues, recommendations, canBeFixed: false };
+      }
+      
       const { data: chunks, error: chunksError } = await this.supabase
         .from('document_chunks')
         .select('id, embedding, metadata');
