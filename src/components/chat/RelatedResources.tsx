@@ -88,7 +88,8 @@ const sampleResources: ResourceItem[] = [
     title: "광고 승인 체크리스트",
     description: "광고 승인을 위한 필수 체크 항목들을 단계별로 정리한 가이드입니다.",
     content: "광고 승인을 위한 필수 체크 항목들을 단계별로 정리한 가이드입니다.",
-    tags: ["승인", "체크리스트", "가이드"]
+    tags: ["승인", "체크리스트", "가이드"],
+    updatedAt: "2024-01-15"
   }
 ];
 
