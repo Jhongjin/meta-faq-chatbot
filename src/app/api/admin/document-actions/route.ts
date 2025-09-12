@@ -360,6 +360,9 @@ async function handleReindex(documentId: string) {
         const crawlingService = new PuppeteerCrawlingService();
         
         const crawledDoc = await crawlingService.crawlMetaPage(document.url);
+        if (!crawledDoc) {
+          throw new Error('크롤링 결과가 없습니다.');
+        }
         console.log(`📄 크롤링 완료: ${crawledDoc.title}`);
         
         // DocumentIndexingService를 사용하여 인덱싱
