@@ -272,6 +272,11 @@ export default function DocumentManagementPage() {
       const aValue = a[sortField];
       const bValue = b[sortField];
       
+      // null/undefined 체크
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return sortDirection === 'asc' ? -1 : 1;
+      if (bValue == null) return sortDirection === 'asc' ? 1 : -1;
+      
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
