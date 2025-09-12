@@ -101,15 +101,18 @@
 
   /* 가독성 개선을 위한 카드 스타일 */
   .card-enhanced {
-    @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    background: rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
     box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 8px 32px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
   }
 
   .card-enhanced:hover {
-    @apply bg-white/15 border-white/30;
+    background: rgba(0, 0, 0, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
     transform: translateY(-2px);
     transition: all 0.3s ease;
   }
@@ -164,13 +167,14 @@
 
   /* 텍스트 가독성 개선 */
   .text-enhanced {
-    @apply text-white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+    font-weight: 600 !important;
   }
 
   .text-muted-enhanced {
-    @apply text-gray-300;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    color: #e5e7eb !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
   }
 
   /* 상태 표시 개선 */

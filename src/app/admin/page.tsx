@@ -126,7 +126,7 @@ export default function AdminDashboardPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} className="bg-gray-800/50 border-gray-700">
+              <Card key={i} className="card-enhanced">
                 <CardContent className="p-6">
                   <Skeleton className="h-4 w-20 mb-2" />
                   <Skeleton className="h-8 w-16 mb-2" />
@@ -360,7 +360,7 @@ export default function AdminDashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700/50 shadow-lg rounded-xl">
+        <Card className="card-enhanced">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -412,7 +412,7 @@ export default function AdminDashboardPage() {
           whileHover={{ scale: 1.02, y: -2 }}
           transition={{ duration: 0.2 }}
         >
-          <Card className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+          <Card className="card-enhanced group">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
@@ -438,7 +438,7 @@ export default function AdminDashboardPage() {
           whileHover={{ scale: 1.02, y: -2 }}
           transition={{ duration: 0.2 }}
         >
-          <Card className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+          <Card className="card-enhanced group">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
@@ -464,7 +464,7 @@ export default function AdminDashboardPage() {
           whileHover={{ scale: 1.02, y: -2 }}
           transition={{ duration: 0.2 }}
         >
-          <Card className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+          <Card className="card-enhanced group">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
@@ -490,7 +490,7 @@ export default function AdminDashboardPage() {
           whileHover={{ scale: 1.02, y: -2 }}
           transition={{ duration: 0.2 }}
         >
-          <Card className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+          <Card className="card-enhanced group">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
@@ -526,7 +526,7 @@ export default function AdminDashboardPage() {
             <p className="text-gray-300">시스템의 상세한 성능 데이터를 확인하세요</p>
           </div>
           
-          <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700/50 shadow-lg rounded-xl">
+          <Card className="card-enhanced">
             <CardContent className="p-6">
               <Table>
                 <TableHeader>
@@ -606,7 +606,7 @@ export default function AdminDashboardPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.1 * index }}
                     >
-                <Card className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group overflow-hidden">
+                <Card className="card-enhanced cursor-pointer group overflow-hidden">
                   <CardContent className="p-6 relative">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500" />
                     
@@ -669,7 +669,7 @@ export default function AdminDashboardPage() {
           {isLoading ? (
             // Skeleton loading state
             Array.from({ length: 3 }).map((_, index) => (
-              <Card key={index} className="bg-gray-800/80 backdrop-blur-sm border-gray-700/50 shadow-lg">
+              <Card key={index} className="card-enhanced">
                 <CardContent className="p-4">
                   <div className="flex items-start space-x-3">
                     <Skeleton className="w-5 h-5 rounded-full" />
@@ -687,7 +687,7 @@ export default function AdminDashboardPage() {
             ))
           ) : (
             recentAlerts.map((alert) => (
-              <Card key={alert.id} className="bg-gray-800/80 backdrop-blur-sm border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300">
+              <Card key={alert.id} className="card-enhanced hover:shadow-xl transition-all duration-300">
                 <CardContent className="p-4">
                   <div className="flex items-start space-x-3">
                     {getStatusIcon(alert.type)}
@@ -759,7 +759,7 @@ export default function AdminDashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.5 }}
       >
-        <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="card-enhanced hover:shadow-xl transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2 text-white">
               <Clock className="w-5 h-5 text-blue-400" />
@@ -786,7 +786,7 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/80 backdrop-blur-sm border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="card-enhanced hover:shadow-xl transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2 text-white">
               <TrendingUp className="w-5 h-5 text-green-400" />

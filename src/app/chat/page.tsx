@@ -847,7 +847,7 @@ function ChatPageContent() {
   };
 
   const chatHeader = (
-    <div className="bg-black/80 backdrop-blur-md border-b border-gray-800/50 px-4 py-3">
+    <div className="card-enhanced border-b border-white/20 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
@@ -988,7 +988,7 @@ function ChatPageContent() {
             {isLoading && (
               <div className="flex justify-start">
                 <div className="max-w-3xl">
-                  <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700/50 shadow-lg rounded-xl px-4 py-3">
+                  <div className="card-enhanced px-4 py-3">
                     <div className="flex items-start space-x-3">
                       <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
                         <span className="text-white text-sm font-medium">AI</span>
