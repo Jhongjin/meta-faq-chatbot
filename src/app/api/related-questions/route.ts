@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       questionPatterns.forEach(pattern => {
         const matches = chunk.content.match(pattern);
         if (matches) {
-          matches.forEach(match => {
+          matches.forEach((match: any) => {
             const question = match.trim();
             if (question.length > 10 && question.length < 100) {
               extractedQuestions.add(question);
