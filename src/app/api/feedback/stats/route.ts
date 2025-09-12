@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       date.setDate(date.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
       
-      const dayStats = totalStats?.filter(f => {
+      const dayStats = totalStats?.filter((f: any) => {
         const feedbackDate = new Date(f.created_at).toISOString().split('T')[0];
         return feedbackDate === dateStr;
       }) || [];
@@ -81,8 +81,8 @@ export async function GET(request: NextRequest) {
       dailyStats.push({
         date: dateStr,
         total: dayStats.length,
-        positive: dayStats.filter(f => f.helpful === true).length,
-        negative: dayStats.filter(f => f.helpful === false).length
+        positive: dayStats.filter((f: any) => f.helpful === true).length,
+        negative: dayStats.filter((f: any) => f.helpful === false).length
       });
     }
 
