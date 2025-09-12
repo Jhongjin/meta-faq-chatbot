@@ -343,6 +343,13 @@ export async function DELETE(request: NextRequest) {
     }
     
     // 문서와 관련된 모든 임베딩 데이터 삭제
+    if (!targetDocumentId) {
+      return NextResponse.json(
+        { error: '문서 ID를 찾을 수 없습니다.' },
+        { status: 400 }
+      );
+    }
+    
     const result = await vectorStorageService.deleteDocument(targetDocumentId);
 
     if (!result.success) {
