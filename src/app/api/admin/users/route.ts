@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
         // 대화 수 조회 실패해도 계속 진행
       } else {
         // 사용자별 대화 수 계산
-        conversations?.forEach(conv => {
+        conversations?.forEach((conv: any) => {
           conversationCounts[conv.user_id] = (conversationCounts[conv.user_id] || 0) + 1;
         });
       }
