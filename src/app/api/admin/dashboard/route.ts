@@ -87,20 +87,20 @@ export async function GET(request: NextRequest) {
 
     // 4. 통계 계산
     const totalDocuments = documents?.length || 0;
-    const completedDocuments = documents?.filter(doc => 
+    const completedDocuments = documents?.filter((doc: any) => 
       doc.status === 'completed' || doc.status === 'indexed'
     ).length || 0;
-    const pendingDocuments = documents?.filter(doc => 
+    const pendingDocuments = documents?.filter((doc: any) => 
       doc.status === 'pending' || doc.status === 'waiting'
     ).length || 0;
-    const processingDocuments = documents?.filter(doc => 
+    const processingDocuments = documents?.filter((doc: any) => 
       doc.status === 'processing' || doc.status === 'indexing' || doc.status === 'crawling'
     ).length || 0;
     const totalChunks = chunks?.length || 0;
     const totalEmbeddings = embeddings?.length || 0;
 
     // 5. 시스템 상태 계산
-    const errorCount = documents?.filter(doc => 
+    const errorCount = documents?.filter((doc: any) => 
       doc.status === 'error' || doc.status === 'failed'
     ).length || 0;
     
