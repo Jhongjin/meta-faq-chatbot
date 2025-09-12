@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,8 @@ import {
   FileText, 
   ChevronDown, 
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Lightbulb
 } from "lucide-react";
 
 interface QuickQuestionsProps {
@@ -85,6 +86,40 @@ const questionCategories: QuestionCategory[] = [
 
 export default function QuickQuestions({ onQuestionClick, currentQuestion }: QuickQuestionsProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [vectorBasedQuestions, setVectorBasedQuestions] = useState<string[]>([]);
+  const [isLoadingVectorQuestions, setIsLoadingVectorQuestions] = useState(false);
+
+  // 벡터 검색 기반 관련 질문 가져오기
+  const fetchVectorBasedQuestions = async (question: string) => {
+    if (!question.trim()) return;
+    
+    setIsLoadingVectorQuestions(true);
+    try {
+      const response = await fetch('/api/related-questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: question }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setVectorBasedQuestions(data.relatedQuestions || []);
+      }
+    } catch (error) {
+      console.error('벡터 기반 관련 질문 가져오기 실패:', error);
+    } finally {
+      setIsLoadingVectorQuestions(false);
+    }
+  };
+
+  // 사용자 질문이 변경될 때마다 벡터 기반 관련 질문 가져오기
+  useEffect(() => {
+    if (currentQuestion) {
+      fetchVectorBasedQuestions(currentQuestion);
+    }
+  }, [currentQuestion]);
 
   // 현재 질문과 유사한 질문들을 찾는 함수
   const getSimilarQuestions = (currentQ?: string) => {
@@ -169,36 +204,43 @@ export default function QuickQuestions({ onQuestionClick, currentQuestion }: Qui
           <Sparkles className="w-4 h-4 text-orange-500" />
           <span>{currentQuestion ? '관련 질문' : '빠른 질문'}</span>
           <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 border-orange-200">
-            {currentQuestion ? similarQuestions.length : questionCategories.reduce((total, cat) => total + cat.questions.length, 0)}개
+            {currentQuestion ? vectorBasedQuestions.length : questionCategories.reduce((total, cat) => total + cat.questions.length, 0)}개
           </Badge>
         </CardTitle>
         <Separator className="bg-orange-200/50" />
       </CardHeader>
       <CardContent className="space-y-3">
         {currentQuestion ? (
-          // 유사도 기반 질문 리스트
+          // 벡터 검색 기반 관련 질문 리스트
           <div className="space-y-2">
-            {similarQuestions.length > 0 ? (
-              similarQuestions.map((question, index) => (
-                  <Button
-                    key={index}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onQuestionClick(question)}
-                    className="w-full justify-start text-left h-auto p-3 text-xs text-gray-600 hover:text-gray-800 hover:bg-orange-100/50 transition-all duration-200"
-                  >
-                    <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="line-clamp-2">{question}</span>
-                    </div>
-                  </Button>
+            {isLoadingVectorQuestions ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-200 to-pink-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <div className="w-6 h-6 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                </div>
+                <p className="text-sm text-gray-600">관련 질문을 찾는 중...</p>
+              </div>
+            ) : vectorBasedQuestions.length > 0 ? (
+              vectorBasedQuestions.map((question, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onQuestionClick(question)}
+                  className="w-full justify-start text-left h-auto p-3 text-xs text-gray-700 hover:text-gray-800 hover:bg-orange-50 hover:border-orange-200 transition-all duration-200 border-gray-200"
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <span className="line-clamp-2 text-left">{question}</span>
+                  </div>
+                </Button>
               ))
             ) : (
               <div className="text-center py-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-orange-200 to-pink-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Sparkles className="w-6 h-6 text-orange-600" />
+                  <Lightbulb className="w-6 h-6 text-orange-600" />
                 </div>
-                <p className="text-sm text-gray-600">관련 질문을 찾는 중...</p>
+                <p className="text-sm text-gray-600">관련 질문을 찾을 수 없습니다</p>
               </div>
             )}
           </div>
@@ -207,10 +249,10 @@ export default function QuickQuestions({ onQuestionClick, currentQuestion }: Qui
           questionCategories.map((category) => (
             <div key={category.id} className="space-y-2">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => toggleCategory(category.id)}
-                className="w-full justify-between h-auto p-3 text-left hover:bg-orange-100/50 transition-all duration-200"
+                className="w-full justify-between h-auto p-3 text-left hover:bg-orange-50 hover:border-orange-200 transition-all duration-200 border-gray-200"
               >
                 <div className="flex items-center space-x-3">
                   <div className={`w-8 h-8 ${category.color} rounded-full flex items-center justify-center`}>
@@ -233,12 +275,15 @@ export default function QuickQuestions({ onQuestionClick, currentQuestion }: Qui
                   {category.questions.map((question, index) => (
                     <Button
                       key={index}
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => onQuestionClick(question)}
-                      className="w-full justify-start text-left h-auto p-2 text-xs text-gray-600 hover:text-gray-800 hover:bg-orange-100/50 transition-all duration-200"
+                      className="w-full justify-start text-left h-auto p-2 text-xs text-gray-700 hover:text-gray-800 hover:bg-orange-50 hover:border-orange-200 transition-all duration-200 border-gray-200"
                     >
-                      <span className="line-clamp-2">{question}</span>
+                      <div className="flex items-start space-x-2">
+                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="line-clamp-2 text-left">{question}</span>
+                      </div>
                     </Button>
                   ))}
                 </div>

@@ -84,10 +84,24 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
     setInputMessage('');
     setIsLoading(true);
 
+    // 스트림 응답을 위한 봇 메시지 초기화
+    const botMessageId = (Date.now() + 1).toString();
+    const botMessage: Message = {
+      id: botMessageId,
+      type: 'bot',
+      content: '',
+      timestamp: new Date(),
+      sources: [],
+      confidence: 0,
+      processingTime: 0
+    };
+
+    setMessages(prev => [...prev, botMessage]);
+
     try {
-      console.log('🚀 챗봇 API 호출 시작:', inputMessage.trim());
+      console.log('🚀 챗봇 스트림 API 호출 시작:', inputMessage.trim());
       
-      const response = await fetch('/api/chatbot', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,62 +111,29 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
 
       console.log('📡 API 응답 상태:', response.status, response.statusText);
 
-      // 응답이 비어있는지 확인
       if (!response.ok) {
         console.error('❌ API 응답 오류:', response.status, response.statusText);
-        
-        // 500 오류인 경우 서비스 설정 오류로 처리
-        if (response.status === 500) {
-          throw new Error('서비스 설정 오류: 데이터베이스 연결이 필요합니다. 관리자에게 문의해주세요.');
-        }
-        
         throw new Error(`서버 오류: ${response.status} ${response.statusText}`);
       }
 
-      // 응답 본문이 비어있는지 확인
-      const responseText = await response.text();
-      console.log('📝 응답 본문 길이:', responseText.length);
+      // 일반 JSON 응답 처리
+      console.log('📝 일반 JSON 응답 처리');
+      const data = await response.json();
+      console.log('📝 일반 JSON 응답:', data);
       
-      if (!responseText || responseText.trim().length === 0) {
-        console.error('❌ 빈 응답 본문');
-        throw new Error('서버에서 빈 응답을 받았습니다. 잠시 후 다시 시도해주세요.');
-      }
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log('✅ JSON 파싱 성공:', { success: data.success, hasResponse: !!data.response });
-      } catch (parseError) {
-        console.error('❌ JSON 파싱 실패:', parseError);
-        console.error('❌ 응답 본문:', responseText);
-        throw new Error('서버 응답 형식이 올바르지 않습니다. 잠시 후 다시 시도해주세요.');
-      }
-
-      if (data.success) {
-        const botMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'bot',
-          content: data.response.message,
-          timestamp: new Date(),
-          sources: data.response.sources,
-          confidence: data.response.confidence,
-          processingTime: data.response.processingTime
-        };
-
-        // 중복 응답 방지: 상태 업데이트 시점에서 확인
-        setMessages(prev => {
-          const lastBotMessage = prev.filter(m => m.type === 'bot').pop();
-          if (lastBotMessage && lastBotMessage.content === botMessage.content) {
-            console.log('⚠️ 중복 응답 방지: 동일한 봇 메시지가 이미 표시되었습니다.');
-            return prev; // 상태 변경하지 않음
-          }
-          console.log('✅ 챗봇 메시지 추가 완료');
-          return [...prev, botMessage];
-        });
-      } else {
-        console.error('❌ API 오류 응답:', data);
-        throw new Error(data.error || data.details || '알 수 없는 오류가 발생했습니다.');
-      }
+      setMessages(prev => prev.map(msg => 
+        msg.id === botMessageId 
+          ? { 
+              ...msg, 
+              content: data.response?.message || data.message || '답변을 생성할 수 없습니다.',
+              sources: data.response?.sources || data.sources || [],
+              confidence: data.confidence || 0,
+              processingTime: data.processingTime || 0,
+              noDataFound: data.response?.noDataFound || false,
+              showContactOption: data.response?.showContactOption || false
+            }
+          : msg
+      ));
 
     } catch (error) {
       console.error('❌ 챗봇 응답 오류:', error);

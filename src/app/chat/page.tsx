@@ -12,6 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Send, Bot, User, Star, ThumbsUp, ThumbsDown, RotateCcw, AlertCircle, CheckCircle, History, FileText, Target, Lightbulb, BookOpen, MessageSquare, Trash2, RefreshCw, PanelLeft, PanelRight, Maximize2, Minimize2 } from "lucide-react";
@@ -34,6 +37,8 @@ interface Message {
     helpful: boolean | null;
     count: number;
   };
+  noDataFound?: boolean;
+  showContactOption?: boolean;
 }
 
 function ChatPageContent() {
@@ -48,16 +53,20 @@ function ChatPageContent() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [savedMessageIds, setSavedMessageIds] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [leftPanelWidth, setLeftPanelWidth] = useState(65);
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
   const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [hasProcessedInitialQuestion, setHasProcessedInitialQuestion] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
 
   const handleResize = (e: React.MouseEvent) => {
     e.preventDefault();
+    setIsDragging(true);
     
     const startX = e.clientX;
     const startWidth = leftPanelWidth;
@@ -71,6 +80,7 @@ function ChatPageContent() {
     };
     
     const handleMouseUp = () => {
+      setIsDragging(false);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -131,8 +141,9 @@ function ChatPageContent() {
 
   useEffect(() => {
     const question = searchParams.get('q');
-    if (question && question.trim() && isInitialized && messages.length === 1 && user) {
+    if (question && question.trim() && isInitialized && messages.length === 1 && user && !hasProcessedInitialQuestion) {
       // 초기화 완료 후 초기 메시지만 있을 때만 실행 (중복 방지)
+      setHasProcessedInitialQuestion(true);
       setInputValue(question);
       setTimeout(() => {
         handleSendMessageWithQuestion(question);
@@ -141,7 +152,21 @@ function ChatPageContent() {
         window.history.replaceState({}, '', url.toString());
       }, 200);
     }
-  }, [searchParams, isInitialized, messages.length, user]);
+  }, [searchParams, isInitialized, user, hasProcessedInitialQuestion]); // hasProcessedInitialQuestion 추가
+
+  // 자동 메일 발송 이벤트 리스너
+  useEffect(() => {
+    const handleSendContactEmail = (event: CustomEvent) => {
+      const { question } = event.detail;
+      handleContactRequest(question);
+    };
+
+    window.addEventListener('sendContactEmail', handleSendContactEmail as EventListener);
+    
+    return () => {
+      window.removeEventListener('sendContactEmail', handleSendContactEmail as EventListener);
+    };
+  }, [messages]);
 
   const messagesRef = useRef(messages);
   const savedMessageIdsRef = useRef(savedMessageIds);
@@ -262,7 +287,7 @@ function ChatPageContent() {
     setMessages(currentMessages);
 
     try {
-      const response = await fetch('/api/chatbot', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -291,16 +316,7 @@ function ChatPageContent() {
         feedback: { helpful: null, count: 0 },
       };
 
-      // 중복 응답 방지: 상태 업데이트 시점에서 확인
-      setMessages(prev => {
-        const lastBotMessage = prev.filter(m => m.type === 'assistant').pop();
-        if (lastBotMessage && lastBotMessage.content === aiResponse.content) {
-          console.log('⚠️ 중복 응답 방지: 동일한 봇 메시지가 이미 표시되었습니다.');
-          return prev; // 상태 변경하지 않음
-        }
-        console.log('✅ 챗봇 메시지 추가 완료');
-        return [...prev, aiResponse];
-      });
+      setMessages(prev => [...prev, aiResponse]);
       
       // 대화 자동 저장
       if (user) {
@@ -398,7 +414,7 @@ function ChatPageContent() {
     setMessages(currentMessages);
 
     try {
-      const response = await fetch('/api/chatbot', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -425,18 +441,11 @@ function ChatPageContent() {
         }),
         sources: data.response.sources || [],
         feedback: { helpful: null, count: 0 },
+        noDataFound: data.response.noDataFound || false,
+        showContactOption: data.response.showContactOption || false
       };
 
-      // 중복 응답 방지: 상태 업데이트 시점에서 확인
-      setMessages(prev => {
-        const lastBotMessage = prev.filter(m => m.type === 'assistant').pop();
-        if (lastBotMessage && lastBotMessage.content === aiResponse.content) {
-          console.log('⚠️ 중복 응답 방지: 동일한 봇 메시지가 이미 표시되었습니다.');
-          return prev; // 상태 변경하지 않음
-        }
-        console.log('✅ 챗봇 메시지 추가 완료');
-        return [...prev, aiResponse];
-      });
+      setMessages(prev => [...prev, aiResponse]);
       
       // 대화 자동 저장
       if (user) {
@@ -505,6 +514,86 @@ function ChatPageContent() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleContactRequest = async (question: string) => {
+    // 실제 질문 찾기 (마지막 사용자 메시지)
+    const lastUserMessage = messages.filter(msg => msg.type === 'user').pop();
+    const actualQuestion = lastUserMessage?.content || question;
+
+    setIsSendingEmail(true);
+    
+    // 메일 발송 중 메시지 추가
+    const sendingMessage: Message = {
+      id: `sending-${Date.now()}`,
+      type: "assistant",
+      content: "📧 페이스북 담당팀에 문의 메일을 발송 중입니다...",
+      timestamp: new Date().toLocaleTimeString('ko-KR', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }),
+    };
+    
+    setMessages(prev => [...prev, sendingMessage]);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: actualQuestion
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.emailLink) {
+        // 이메일 클라이언트 열기
+        window.location.href = data.emailLink;
+        
+        // 성공 메시지로 교체
+        const successMessage: Message = {
+          id: `success-${Date.now()}`,
+          type: "assistant",
+          content: "✅ 페이스북 담당팀에 문의사항이 메일로 정상 발송되었습니다.\n\n📧 **발송 정보:**\n- 수신자: fb@nasmedia.co.kr\n- 문의 내용: " + actualQuestion.substring(0, 50) + (actualQuestion.length > 50 ? "..." : "") + "\n- 발송 시간: " + new Date().toLocaleString('ko-KR') + "\n\n담당팀에서 검토 후 답변을 드릴 예정입니다.",
+          timestamp: new Date().toLocaleTimeString('ko-KR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+        };
+        
+        // 발송 중 메시지를 성공 메시지로 교체
+        setMessages(prev => prev.map(msg => 
+          msg.id === sendingMessage.id ? successMessage : msg
+        ));
+      }
+    } catch (error) {
+      console.error("Error sending contact email:", error);
+      
+      // 실패 메시지로 교체
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        type: "assistant",
+        content: "❌ 메일 발송 중 오류가 발생했습니다.\n\n**오류 내용:**\n" + (error instanceof Error ? error.message : "알 수 없는 오류") + "\n\n잠시 후 다시 시도해주시거나, 직접 fb@nasmedia.co.kr로 문의해주세요.",
+        timestamp: new Date().toLocaleTimeString('ko-KR', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }),
+      };
+      
+      // 발송 중 메시지를 실패 메시지로 교체
+      setMessages(prev => prev.map(msg => 
+        msg.id === sendingMessage.id ? errorMessage : msg
+      ));
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -606,6 +695,9 @@ function ChatPageContent() {
   };
 
   const handleLoadConversation = async (conversation: any) => {
+    // 로딩 상태 시작
+    setIsLoading(true);
+    
     // 피드백 정보를 가져오는 함수
     const fetchFeedback = async (conversationId: string) => {
       if (!user?.id) return { helpful: null, count: 0 };
@@ -626,47 +718,52 @@ function ChatPageContent() {
       return { helpful: null, count: 0 };
     };
 
-    // AI 응답 메시지의 피드백 정보 가져오기
-    const conversationId = conversation.conversation_id || conversation.id;
-    const feedback = await fetchFeedback(conversationId);
+    try {
+      // AI 응답 메시지의 피드백 정보 가져오기
+      const conversationId = conversation.conversation_id || conversation.id;
+      const feedback = await fetchFeedback(conversationId);
 
-    setMessages([
-      {
-        id: "1",
-        type: "assistant",
-        content: "안녕하세요! 메타 광고 FAQ AI 챗봇입니다. 광고 정책, 가이드라인, 설정 방법 등에 대해 궁금한 점이 있으시면 자유롭게 질문해주세요. 한국어로 질문하시면 됩니다.",
-        timestamp: "방금 전",
-        sources: [],
-      },
-      {
-        id: "2",
-        type: "user",
-        content: conversation.user_message || conversation.title || "대화 내용",
-        timestamp: new Date(conversation.createdAt || conversation.created_at).toLocaleTimeString('ko-KR', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }),
-      },
-      {
-        id: `ai_${conversationId}`,
-        type: "assistant",
-        content: conversation.ai_response || "AI 응답을 불러올 수 없습니다.",
-        timestamp: new Date(conversation.createdAt || conversation.created_at).toLocaleTimeString('ko-KR', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }),
-        sources: conversation.sources || [],
-        feedback: feedback,
-      },
-    ]);
-    setConversationId(conversation.conversation_id);
-    setHistoryOpen(false);
-    setIsInitialized(true);
-    toast({
-      title: "대화 로드 완료",
-      description: "이전 대화를 불러왔습니다.",
-      duration: 2000,
-    });
+      setMessages([
+        {
+          id: "1",
+          type: "assistant",
+          content: "안녕하세요! 메타 광고 FAQ AI 챗봇입니다. 광고 정책, 가이드라인, 설정 방법 등에 대해 궁금한 점이 있으시면 자유롭게 질문해주세요. 한국어로 질문하시면 됩니다.",
+          timestamp: "방금 전",
+          sources: [],
+        },
+        {
+          id: "2",
+          type: "user",
+          content: conversation.user_message || conversation.title || "대화 내용",
+          timestamp: new Date(conversation.createdAt || conversation.created_at).toLocaleTimeString('ko-KR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+        },
+        {
+          id: `ai_${conversationId}`,
+          type: "assistant",
+          content: conversation.ai_response || "AI 응답을 불러올 수 없습니다.",
+          timestamp: new Date(conversation.createdAt || conversation.created_at).toLocaleTimeString('ko-KR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          sources: conversation.sources || [],
+          feedback: feedback,
+        },
+      ]);
+      setConversationId(conversation.conversation_id);
+      setHistoryOpen(false);
+      setIsInitialized(true);
+      
+      // 성공 메시지 (toast 없이)
+      console.log('대화 로드 완료: 이전 대화를 불러왔습니다.');
+    } catch (error) {
+      console.error('대화 로드 오류:', error);
+      setError('대화를 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleTextareaResize = () => {
@@ -868,7 +965,7 @@ function ChatPageContent() {
           className="flex flex-col border-r border-gray-800/50 h-full lg:border-r"
           animate={{ 
             width: isRightPanelCollapsed ? '100%' : `${leftPanelWidth}%`,
-            transition: { duration: 0.3, ease: "easeInOut" }
+            transition: isDragging ? { duration: 0 } : { duration: 0.2, ease: "easeOut" }
           }}
         >
           <div className="h-4"></div>
@@ -883,6 +980,8 @@ function ChatPageContent() {
                 sources={message.sources}
                 feedback={message.feedback}
                 onFeedback={(helpful) => handleFeedback(message.id, helpful)}
+                noDataFound={message.noDataFound}
+                showContactOption={message.showContactOption}
               />
             ))}
             
@@ -951,7 +1050,7 @@ function ChatPageContent() {
 
         {!isRightPanelCollapsed && (
           <div 
-            className="w-1 bg-gray-800 hover:bg-orange-500 cursor-col-resize transition-colors hidden lg:block"
+            className="w-1 bg-gray-800 hover:bg-orange-500 cursor-col-resize transition-colors duration-200 hidden lg:block"
             onMouseDown={handleResize}
             style={{ cursor: 'col-resize' }}
           />
@@ -965,12 +1064,12 @@ function ChatPageContent() {
               animate={{ 
                 width: `${100 - leftPanelWidth}%`, 
                 opacity: 1,
-                transition: { duration: 0.3, ease: "easeInOut" }
+                transition: isDragging ? { duration: 0 } : { duration: 0.2, ease: "easeOut" }
               }}
               exit={{ 
                 width: 0, 
                 opacity: 0,
-                transition: { duration: 0.3, ease: "easeInOut" }
+                transition: { duration: 0.2, ease: "easeIn" }
               }}
               className="hidden lg:flex flex-col bg-gradient-to-b from-[#FDFBF6] to-[#FAF8F3] rounded-lg h-full overflow-hidden"
               style={{ borderRadius: '12px' }}
@@ -995,7 +1094,7 @@ function ChatPageContent() {
                   <RelatedResources 
                     userQuestion={messages[messages.length - 2]?.content}
                     aiResponse={messages[messages.length - 1]?.content}
-                    sources={messages[messages.length - 1]?.sources || []}
+                    sources={messages[messages.length - 1]?.sources as any || []}
                   />
                   
                   {/* 빠른 질문 컴포넌트 - 하단 배치 */}
@@ -1023,7 +1122,6 @@ function ChatPageContent() {
           )}
         </AnimatePresence>
     </div>
-    
     </MainLayout>
   );
 }

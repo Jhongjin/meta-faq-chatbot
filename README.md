@@ -1,77 +1,39 @@
 # AdMate - Meta 광고 정책 AI 챗봇
 
-## 🔄 최신 배포 정보
-- **배포 일시**: 2025-01-09 10:35
-- **버전**: API 엔드포인트 통일 v1.2 (405 오류 해결)
-- **상태**: 🔄 최종 배포 진행 중
+RAG(Retrieval-Augmented Generation) 기반의 AI 챗봇으로 Meta 광고 집행 관련 내부 FAQ에 대한 즉각적인 한국어 답변을 제공합니다.
 
-## 📋 프로젝트 개요
+## 🚀 주요 기능
 
-AdMate는 Meta(Facebook·Instagram·Threads) 광고 집행 관련 내부 문서와 지정된 URL만을 근거로, 전사 직원이 한국어로 즉시 질문하고 정확한 답변을 받을 수 있는 RAG 기반 AI 챗봇입니다.
-
-## 🎯 주요 기능
-
-- **AI 챗봇 대화**: 자연어로 질문하면 AI가 관련 문서를 찾아 정확한 답변 제공
-- **히스토리 & 즐겨찾기**: 이전 질문과 답변을 언제든지 확인하고 자주 사용하는 답변을 즐겨찾기로 저장
+- **AI 챗봇 대화**: 자연어로 질문하면 AI가 관련 문서를 찾아 정확한 답변을 제공
+- **히스토리 관리**: 이전 질문과 답변을 언제든지 확인 가능
 - **보안 & 권한 관리**: 사내 보안 정책에 맞춘 접근 제어와 데이터 보호
-- **실시간 동기화**: 최신 정책과 가이드라인이 실시간으로 반영되어 항상 최신 정보 제공
-- **관리자 대시보드**: 문서 업로드, 통계 확인, 로그 모니터링
+- **실시간 동기화**: 최신 정책과 가이드라인이 실시간으로 반영
 
-## 🚀 기술 스택
+## 🛠️ 기술 스택
 
 ### Frontend
-- **Next.js 15**: 서버 사이드 렌더링 및 정적 사이트 생성
-- **TypeScript**: 정적 타입 검사를 통한 코드 안정성
-- **React**: 컴포넌트 기반 개발 및 재사용성
-- **shadcn/ui**: Tailwind CSS 기반의 재사용 가능한 UI 컴포넌트
+- **Next.js 15**: React 기반 풀스택 프레임워크
+- **TypeScript**: 정적 타입 검사
 - **Tailwind CSS**: 유틸리티 기반 CSS 프레임워크
-- **Framer Motion**: 부드러운 애니메이션 및 전환 효과
+- **shadcn/ui**: 재사용 가능한 UI 컴포넌트
+- **Framer Motion**: 애니메이션 라이브러리
 
 ### Backend & Database
-- **Supabase Postgres**: 안정적인 오픈 소스 관계형 데이터베이스
-- **pgvector**: Postgres 확장, 임베딩 벡터 저장 및 유사도 검색
-- **FastAPI**: 고성능 API 개발 (향후 구현 예정)
-- **LangChain**: LLM 통합 및 관리, RAG 파이프라인 구축
+- **Supabase**: 백엔드 서비스 (PostgreSQL + pgvector)
+- **Vercel**: 프론트엔드 호스팅 및 서버리스 함수
+- **Google Gemini**: LLM (Large Language Model)
 
-### Authentication & State Management
-- **Supabase Auth**: 사용자 인증 및 권한 관리
-- **@tanstack/react-query**: 서버 상태 관리 및 캐싱
-- **Zustand**: 경량 글로벌 상태 관리
+### RAG 시스템
+- **pgvector**: 벡터 임베딩 저장 및 유사도 검색
+- **문서 처리**: PDF, DOCX, TXT 파일 지원
+- **URL 크롤링**: 웹 페이지 내용 자동 수집
 
-## 📁 프로젝트 구조
-
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── admin/             # 관리자 페이지
-│   │   ├── docs/          # 문서 관리
-│   │   ├── logs/          # 로그 확인
-│   │   └── stats/         # 통계 대시보드
-│   ├── api/               # API 엔드포인트
-│   ├── chat/              # 챗봇 페이지
-│   ├── history/           # 히스토리 페이지
-│   └── test/              # 테스트 페이지
-├── components/             # React 컴포넌트
-│   ├── admin/             # 관리자 관련 컴포넌트
-│   ├── chat/              # 챗봇 관련 컴포넌트
-│   ├── layouts/           # 레이아웃 컴포넌트
-│   └── ui/                # shadcn/ui 컴포넌트
-├── hooks/                  # 커스텀 React 훅
-├── lib/                    # 유틸리티 함수 및 설정
-└── supabase/               # Supabase 설정 및 마이그레이션
-```
-
-## 🛠️ 설치 및 실행
-
-### 필수 요구사항
-- Node.js 18+ 
-- npm 또는 yarn
-- Supabase 계정 및 프로젝트
+## 📦 설치 및 실행
 
 ### 1. 저장소 클론
 ```bash
-git clone [repository-url]
-cd meta_faq
+git clone https://github.com/your-username/meta-faq.git
+cd meta-faq
 ```
 
 ### 2. 의존성 설치
@@ -80,28 +42,22 @@ npm install
 ```
 
 ### 3. 환경 변수 설정
-`.env.local` 파일을 생성하고 다음 내용을 추가하세요:
+`.env.local` 파일을 생성하고 다음 변수들을 설정하세요:
 
 ```env
-# Supabase 설정 (필수)
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# OpenAI API 설정
-OPENAI_API_KEY=your_openai_api_key
+# Google Gemini
+GEMINI_API_KEY=your_gemini_api_key
+GOOGLE_API_KEY=your_google_api_key
+GOOGLE_MODEL=gemini-2.0-flash-exp
 
-# 문서 처리 설정
-MAX_FILE_SIZE=10485760  # 10MB in bytes
-SUPPORTED_FILE_TYPES=pdf,docx,txt
-CHUNK_SIZE=1000
-CHUNK_OVERLAP=200
-
-# 벡터 검색 설정
-EMBEDDING_MODEL=text-embedding-3-small
-EMBEDDING_DIMENSIONS=1536
-SIMILARITY_THRESHOLD=0.7
-MAX_SEARCH_RESULTS=10
+# 기타 설정
+EMBEDDING_DIM=768
+TOP_K=5
 ```
 
 ### 4. 개발 서버 실행
@@ -109,81 +65,72 @@ MAX_SEARCH_RESULTS=10
 npm run dev
 ```
 
-### 5. 브라우저에서 확인
-```
-http://localhost:3000
-```
-
-## 🔐 관리자 권한
-
-다음 이메일을 가진 사용자만 관리자 페이지에 접근할 수 있습니다:
-
-- `secho@nasmedia.co.kr`
-- `woolela@nasmedia.co.kr`
-- `dsko@nasmedia.co.kr`
-- `hjchoi@nasmedia.co.kr`
-- `sunjung@nasmedia.co.kr`
-- `sy230@nasmedia.co.kr`
-- `jeng351@nasmedia.co.kr`
-
-## 📊 주요 지표
-
-- **응답 속도**: 평균 3초 이내
-- **동시 사용자**: 최대 50명 지원
-- **데이터 보존**: 90일 후 자동 삭제
-- **사용자 만족도**: 80% 이상 목표
-
-## 🔧 개발 가이드
-
-### 코드 스타일
-- TypeScript 사용
-- ESLint 규칙 준수
-- 컴포넌트는 `"use client"` 지시어 사용
-- Tailwind CSS로 스타일링
-
-### 컴포넌트 추가
-새로운 shadcn/ui 컴포넌트가 필요한 경우:
-```bash
-npx shadcn@latest add [component-name]
-```
-
-### 데이터베이스 마이그레이션
-새 테이블이 필요한 경우 `/supabase/migrations/` 디렉토리에 SQL 파일 생성
+브라우저에서 `http://localhost:3000`을 열어 확인하세요.
 
 ## 🚀 배포
 
-### Vercel 배포 (권장)
-1. Vercel 계정 생성
+### Vercel 배포
+1. Vercel 계정에 로그인
 2. GitHub 저장소 연결
 3. 환경 변수 설정
-4. 자동 배포
+4. 자동 배포 완료
 
-### 수동 배포
-```bash
-npm run build
-npm start
+### Railway 배포 (Ollama 버전)
+Railway+Ollama 기반 서비스는 별도 브랜치에서 관리됩니다.
+
+## 📁 프로젝트 구조
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # API 라우트
+│   ├── chat/              # 채팅 페이지
+│   ├── admin/             # 관리자 페이지
+│   └── page.tsx           # 메인 페이지
+├── components/            # React 컴포넌트
+│   ├── chat/              # 채팅 관련 컴포넌트
+│   ├── admin/             # 관리자 컴포넌트
+│   ├── layouts/           # 레이아웃 컴포넌트
+│   └── ui/                # shadcn/ui 컴포넌트
+├── hooks/                 # 커스텀 훅
+├── lib/                   # 유틸리티 함수
+│   ├── services/          # 서비스 레이어
+│   └── supabase/          # Supabase 클라이언트
+└── types/                 # TypeScript 타입 정의
 ```
 
-## 📝 라이선스
+## 🔧 주요 API 엔드포인트
 
-이 프로젝트는 내부 사용을 위한 프로젝트입니다.
+- `POST /api/chat`: 채팅 메시지 처리
+- `POST /api/upload`: 문서 업로드
+- `GET /api/documents`: 문서 목록 조회
+- `POST /api/feedback`: 피드백 저장
+- `GET /api/feedback/stats`: 피드백 통계
 
-## 👥 팀
+## 📊 데이터베이스 스키마
 
-- **개발**: AI Assistant
-- **기획**: Product Team
-- **디자인**: Design Team
+### 주요 테이블
+- `documents`: 업로드된 문서 정보
+- `document_chunks`: 문서 청크 및 임베딩
+- `conversations`: 대화 기록
+- `feedback`: 사용자 피드백
 
-## �� 지원
+## 🤝 기여하기
 
-프로젝트 관련 문의사항이 있으시면 개발팀에 연락해주세요.
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+
+## 📞 문의
+
+프로젝트에 대한 문의사항이 있으시면 이슈를 생성해주세요.
 
 ---
 
-**AdMate** - Meta 광고 정책을 대화로 해결하세요! 🚀
-
-## 📦 최신 배포 정보
-- **버전**: 최종코드완료_v2
-- **배포일**: 2025-09-08
-- **상태**: ✅ 배포 완료 - 강제 재배포 진행
-- **재배포 시간**: 2025-09-08 18:30
+**태그**: `vercel_gemini_최종완료`

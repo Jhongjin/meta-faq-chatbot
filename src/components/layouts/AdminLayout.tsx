@@ -42,7 +42,7 @@ export default function AdminLayout({ children, currentPage = "dashboard" }: Adm
                   <motion.img 
                     src="/admate-logo.png" 
                     alt="AdMate" 
-                    className="h-14 w-auto"
+                    className="h-24 w-auto"
                     whileHover={{
                       filter: "brightness(1.1) drop-shadow(0 4px 8px rgba(255, 107, 53, 0.3))",
                       transition: { duration: 0.2 }

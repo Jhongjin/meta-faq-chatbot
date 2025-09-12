@@ -63,7 +63,9 @@ export default function MainLayout({ children, chatHeader }: MainLayoutProps) {
 
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{
+      background: 'linear-gradient(180deg, #0d1421 0%, #512da8 50%, #cc4125 100%)'
+    }}>
       {/* 헤더 - Lovable.dev 스타일, 스크롤 시에도 고정 */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -85,7 +87,7 @@ export default function MainLayout({ children, chatHeader }: MainLayoutProps) {
                   <motion.img 
                     src="/admate-logo.png" 
                     alt="AdMate" 
-                    className="h-14 w-auto"
+                    className="h-24 w-auto"
                     whileHover={{
                       filter: "brightness(1.1) drop-shadow(0 4px 8px rgba(255, 107, 53, 0.3))",
                       transition: { duration: 0.2 }

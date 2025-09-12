@@ -83,25 +83,25 @@ export default function HomePage() {
 
   const features = [
     {
-      icon: <Brain className="w-8 h-8" />,
+      icon: "🧠",
       title: "AI 챗봇 대화",
       description: "자연어로 질문하면 AI가 관련 문서를 찾아 정확한 답변을 제공합니다.",
       badges: ["실시간 답변", "출처 표시", "한국어 지원"]
     },
     {
-      icon: <History className="w-8 h-8" />,
+      icon: "📚",
       title: "히스토리 관리",
       description: "이전 질문과 답변을 언제든지 확인할 수 있습니다.",
       badges: ["검색 가능", "90일 보관"]
     },
     {
-      icon: <Shield className="w-8 h-8" />,
+      icon: "🛡️",
       title: "보안 & 권한 관리",
       description: "사내 보안 정책에 맞춘 접근 제어와 데이터 보호를 제공합니다.",
       badges: ["SSO 연동", "권한 관리", "데이터 암호화"]
     },
     {
-      icon: <Globe className="w-8 h-8" />,
+      icon: "🌐",
       title: "실시간 동기화",
       description: "최신 정책과 가이드라인이 실시간으로 반영되어 항상 최신 정보를 제공합니다.",
       badges: ["자동 업데이트", "실시간 반영", "버전 관리"]
@@ -111,25 +111,25 @@ export default function HomePage() {
   // 실제 데이터 기반 통계
   const stats = [
     {
-      icon: <Users className="w-6 h-6" />,
+      icon: "👥",
       value: dashboardStats?.weeklyStats?.users ? `${dashboardStats.weeklyStats.users}+` : "0+",
       label: "활성 사용자",
       description: "전사 직원들이 매일 사용"
     },
     {
-      icon: <Clock className="w-6 h-6" />,
+      icon: "⏱️",
       value: chatStats?.averageResponseTime ? `${(chatStats.averageResponseTime / 1000).toFixed(1)}초` : "0초",
       label: "평균 응답 시간",
       description: "빠른 답변으로 업무 효율 향상"
     },
     {
-      icon: <TrendingUp className="w-6 h-6" />,
+      icon: "📈",
       value: chatStats?.userSatisfaction ? `${Math.round(chatStats.userSatisfaction * 100)}%` : "0%",
       label: "사용자 만족도",
       description: "정확하고 유용한 답변 제공"
     },
     {
-      icon: <FileText className="w-6 h-6" />,
+      icon: "📄",
       value: dashboardStats?.totalDocuments ? `${dashboardStats.totalDocuments}+` : "0+",
       label: "문서 데이터베이스",
       description: "최신 정책과 가이드라인"
@@ -172,21 +172,21 @@ export default function HomePage() {
 
   const productivityCards = [
     {
-      icon: <Rocket className="w-8 h-8" />,
+      icon: "🚀",
       title: "업무 효율성 극대화",
       subtitle: "8시간 → 8분",
       description: "복잡한 문서 검색과 정책 확인을 AI가 처리하여 업무 시간을 대폭 단축합니다.",
       gradient: "from-purple-500 to-pink-500"
     },
     {
-      icon: <Search className="w-8 h-8" />,
+      icon: "🔍",
       title: "즉시 답변",
       subtitle: "AI 기반 검색",
       description: "수백만 개의 문서를 AI가 스캔하여 질문에 대한 정확한 요약과 답변을 제공합니다.",
       gradient: "from-blue-500 to-cyan-500"
     },
     {
-      icon: <FileText className="w-8 h-8" />,
+      icon: "📄",
       title: "전문가 수준",
       subtitle: "AI 문서 생성",
       description: "프로페셔널한 문서, 슬라이드, 리포트를 AI가 자동으로 생성해드립니다.",
@@ -514,8 +514,8 @@ export default function HomePage() {
               >
                 <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/5 backdrop-blur-sm h-full group hover:-translate-y-1 border border-white/10">
                   <CardContent className="p-6 h-full flex flex-col">
-                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                      <div className="text-white">{feature.icon}</div>
+                    <div className="w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <div className="text-3xl">{feature.icon}</div>
                     </div>
                     <h3 className="text-xl font-bold text-white mb-3 font-nanum">{feature.title}</h3>
                     <p className="text-gray-300 leading-relaxed text-sm mb-4 flex-grow font-nanum">{feature.description}</p>
@@ -576,8 +576,8 @@ export default function HomePage() {
                   >
                     <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/5 backdrop-blur-sm group hover:-translate-y-1 border border-white/10">
                       <CardContent className="p-6 text-center">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                          <div className="text-white">{stat.icon}</div>
+                        <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                          <div className="text-3xl">{stat.icon}</div>
                         </div>
                         <h3 className="text-2xl font-bold text-white mb-2 font-nanum">{stat.value}</h3>
                         <p className="text-gray-300 font-semibold mb-2 font-nanum">{stat.label}</p>

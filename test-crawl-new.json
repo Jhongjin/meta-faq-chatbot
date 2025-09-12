@@ -1,8 +1,0 @@
-{
-  "action": "crawl-custom",
-  "urls": [
-    "https://developers.facebook.com/docs/marketing-api/",
-    "https://www.facebook.com/business/help/"
-  ]
-}
-
