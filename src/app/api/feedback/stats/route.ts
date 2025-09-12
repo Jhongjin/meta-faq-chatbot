@@ -59,8 +59,8 @@ export async function GET(request: NextRequest) {
 
     // 통계 계산
     const total = totalStats?.length || 0;
-    const positive = totalStats?.filter(f => f.helpful === true).length || 0;
-    const negative = totalStats?.filter(f => f.helpful === false).length || 0;
+    const positive = totalStats?.filter((f: any) => f.helpful === true).length || 0;
+    const negative = totalStats?.filter((f: any) => f.helpful === false).length || 0;
     const positivePercentage = total > 0 ? Math.round((positive / total) * 100) : 0;
 
     // 최근 N일간 일별 통계
