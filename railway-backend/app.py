@@ -272,11 +272,20 @@ if __name__ == "__main__":
     
     # PORT 환경변수 안전하게 처리
     port_str = os.getenv("PORT", "8000")
-    try:
-        port = int(port_str)
-    except (ValueError, TypeError):
-        print(f"Invalid PORT value: {port_str}, using default 8000")
+    print(f"Raw PORT value: '{port_str}'")
+    
+    # PORT 값 정리 (공백, 특수문자 제거)
+    port_str = str(port_str).strip()
+    if not port_str or port_str == "$PORT":
+        print("PORT is empty or not set, using default 8000")
         port = 8000
+    else:
+        try:
+            port = int(port_str)
+            print(f"Successfully parsed PORT: {port}")
+        except (ValueError, TypeError) as e:
+            print(f"Invalid PORT value: '{port_str}', error: {e}, using default 8000")
+            port = 8000
     
     print(f"Starting server on port {port}")
     print(f"Environment variables: PORT={os.getenv('PORT')}")
