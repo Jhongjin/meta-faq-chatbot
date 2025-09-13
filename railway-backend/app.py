@@ -268,7 +268,31 @@ async def get_available_models():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
+    import sys
+    
+    # PORT 환경변수 안전하게 처리
+    port_str = os.getenv("PORT", "8000")
+    try:
+        port = int(port_str)
+    except (ValueError, TypeError):
+        print(f"Invalid PORT value: {port_str}, using default 8000")
+        port = 8000
+    
     print(f"Starting server on port {port}")
     print(f"Environment variables: PORT={os.getenv('PORT')}")
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+    print(f"Server will be available at: http://0.0.0.0:{port}")
+    
+    # 더 안정적인 서버 설정
+    try:
+        uvicorn.run(
+            app, 
+            host="0.0.0.0", 
+            port=port, 
+            log_level="info",
+            access_log=True,
+            timeout_keep_alive=30,
+            timeout_graceful_shutdown=30
+        )
+    except Exception as e:
+        print(f"Server startup error: {e}")
+        sys.exit(1)
