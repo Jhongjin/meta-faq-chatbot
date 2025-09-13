@@ -270,21 +270,10 @@ if __name__ == "__main__":
     import uvicorn
     import sys
     
-    # PORT 환경변수 안전하게 처리
-    port_str = os.getenv("PORT", "8000")
-    print(f"Raw PORT value: '{port_str}'")
-    
-    # Railway에서 PORT가 제대로 설정되지 않는 경우를 대비한 하드코딩
-    if not port_str or port_str == "$PORT" or port_str.strip() == "":
-        print("PORT is not properly set, using hardcoded 8000")
-        port = 8000
-    else:
-        try:
-            port = int(str(port_str).strip())
-            print(f"Successfully parsed PORT: {port}")
-        except (ValueError, TypeError) as e:
-            print(f"Invalid PORT value: '{port_str}', error: {e}, using hardcoded 8000")
-            port = 8000
+    # Railway에서 PORT 환경변수가 제대로 작동하지 않으므로 하드코딩
+    port = 8000
+    print(f"Using hardcoded port: {port}")
+    print(f"Environment PORT value: '{os.getenv('PORT', 'NOT_SET')}'")
     
     print(f"Starting server on port {port}")
     print(f"Environment variables: PORT={os.getenv('PORT')}")
