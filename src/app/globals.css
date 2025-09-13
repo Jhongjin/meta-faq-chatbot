@@ -314,7 +314,7 @@
   /* 새로운 채팅박스 스타일 (참고 사이트 기반) */
   .chatbox-container {
     width: 100%;
-    max-width: 700px;
+    max-width: 900px;
     margin: 0 auto;
   }
 
@@ -353,8 +353,8 @@
     line-height: 1.5; /* leading-snug */
     color: #e0e0e0;
     padding: 8px 0; /* px-2 py-2 (adjusted for inner padding) */
-    min-height: 80px;
-    height: 80px;
+    min-height: 50px;
+    height: 50px;
     box-sizing: border-box;
     overflow-y: auto;
     width: 100%;
@@ -443,6 +443,45 @@
     border-color: rgba(118, 118, 118, 0.6);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
     transform: translateY(-2px) scale(1.02);
+  }
+
+  /* 우상단 버튼 스타일 (참고 이미지 기반) */
+  .header-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 100ms ease-in-out;
+    outline: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    height: 32px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .header-btn-primary {
+    border: 1px solid #3a3f47;
+    background-color: #2f333a;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    color: #e0e0e0;
+  }
+
+  .header-btn-primary:hover {
+    background-color: #4a4f57;
+    border-color: #5a5f67;
+  }
+
+  .header-btn-secondary {
+    background-color: #e0e0e0;
+    color: #2f333a;
+  }
+
+  .header-btn-secondary:hover {
+    background-color: #c0c0c0;
   }
 
   /* 상태 표시 개선 */

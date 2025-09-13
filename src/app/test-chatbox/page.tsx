@@ -15,7 +15,7 @@ export default function TestChatboxPage() {
   // 자동 높이 조정 함수
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement) => {
     textarea.style.height = 'auto';
-    const newHeight = Math.min(textarea.scrollHeight, 200);
+    const newHeight = Math.min(textarea.scrollHeight, 120);
     textarea.style.height = `${newHeight}px`;
   };
 
@@ -92,15 +92,15 @@ export default function TestChatboxPage() {
                 <p className="text-sm text-gray-400">Meta 광고 FAQ AI 챗봇</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" className="text-white hover:bg-white/10">
-                <Clock className="w-4 h-4 mr-2" />
+            <div className="flex items-center space-x-2">
+              <button className="header-btn header-btn-primary">
+                <Clock className="w-4 h-4" />
                 히스토리
-              </Button>
-              <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
-                <MessageCircle className="w-4 h-4 mr-2" />
+              </button>
+              <button className="header-btn header-btn-secondary">
+                <MessageCircle className="w-4 h-4" />
                 채팅하기
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -308,7 +308,7 @@ export default function TestChatboxPage() {
           transition={{ duration: 0.6, delay: 0.8 }}
           className="text-center"
         >
-          <div className="max-w-4xl mx-auto">
+          <div className="w-full max-w-7xl mx-auto px-4">
             <div className="chatbox-form p-8">
               <div className="text-center mb-8">
                 <h2 className="text-4xl font-bold text-white mb-4">
