@@ -349,3 +349,4 @@ if __name__ == "__main__":
         traceback.print_exc()
         sys.exit(1)
 # Force redeploy
+# Trigger deploy after start command removal
