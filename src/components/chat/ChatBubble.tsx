@@ -154,65 +154,65 @@ export default function ChatBubble({
                     {showSources && (
                       <div className="mt-3 space-y-3">
                         {sources.map((source, index) => (
-                          <Card key={source.id} className="border-blue-500/30 bg-gradient-to-r from-blue-900/20 to-purple-900/20 backdrop-blur-sm shadow-lg">
-                            <CardContent className="p-4">
-                              <div className="flex items-start space-x-3">
+                          <Card key={source.id} className="modern-card-dark border-gray-600/50 bg-gray-800/80 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300">
+                            <CardContent className="p-6">
+                              <div className="flex items-start space-x-4">
                                 <div className="flex-shrink-0">
-                                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
                                     <span className="text-white text-sm font-bold">{index + 1}</span>
                                   </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between">
-                                    <h4 className="text-sm font-semibold text-white truncate pr-2">
+                                  <div className="flex items-start justify-between mb-3">
+                                    <h4 className="text-base font-semibold text-white truncate pr-2 leading-tight">
                                       {source.title.replace(/_chunk_\d+/g, `_page_${index + 1}`)}
                                     </h4>
-                                    <div className="flex items-center space-x-1">
+                                    <div className="flex items-center space-x-2">
                                       {source.url && (
                                         <>
                                           {source.sourceType === 'file' ? (
                                             <Button
                                               variant="ghost"
                                               size="sm"
-                                              className="text-xs text-green-300 hover:text-green-100 p-1 h-6 hover:bg-green-800/30 rounded"
+                                              className="text-xs text-green-400 hover:text-green-300 p-2 h-8 hover:bg-green-900/30 rounded-lg transition-all duration-200"
                                               onClick={() => handleFileDownload(source)}
                                               title="파일 다운로드"
                                             >
-                                              <Download className="w-3 h-3" />
+                                              <Download className="w-4 h-4" />
                                             </Button>
                                           ) : (
                                             <Button
                                               variant="ghost"
                                               size="sm"
-                                              className="text-xs text-blue-300 hover:text-blue-100 p-1 h-6 hover:bg-blue-800/30 rounded"
+                                              className="text-xs text-blue-400 hover:text-blue-300 p-2 h-8 hover:bg-blue-900/30 rounded-lg transition-all duration-200"
                                               onClick={() => handleUrlOpen(source)}
                                               title="웹페이지 열기"
                                             >
-                                              <Globe className="w-3 h-3" />
+                                              <Globe className="w-4 h-4" />
                                             </Button>
                                           )}
                                         </>
                                       )}
                                     </div>
                                   </div>
-                                  <p className="text-xs text-gray-300 mt-2 line-clamp-3 leading-relaxed">
+                                  <p className="text-sm text-gray-300 mb-4 line-clamp-3 leading-relaxed">
                                     {source.excerpt}
                                   </p>
-                                  <div className="flex items-center justify-between mt-3">
-                                    <div className="flex items-center text-xs text-gray-400">
-                                      <Calendar className="w-3 h-3 mr-1" />
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center text-sm text-gray-400">
+                                      <Calendar className="w-4 h-4 mr-2" />
                                       {new Date(source.updatedAt).toLocaleDateString('ko-KR')}
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <Badge variant="secondary" className="text-xs bg-blue-500/20 text-blue-300 border-blue-400/30">
+                                    <div className="flex items-center space-x-3">
+                                      <Badge variant="secondary" className="text-xs bg-blue-600/30 text-blue-300 border-blue-500/50 px-3 py-1">
                                         출처 {index + 1}
                                       </Badge>
                                       <Badge 
                                         variant="outline" 
-                                        className={`text-xs ${
+                                        className={`text-xs px-3 py-1 ${
                                           source.sourceType === 'file' 
-                                            ? 'bg-green-500/20 text-green-300 border-green-400/30' 
-                                            : 'bg-purple-500/20 text-purple-300 border-purple-400/30'
+                                            ? 'bg-green-600/30 text-green-300 border-green-500/50' 
+                                            : 'bg-purple-600/30 text-purple-300 border-purple-500/50'
                                         }`}
                                       >
                                         {source.sourceType === 'file' ? '📄 파일' : '🌐 웹페이지'}
@@ -221,22 +221,22 @@ export default function ChatBubble({
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="text-xs text-green-600 hover:text-green-700 hover:bg-green-100 p-1 h-6 transition-colors duration-200"
+                                          className="text-xs text-green-400 hover:text-green-300 hover:bg-green-900/30 px-3 py-2 h-8 transition-all duration-200 rounded-lg"
                                           onClick={() => handleFileDownload(source)}
                                           title="파일 다운로드"
                                         >
-                                          <Download className="w-3 h-3 mr-1" />
+                                          <Download className="w-4 h-4 mr-2" />
                                           다운로드
                                         </Button>
                                       ) : (
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-100 p-1 h-6 transition-colors duration-200"
+                                          className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 px-3 py-2 h-8 transition-all duration-200 rounded-lg"
                                           onClick={() => handleUrlOpen(source)}
                                           title="웹페이지 열기"
                                         >
-                                          <Globe className="w-3 h-3 mr-1" />
+                                          <Globe className="w-4 h-4 mr-2" />
                                           웹페이지
                                         </Button>
                                       )}
