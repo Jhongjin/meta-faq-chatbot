@@ -102,16 +102,16 @@
   /* 고급 카드 스타일 - Glassmorphism + Neumorphism */
   .card-enhanced {
     background: linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.1) 0%, 
-      rgba(255, 255, 255, 0.05) 50%,
-      rgba(0, 0, 0, 0.1) 100%) !important;
+      rgba(255, 255, 255, 0.25) 0%, 
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.1) 100%) !important;
     backdrop-filter: blur(20px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
     box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 8px 32px rgba(0, 0, 0, 0.2),
       0 2px 8px rgba(0, 0, 0, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.05) !important;
     border-radius: 20px !important;
     position: relative !important;
     overflow: hidden !important;
@@ -133,31 +133,31 @@
 
   .card-enhanced:hover {
     background: linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.15) 0%, 
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(0, 0, 0, 0.15) 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      rgba(255, 255, 255, 0.35) 0%, 
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0.15) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
     transform: translateY(-4px) scale(1.02);
     box-shadow: 
-      0 20px 40px rgba(0, 0, 0, 0.4),
-      0 8px 16px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
+      0 20px 40px rgba(0, 0, 0, 0.3),
+      0 8px 16px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.05) !important;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* 프리미엄 카드 스타일 */
   .card-premium {
     background: linear-gradient(135deg, 
-      rgba(59, 130, 246, 0.1) 0%, 
-      rgba(147, 51, 234, 0.05) 50%,
-      rgba(0, 0, 0, 0.1) 100%) !important;
+      rgba(255, 255, 255, 0.3) 0%, 
+      rgba(59, 130, 246, 0.15) 50%,
+      rgba(147, 51, 234, 0.1) 100%) !important;
     backdrop-filter: blur(24px) saturate(200%) !important;
-    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    border: 1px solid rgba(59, 130, 246, 0.4) !important;
     box-shadow: 
-      0 12px 40px rgba(59, 130, 246, 0.2),
-      0 4px 12px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 12px 40px rgba(59, 130, 246, 0.15),
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
       inset 0 -1px 0 rgba(59, 130, 246, 0.1) !important;
     border-radius: 24px !important;
     position: relative !important;
@@ -181,15 +181,15 @@
 
   .card-premium:hover {
     background: linear-gradient(135deg, 
-      rgba(59, 130, 246, 0.15) 0%, 
-      rgba(147, 51, 234, 0.08) 50%,
-      rgba(0, 0, 0, 0.15) 100%) !important;
-    border: 1px solid rgba(59, 130, 246, 0.4) !important;
+      rgba(255, 255, 255, 0.4) 0%, 
+      rgba(59, 130, 246, 0.2) 50%,
+      rgba(147, 51, 234, 0.15) 100%) !important;
+    border: 1px solid rgba(59, 130, 246, 0.5) !important;
     transform: translateY(-6px) scale(1.03);
     box-shadow: 
-      0 24px 48px rgba(59, 130, 246, 0.3),
-      0 12px 24px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      0 24px 48px rgba(59, 130, 246, 0.2),
+      0 12px 24px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
       inset 0 -1px 0 rgba(59, 130, 246, 0.2) !important;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -245,14 +245,14 @@
   /* 고급 텍스트 스타일 */
   .text-enhanced {
     color: #ffffff !important;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
     font-weight: 600 !important;
     letter-spacing: -0.025em !important;
   }
 
   .text-muted-enhanced {
-    color: #e5e7eb !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+    color: #f1f5f9 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
     letter-spacing: -0.01em !important;
   }
 
@@ -287,12 +287,12 @@
   /* 고급 배지 스타일 */
   .badge-premium {
     background: linear-gradient(135deg, 
-      rgba(59, 130, 246, 0.2) 0%, 
-      rgba(147, 51, 234, 0.2) 100%) !important;
-    border: 1px solid rgba(59, 130, 246, 0.3) !important;
-    color: #93c5fd !important;
+      rgba(255, 255, 255, 0.2) 0%, 
+      rgba(59, 130, 246, 0.15) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #e2e8f0 !important;
     font-weight: 500 !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
     backdrop-filter: blur(10px) !important;
   }
 
