@@ -404,6 +404,12 @@
     fill: currentColor;
   }
 
+  /* 푸터 카드 호버 효과 */
+  .chatbox-form:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  }
+
   /* 상태 표시 개선 */
   .status-completed {
     @apply bg-green-500/20 text-green-300 border border-green-500/30;

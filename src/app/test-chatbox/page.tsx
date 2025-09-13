@@ -134,7 +134,7 @@ export default function TestChatboxPage() {
                   value={chatMessage}
                   onChange={handleTextareaChange}
                   className="chatbox-textarea"
-                  placeholder="Ask Lovable to create a dashboard to..."
+                  placeholder="Meta 광고 정책에 대해 궁금한 것이 있으시면 언제든지 물어보세요..."
                   maxLength={50000}
                   autoFocus
                 />
@@ -301,37 +301,36 @@ export default function TestChatboxPage() {
           </div>
         </motion.div>
 
-        {/* CTA Section */}
+        {/* CTA Section - Chatbox Style */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.8 }}
           className="text-center"
         >
-          <div className="card-premium p-12 overflow-hidden group">
-            <div className="card-content-animated">
-              <h2 className="text-4xl font-bold text-gradient-premium mb-6 group-hover:scale-105 transition-transform duration-300">
-                지금 바로 시작해보세요
-              </h2>
-              <p className="text-lg text-muted-enhanced mb-8 max-w-3xl mx-auto font-nanum group-hover:text-white/90 transition-colors duration-300">
-                Meta 광고 정책에 대한 궁금증을 AI 챗봇에게 물어보고, 업무 효율성을 극대화하세요
-              </p>
+          <div className="chatbox-container">
+            <div className="chatbox-form p-8">
+              <div className="text-center mb-8">
+                <h2 className="text-4xl font-bold text-white mb-4">
+                  지금 바로 시작해보세요
+                </h2>
+                <p className="text-lg text-gray-300 max-w-3xl mx-auto">
+                  Meta 광고 정책에 대한 궁금증을 AI 챗봇에게 물어보고, 업무 효율성을 극대화하세요
+                </p>
+              </div>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  size="lg" 
-                  className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:scale-105 hover:-translate-y-1 transition-all duration-300 icon-enhanced"
+                <button 
+                  className="flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:scale-105 hover:-translate-y-1 transition-all duration-300"
                 >
                   <MessageCircle className="w-5 h-5 mr-2" />
                   질문하기
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="px-8 py-4 border-2 border-white/30 text-white hover:bg-white/10 font-semibold rounded-xl shadow-lg hover:scale-105 hover:-translate-y-1 transition-all duration-300 icon-enhanced"
+                </button>
+                <button 
+                  className="flex items-center justify-center px-8 py-4 border-2 border-gray-400 text-white hover:bg-gray-600/20 font-semibold rounded-xl shadow-lg hover:scale-105 hover:-translate-y-1 transition-all duration-300"
                 >
                   <Clock className="w-5 h-5 mr-2" />
                   히스토리 보기
-                </Button>
+                </button>
               </div>
             </div>
           </div>
