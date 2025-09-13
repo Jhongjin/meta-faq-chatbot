@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buttons Only</title>
+    <style type="text/css">
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: transparent; /* Transparent background */
+            font-family: Arial, sans-serif;
+        }
+
+        .button-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+
+        .button-container .flex {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            white-space: nowrap;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 100ms ease-in-out;
+            outline: none;
+            border-radius: 6px; /* rounded-md */
+            padding: 8px 16px; /* px-4 py-2 */
+            height: 32px; /* h-8 */
+            text-decoration: none; /* Remove underline from links */
+        }
+
+        .login-btn {
+            border: 1px solid #3a3f47; /* border-input */
+            background-color: #2f333a; /* bg-muted */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+            color: #e0e0e0;
+        }
+
+        .login-btn:hover {
+            background-color: #4a4f57; /* hover:bg-accent */
+            border-color: #5a5f67; /* hover:border-accent */
+        }
+
+        .signup-btn {
+            background-color: #e0e0e0; /* bg-primary */
+            color: #2f333a; /* text-primary-foreground */
+        }
+
+        .signup-btn:hover {
+            background-color: #c0c0c0; /* hover:bg-primary/90 */
+        }
+    </style>
+</head>
+<body>
+    <div class="flex items-center gap-4 md:pr-8 button-container">
+        <div class="flex gap-2">
+            <a class="btn login-btn" id="login-link" href="/login">Log in</a>
+            <a class="btn signup-btn" id="signup-link" href="/signup">Get started</a>
+        </div>
+    </div>
+</body>
+</html>
+

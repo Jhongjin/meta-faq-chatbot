@@ -308,7 +308,7 @@ export default function TestChatboxPage() {
           transition={{ duration: 0.6, delay: 0.8 }}
           className="text-center"
         >
-          <div className="chatbox-container">
+          <div className="max-w-4xl mx-auto">
             <div className="chatbox-form p-8">
               <div className="text-center mb-8">
                 <h2 className="text-4xl font-bold text-white mb-4">
@@ -320,13 +320,13 @@ export default function TestChatboxPage() {
               </div>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button 
-                  className="flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:scale-105 hover:-translate-y-1 transition-all duration-300"
+                  className="chatbox-cta-button-primary flex items-center justify-center px-8 py-4 rounded-xl"
                 >
                   <MessageCircle className="w-5 h-5 mr-2" />
                   질문하기
                 </button>
                 <button 
-                  className="flex items-center justify-center px-8 py-4 border-2 border-gray-400 text-white hover:bg-gray-600/20 font-semibold rounded-xl shadow-lg hover:scale-105 hover:-translate-y-1 transition-all duration-300"
+                  className="chatbox-cta-button-secondary flex items-center justify-center px-8 py-4 rounded-xl"
                 >
                   <Clock className="w-5 h-5 mr-2" />
                   히스토리 보기

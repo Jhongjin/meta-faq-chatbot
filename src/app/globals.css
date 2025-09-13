@@ -410,6 +410,41 @@
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
   }
 
+  /* 푸터 카드 버튼 스타일 개선 */
+  .chatbox-cta-button-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #ffffff;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .chatbox-cta-button-primary:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  .chatbox-cta-button-secondary {
+    background: rgba(47, 51, 58, 0.8);
+    border: 1px solid rgba(118, 118, 118, 0.4);
+    color: #e0e0e0;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .chatbox-cta-button-secondary:hover {
+    background: rgba(47, 51, 58, 0.9);
+    border-color: rgba(118, 118, 118, 0.6);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px) scale(1.02);
+  }
+
   /* 상태 표시 개선 */
   .status-completed {
     @apply bg-green-500/20 text-green-300 border border-green-500/30;
