@@ -8,10 +8,10 @@ const supabase = createClient(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ documentId: string }> }
+  { params }: { params: { documentId: string } }
 ) {
   try {
-    const { documentId } = await params;
+    const { documentId } = params;
     
     console.log(`📥 파일 다운로드 요청: ${documentId}`);
     
