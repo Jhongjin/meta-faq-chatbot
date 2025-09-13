@@ -745,59 +745,113 @@ export default function HybridCrawlingManager({ onCrawlingComplete }: HybridCraw
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card 
-              className={`cursor-pointer transition-all duration-300 rounded-xl ${
+              className={`cursor-pointer transition-all duration-300 rounded-xl group ${
                 crawlingMode === 'predefined' 
-                  ? 'ring-2 ring-blue-500 bg-blue-500/10 border-blue-500/30' 
-                  : 'hover:bg-gray-700/30 border-gray-600/50'
+                  ? 'ring-2 ring-blue-500 bg-blue-500/20 border-blue-500/50 shadow-lg shadow-blue-500/20' 
+                  : 'hover:bg-gray-700/40 border-gray-600/50 hover:border-blue-400/30 hover:shadow-lg hover:shadow-blue-500/10'
               }`}
               onClick={() => setCrawlingMode('predefined')}
             >
               <CardHeader className="pb-2">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <Layers className="w-4 h-4 text-white" />
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                    crawlingMode === 'predefined' 
+                      ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30' 
+                      : 'bg-gradient-to-br from-gray-600 to-gray-700 group-hover:from-blue-500 group-hover:to-blue-600'
+                  }`}>
+                    <Layers className="w-5 h-5 text-white" />
                   </div>
-                  <CardTitle className="text-lg text-white">미리 정의된 URL</CardTitle>
+                  <div>
+                    <CardTitle className="text-lg text-white font-semibold group-hover:text-blue-300 transition-colors duration-200">
+                      미리 정의된 URL
+                    </CardTitle>
+                    <CardDescription className="text-gray-400 group-hover:text-gray-300 transition-colors duration-200">
+                      검증된 URL 템플릿만 사용
+                    </CardDescription>
+                  </div>
                 </div>
-                <CardDescription className="text-gray-400">검증된 URL 템플릿만 사용</CardDescription>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-blue-500/20 text-blue-300 border-blue-400/50 text-xs px-2 py-1">
+                    안전한 크롤링
+                  </Badge>
+                  {crawlingMode === 'predefined' && (
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  )}
+                </div>
               </CardHeader>
             </Card>
             
             <Card 
-              className={`cursor-pointer transition-all duration-300 rounded-xl ${
+              className={`cursor-pointer transition-all duration-300 rounded-xl group ${
                 crawlingMode === 'custom' 
-                  ? 'ring-2 ring-green-500 bg-green-500/10 border-green-500/30' 
-                  : 'hover:bg-gray-700/30 border-gray-600/50'
+                  ? 'ring-2 ring-green-500 bg-green-500/20 border-green-500/50 shadow-lg shadow-green-500/20' 
+                  : 'hover:bg-gray-700/40 border-gray-600/50 hover:border-green-400/30 hover:shadow-lg hover:shadow-green-500/10'
               }`}
               onClick={() => setCrawlingMode('custom')}
             >
               <CardHeader className="pb-2">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                    <Plus className="w-4 h-4 text-white" />
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                    crawlingMode === 'custom' 
+                      ? 'bg-gradient-to-br from-green-500 to-green-600 shadow-lg shadow-green-500/30' 
+                      : 'bg-gradient-to-br from-gray-600 to-gray-700 group-hover:from-green-500 group-hover:to-green-600'
+                  }`}>
+                    <Plus className="w-5 h-5 text-white" />
                   </div>
-                  <CardTitle className="text-lg text-white">사용자 정의 URL</CardTitle>
+                  <div>
+                    <CardTitle className="text-lg text-white font-semibold group-hover:text-green-300 transition-colors duration-200">
+                      사용자 정의 URL
+                    </CardTitle>
+                    <CardDescription className="text-gray-400 group-hover:text-gray-300 transition-colors duration-200">
+                      직접 URL 입력
+                    </CardDescription>
+                  </div>
                 </div>
-                <CardDescription className="text-gray-400">직접 URL 입력</CardDescription>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-green-500/20 text-green-300 border-green-400/50 text-xs px-2 py-1">
+                    유연한 크롤링
+                  </Badge>
+                  {crawlingMode === 'custom' && (
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  )}
+                </div>
               </CardHeader>
             </Card>
             
             <Card 
-              className={`cursor-pointer transition-all duration-300 rounded-xl ${
+              className={`cursor-pointer transition-all duration-300 rounded-xl group ${
                 crawlingMode === 'hybrid' 
-                  ? 'ring-2 ring-purple-500 bg-purple-500/10 border-purple-500/30' 
-                  : 'hover:bg-gray-700/30 border-gray-600/50'
+                  ? 'ring-2 ring-purple-500 bg-purple-500/20 border-purple-500/50 shadow-lg shadow-purple-500/20' 
+                  : 'hover:bg-gray-700/40 border-gray-600/50 hover:border-purple-400/30 hover:shadow-lg hover:shadow-purple-500/10'
               }`}
               onClick={() => setCrawlingMode('hybrid')}
             >
               <CardHeader className="pb-2">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <Globe className="w-4 h-4 text-white" />
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                    crawlingMode === 'hybrid' 
+                      ? 'bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30' 
+                      : 'bg-gradient-to-br from-gray-600 to-gray-700 group-hover:from-purple-500 group-hover:to-purple-600'
+                  }`}>
+                    <Globe className="w-5 h-5 text-white" />
                   </div>
-                  <CardTitle className="text-lg text-white">하이브리드</CardTitle>
+                  <div>
+                    <CardTitle className="text-lg text-white font-semibold group-hover:text-purple-300 transition-colors duration-200">
+                      하이브리드
+                    </CardTitle>
+                    <CardDescription className="text-gray-400 group-hover:text-gray-300 transition-colors duration-200">
+                      템플릿 + 사용자 정의
+                    </CardDescription>
+                  </div>
                 </div>
-                <CardDescription className="text-gray-400">템플릿 + 사용자 정의</CardDescription>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-purple-500/20 text-purple-300 border-purple-400/50 text-xs px-2 py-1">
+                    통합 크롤링
+                  </Badge>
+                  {crawlingMode === 'hybrid' && (
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                  )}
+                </div>
               </CardHeader>
             </Card>
           </div>

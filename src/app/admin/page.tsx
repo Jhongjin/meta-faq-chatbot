@@ -427,8 +427,11 @@ export default function AdminDashboardPage() {
                 {systemStatus.overall}
               </div>
               <p className="text-xs text-gray-400">시스템 전반 상태</p>
-              <div className="mt-3">
-                <Progress value={95} className="h-2" />
+              <div className="mt-3 progress-with-percentage">
+                <div className="progress-enhanced progress-success">
+                  <div className="progress-fill" style={{ width: '95%' }}></div>
+                </div>
+                <div className="progress-percentage">95%</div>
               </div>
             </CardContent>
           </Card>
@@ -453,8 +456,11 @@ export default function AdminDashboardPage() {
                 {systemStatus.database}
               </div>
               <p className="text-xs text-gray-400">PostgreSQL 연결 상태</p>
-              <div className="mt-3">
-                <Progress value={100} className="h-2" />
+              <div className="mt-3 progress-with-percentage">
+                <div className="progress-enhanced progress-success">
+                  <div className="progress-fill" style={{ width: '100%' }}></div>
+                </div>
+                <div className="progress-percentage">100%</div>
               </div>
             </CardContent>
           </Card>
@@ -479,8 +485,11 @@ export default function AdminDashboardPage() {
                 {systemStatus.llm}
               </div>
               <p className="text-xs text-gray-400">AI 모델 응답 상태</p>
-              <div className="mt-3">
-                <Progress value={98} className="h-2" />
+              <div className="mt-3 progress-with-percentage">
+                <div className="progress-enhanced progress-purple">
+                  <div className="progress-fill" style={{ width: '98%' }}></div>
+                </div>
+                <div className="progress-percentage">98%</div>
               </div>
             </CardContent>
           </Card>
@@ -505,8 +514,11 @@ export default function AdminDashboardPage() {
                 {systemStatus.vectorStore}
               </div>
               <p className="text-xs text-gray-400">pgvector 인덱싱 상태</p>
-              <div className="mt-3">
-                <Progress value={92} className="h-2" />
+              <div className="mt-3 progress-with-percentage">
+                <div className="progress-enhanced progress-warning">
+                  <div className="progress-fill" style={{ width: '92%' }}></div>
+                </div>
+                <div className="progress-percentage">92%</div>
               </div>
             </CardContent>
           </Card>
@@ -687,23 +699,29 @@ export default function AdminDashboardPage() {
             ))
           ) : (
             recentAlerts.map((alert) => (
-              <Card key={alert.id} className="card-enhanced hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-4">
-                  <div className="flex items-start space-x-3">
-                    {getStatusIcon(alert.type)}
+              <Card key={alert.id} className="modern-card-dark hover:shadow-2xl transition-all duration-300 group border-gray-600/50">
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0">
+                      {getStatusIcon(alert.type)}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white mb-1">
+                      <p className="text-base font-semibold text-white mb-2 group-hover:text-blue-300 transition-colors duration-200">
                         {alert.message}
                       </p>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-400">{alert.timestamp}</span>
+                      <div className="flex items-center space-x-3">
+                        <span className="text-sm text-gray-300 font-medium">{alert.timestamp}</span>
                         <Badge 
                           variant={
                             alert.priority === "high" ? "destructive" :
                             alert.priority === "medium" ? "secondary" :
                             "outline"
                           }
-                          className="text-xs border-gray-600 text-gray-300"
+                          className={`text-xs px-3 py-1 font-semibold ${
+                            alert.priority === "high" ? "bg-red-500/20 text-red-300 border-red-400/50" :
+                            alert.priority === "medium" ? "bg-yellow-500/20 text-yellow-300 border-yellow-400/50" :
+                            "bg-gray-500/20 text-gray-300 border-gray-400/50"
+                          }`}
                         >
                           {alert.priority === "high" ? "높음" :
                            alert.priority === "medium" ? "보통" : "낮음"}
@@ -713,7 +731,11 @@ export default function AdminDashboardPage() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white hover:bg-white/10">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-gray-300 hover:text-white hover:bg-blue-500/20 border border-gray-600/50 hover:border-blue-400/50 transition-all duration-200 px-4 py-2"
+                          >
                             확인
                           </Button>
                         </TooltipTrigger>

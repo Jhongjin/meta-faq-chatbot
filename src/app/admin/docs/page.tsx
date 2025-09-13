@@ -792,8 +792,27 @@ export default function DocumentManagementPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {doc.type.toUpperCase()}
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs font-semibold px-3 py-1 ${
+                            doc.type.toLowerCase() === 'pdf' 
+                              ? 'bg-red-500/20 text-red-300 border-red-400/50 hover:bg-red-500/30' 
+                              : doc.type.toLowerCase() === 'docx' 
+                              ? 'bg-blue-500/20 text-blue-300 border-blue-400/50 hover:bg-blue-500/30'
+                              : doc.type.toLowerCase() === 'txt'
+                              ? 'bg-green-500/20 text-green-300 border-green-400/50 hover:bg-green-500/30'
+                              : doc.type.toLowerCase() === 'url'
+                              ? 'bg-purple-500/20 text-purple-300 border-purple-400/50 hover:bg-purple-500/30'
+                              : 'bg-gray-500/20 text-gray-300 border-gray-400/50 hover:bg-gray-500/30'
+                          } transition-all duration-200`}
+                        >
+                          <div className="flex items-center space-x-1">
+                            {doc.type.toLowerCase() === 'pdf' && <FileText className="w-3 h-3" />}
+                            {doc.type.toLowerCase() === 'docx' && <FileText className="w-3 h-3" />}
+                            {doc.type.toLowerCase() === 'txt' && <FileText className="w-3 h-3" />}
+                            {doc.type.toLowerCase() === 'url' && <Globe className="w-3 h-3" />}
+                            <span>{doc.type.toUpperCase()}</span>
+                          </div>
                         </Badge>
                       </TableCell>
                       <TableCell>

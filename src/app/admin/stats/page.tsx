@@ -603,9 +603,11 @@ export default function StatisticsPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-medium text-white">{segment.questions}질문</p>
-                        <div className="flex items-center space-x-2">
-                          <Progress value={segment.satisfaction} className="w-16 h-2" />
-                          <span className="text-sm text-gray-300">{segment.satisfaction}%</span>
+                        <div className="flex items-center space-x-3">
+                          <div className="progress-enhanced progress-info w-20">
+                            <div className="progress-fill" style={{ width: `${segment.satisfaction}%` }}></div>
+                          </div>
+                          <span className="text-sm font-semibold text-white min-w-[3rem]">{segment.satisfaction}%</span>
                         </div>
                       </div>
                     </div>

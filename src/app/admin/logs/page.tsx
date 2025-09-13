@@ -234,30 +234,30 @@ export default function LogsPage() {
   const getLevelBadge = (level: string) => {
     switch (level) {
       case "error":
-        return <Badge variant="destructive">오류</Badge>;
+        return <Badge className="bg-red-500/20 text-red-300 border-red-400/50 text-xs px-3 py-1 font-semibold">오류</Badge>;
       case "warning":
-        return <Badge variant="secondary">경고</Badge>;
+        return <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-400/50 text-xs px-3 py-1 font-semibold">경고</Badge>;
       case "info":
-        return <Badge variant="default">정보</Badge>;
+        return <Badge className="bg-blue-500/20 text-blue-300 border-blue-400/50 text-xs px-3 py-1 font-semibold">정보</Badge>;
       case "debug":
-        return <Badge variant="outline">디버그</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-300 border-gray-400/50 text-xs px-3 py-1 font-semibold">디버그</Badge>;
       default:
-        return <Badge variant="outline">알 수 없음</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-300 border-gray-400/50 text-xs px-3 py-1 font-semibold">알 수 없음</Badge>;
     }
   };
 
   const getTypeBadge = (type: string) => {
     switch (type) {
       case "user":
-        return <Badge variant="default" className="bg-blue-100 text-blue-800">사용자</Badge>;
+        return <Badge className="bg-blue-500/20 text-blue-300 border-blue-400/50 text-xs px-3 py-1 font-semibold">사용자</Badge>;
       case "system":
-        return <Badge variant="secondary">시스템</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-300 border-gray-400/50 text-xs px-3 py-1 font-semibold">시스템</Badge>;
       case "security":
-        return <Badge variant="destructive">보안</Badge>;
+        return <Badge className="bg-red-500/20 text-red-300 border-red-400/50 text-xs px-3 py-1 font-semibold">보안</Badge>;
       case "performance":
-        return <Badge variant="outline" className="bg-purple-100 text-purple-800">성능</Badge>;
+        return <Badge className="bg-purple-500/20 text-purple-300 border-purple-400/50 text-xs px-3 py-1 font-semibold">성능</Badge>;
       default:
-        return <Badge variant="outline">기타</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-300 border-gray-400/50 text-xs px-3 py-1 font-semibold">기타</Badge>;
     }
   };
 

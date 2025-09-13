@@ -681,4 +681,84 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Enhanced Progress Bar Styles */
+  .progress-enhanced {
+    @apply relative w-full overflow-hidden rounded-full bg-gray-700/50;
+    height: 8px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .progress-enhanced .progress-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-enhanced .progress-fill::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shimmer 2s infinite;
+  }
+
+  .progress-enhanced .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    width: 4px;
+    height: 4px;
+    background: white;
+    border-radius: 50%;
+    transform: translateY(-50%);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Progress Bar Variants */
+  .progress-success .progress-fill {
+    background: linear-gradient(90deg, #10b981, #059669);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  }
+
+  .progress-warning .progress-fill {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+  }
+
+  .progress-danger .progress-fill {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  }
+
+  .progress-info .progress-fill {
+    background: linear-gradient(90deg, #06b6d4, #0891b2);
+    box-shadow: 0 2px 4px rgba(6, 182, 212, 0.3);
+  }
+
+  .progress-purple .progress-fill {
+    background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+    box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+  }
+
+  /* Progress Bar with Percentage */
+  .progress-with-percentage {
+    @apply flex items-center space-x-3;
+  }
+
+  .progress-percentage {
+    @apply text-sm font-semibold text-white min-w-[3rem] text-right;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
 }
