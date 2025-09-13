@@ -99,22 +99,99 @@
     font-family: 'Nanum Barun Gothic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
-  /* 가독성 개선을 위한 카드 스타일 */
+  /* 고급 카드 스타일 - Glassmorphism + Neumorphism */
   .card-enhanced {
-    background: rgba(0, 0, 0, 0.4) !important;
-    backdrop-filter: blur(20px) !important;
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.1) 0%, 
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(0, 0, 0, 0.1) 100%) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-    border-radius: 16px !important;
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 2px 8px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
+    border-radius: 20px !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  .card-enhanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      rgba(255, 255, 255, 0.4) 50%, 
+      transparent 100%);
+    z-index: 1;
   }
 
   .card-enhanced:hover {
-    background: rgba(0, 0, 0, 0.6) !important;
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.15) 0%, 
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(0, 0, 0, 0.15) 100%) !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    transform: translateY(-2px);
-    transition: all 0.3s ease;
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+      0 20px 40px rgba(0, 0, 0, 0.4),
+      0 8px 16px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* 프리미엄 카드 스타일 */
+  .card-premium {
+    background: linear-gradient(135deg, 
+      rgba(59, 130, 246, 0.1) 0%, 
+      rgba(147, 51, 234, 0.05) 50%,
+      rgba(0, 0, 0, 0.1) 100%) !important;
+    backdrop-filter: blur(24px) saturate(200%) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    box-shadow: 
+      0 12px 40px rgba(59, 130, 246, 0.2),
+      0 4px 12px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 -1px 0 rgba(59, 130, 246, 0.1) !important;
+    border-radius: 24px !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  .card-premium::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      rgba(59, 130, 246, 0.6) 25%,
+      rgba(147, 51, 234, 0.6) 75%,
+      transparent 100%);
+    z-index: 1;
+  }
+
+  .card-premium:hover {
+    background: linear-gradient(135deg, 
+      rgba(59, 130, 246, 0.15) 0%, 
+      rgba(147, 51, 234, 0.08) 50%,
+      rgba(0, 0, 0, 0.15) 100%) !important;
+    border: 1px solid rgba(59, 130, 246, 0.4) !important;
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 
+      0 24px 48px rgba(59, 130, 246, 0.3),
+      0 12px 24px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(59, 130, 246, 0.2) !important;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* 토글 버튼 개선 */
@@ -165,17 +242,74 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
   }
 
-  /* 텍스트 가독성 개선 */
+  /* 고급 텍스트 스타일 */
   .text-enhanced {
     color: #ffffff !important;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
     font-weight: 600 !important;
+    letter-spacing: -0.025em !important;
   }
 
   .text-muted-enhanced {
     color: #e5e7eb !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+    letter-spacing: -0.01em !important;
   }
+
+  /* 그라데이션 텍스트 효과 */
+  .text-gradient {
+    background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none !important;
+  }
+
+  .text-gradient-premium {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none !important;
+  }
+
+  /* 고급 아이콘 스타일 */
+  .icon-enhanced {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .icon-enhanced:hover {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    transform: scale(1.1);
+  }
+
+  /* 고급 배지 스타일 */
+  .badge-premium {
+    background: linear-gradient(135deg, 
+      rgba(59, 130, 246, 0.2) 0%, 
+      rgba(147, 51, 234, 0.2) 100%) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    color: #93c5fd !important;
+    font-weight: 500 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+  }
+
+  /* 카드 내부 요소 애니메이션 */
+  .card-content-animated {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-enhanced:hover .card-content-animated {
+    transform: translateY(-2px);
+  }
+
+  /* 스태거드 애니메이션을 위한 클래스 */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
 
   /* 상태 표시 개선 */
   .status-completed {

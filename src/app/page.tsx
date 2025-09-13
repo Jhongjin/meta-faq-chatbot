@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import MainLayout from "@/components/layouts/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,7 +29,6 @@ import {
   Rocket
 } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDashboardStats, useChatStats, useSystemStatus, useLatestUpdate } from "@/hooks/useDashboardStats";
@@ -255,12 +255,12 @@ export default function HomePage() {
             <form onSubmit={handleChatSubmit} className="w-full">
               <div className="relative w-full">
                 {/* Main Chat Input Container - Lovable.dev Style */}
-                <div className="card-enhanced rounded-3xl shadow-2xl overflow-hidden">
+                <div className="card-premium rounded-3xl shadow-2xl overflow-hidden group">
                   {/* Input Field with Submit Button */}
                   <div className="p-6">
                     <div className="flex items-center space-x-4">
                       <div className="flex-1 relative">
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-300 w-5 h-5" />
+                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-300 w-5 h-5 icon-enhanced group-hover:text-blue-400 transition-colors duration-300" />
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -270,7 +270,7 @@ export default function HomePage() {
                                 placeholder="메타 광고 정책에 대해 질문해보세요... (예: 인스타그램 광고 정책 변경사항이 있나요?)"
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}
-                                className="pl-12 pr-4 py-4 text-base border-0 bg-transparent text-enhanced placeholder-gray-300 focus:ring-0 focus:outline-none rounded-none w-full"
+                                className="pl-12 pr-4 py-4 text-base border-0 bg-transparent text-enhanced placeholder-gray-300 focus:ring-0 focus:outline-none rounded-none w-full group-hover:placeholder-blue-300 transition-colors duration-300"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
@@ -282,7 +282,7 @@ export default function HomePage() {
                       <Button
                         type="submit"
                         disabled={isLoading || !chatInput.trim()}
-                        className="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-2xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                        className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:scale-105 hover:-translate-y-1 icon-enhanced"
                       >
                         {isLoading ? (
                           <div className="flex items-center space-x-2">
@@ -407,7 +407,7 @@ export default function HomePage() {
           viewport={{ once: true }}
         >
           <div className="text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 font-nanum">
+            <h2 className="text-3xl md:text-4xl font-bold text-gradient mb-4 font-nanum">
               실시간 성능 지표
             </h2>
             <p className="text-lg text-gray-300 max-w-3xl mx-auto font-nanum">
@@ -415,8 +415,8 @@ export default function HomePage() {
             </p>
           </div>
           
-                <Card className="card-enhanced">
-                  <CardContent className="p-6">
+                <Card className="card-premium group">
+                  <CardContent className="p-8 card-content-animated">
               {dashboardLoading || chatLoading ? (
                 <div className="space-y-4">
                   {[...Array(5)].map((_, index) => (
@@ -496,7 +496,7 @@ export default function HomePage() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 font-nanum">
-              강력한 기능으로 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">업무를 혁신하세요</span>
+              강력한 기능으로 <span className="text-gradient-premium">업무를 혁신하세요</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-3xl mx-auto font-nanum">
               AdMate의 핵심 기능들이 여러분의 업무 효율성을 높여드립니다
@@ -512,19 +512,19 @@ export default function HomePage() {
                 transition={{ duration: 0.8, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <Card className="card-enhanced h-full group hover:-translate-y-1">
-                  <CardContent className="p-6 h-full flex flex-col">
-                    <div className="w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                      <div className="text-3xl">{feature.icon}</div>
+                <Card className="card-enhanced h-full group hover:-translate-y-2 hover:scale-[1.02] transition-all duration-500">
+                  <CardContent className="p-8 h-full flex flex-col card-content-animated">
+                    <div className="w-16 h-16 flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-300 icon-enhanced">
+                      <div className="text-4xl">{feature.icon}</div>
                     </div>
-                    <h3 className="text-xl font-bold text-enhanced mb-3 font-nanum">{feature.title}</h3>
-                    <p className="text-muted-enhanced leading-relaxed text-sm mb-4 flex-grow font-nanum">{feature.description}</p>
+                    <h3 className="text-xl font-bold text-gradient mb-4 font-nanum group-hover:text-gradient-premium transition-all duration-300">{feature.title}</h3>
+                    <p className="text-muted-enhanced leading-relaxed text-sm mb-6 flex-grow font-nanum group-hover:text-white/90 transition-colors duration-300">{feature.description}</p>
                     <div className="flex flex-wrap gap-2">
                       {feature.badges.map((badge, badgeIndex) => (
                         <Badge 
                           key={badgeIndex} 
                           variant="secondary" 
-                          className="bg-white/20 text-white border-white/30 font-nanum shadow-sm"
+                          className="badge-premium font-nanum shadow-sm hover:scale-105 transition-transform duration-200 stagger-1"
                         >
                           {badge}
                         </Badge>
@@ -545,9 +545,9 @@ export default function HomePage() {
             viewport={{ once: true }}
           >
             <div className="text-center mb-8">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 font-nanum">
-                실시간 통계
-              </h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gradient mb-4 font-nanum">
+              실시간 통계
+            </h2>
               <p className="text-lg text-gray-300 max-w-3xl mx-auto font-nanum">
                 시스템 사용 현황과 성능 지표를 확인하세요
               </p>
@@ -574,14 +574,14 @@ export default function HomePage() {
                     transition={{ duration: 0.8, delay: index * 0.1 }}
                     viewport={{ once: true }}
                   >
-                    <Card className="card-enhanced group hover:-translate-y-1">
-                      <CardContent className="p-6 text-center">
-                        <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                          <div className="text-3xl">{stat.icon}</div>
+                    <Card className="card-enhanced group hover:-translate-y-3 hover:scale-[1.05] transition-all duration-500">
+                      <CardContent className="p-8 text-center card-content-animated">
+                        <div className="w-16 h-16 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-300 icon-enhanced">
+                          <div className="text-4xl">{stat.icon}</div>
                         </div>
-                        <h3 className="text-2xl font-bold text-enhanced mb-2 font-nanum">{stat.value}</h3>
-                        <p className="text-muted-enhanced font-semibold mb-2 font-nanum">{stat.label}</p>
-                        <p className="text-sm text-gray-400 font-nanum">{stat.description}</p>
+                        <h3 className="text-3xl font-bold text-gradient-premium mb-3 font-nanum group-hover:scale-110 transition-transform duration-300">{stat.value}</h3>
+                        <p className="text-muted-enhanced font-semibold mb-3 font-nanum group-hover:text-white/90 transition-colors duration-300">{stat.label}</p>
+                        <p className="text-sm text-gray-400 font-nanum group-hover:text-gray-300 transition-colors duration-300">{stat.description}</p>
                       </CardContent>
                     </Card>
                   </motion.div>
@@ -602,27 +602,28 @@ export default function HomePage() {
           viewport={{ once: true }}
         >
           <motion.div 
-            className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-12 border border-white/20 overflow-hidden"
+            className="card-premium p-12 overflow-hidden group"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-enhanced mb-4 font-nanum">
-              지금 바로 시작해보세요
-            </h2>
-            <p className="text-base text-muted-enhanced mb-6 max-w-3xl mx-auto font-nanum">
-              Meta 광고 정책에 대한 궁금증을 AI 챗봇에게 물어보고, 업무 효율성을 극대화하세요
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="card-content-animated">
+              <h2 className="text-3xl md:text-4xl font-bold text-gradient-premium mb-6 font-nanum group-hover:scale-105 transition-transform duration-300">
+                지금 바로 시작해보세요
+              </h2>
+              <p className="text-lg text-muted-enhanced mb-8 max-w-3xl mx-auto font-nanum group-hover:text-white/90 transition-colors duration-300">
+                Meta 광고 정책에 대한 궁금증을 AI 챗봇에게 물어보고, 업무 효율성을 극대화하세요
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       onClick={focusInput}
-                      className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                      className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 hover:-translate-y-1 icon-enhanced"
                     >
-                      <MessageSquare className="w-4 h-4 mr-2" />
+                      <MessageSquare className="w-5 h-5 mr-2" />
                       질문하기
                     </Button>
                   </TooltipTrigger>
@@ -638,9 +639,9 @@ export default function HomePage() {
                     <Link href="/history">
                       <Button 
                         variant="outline"
-                        className="px-6 py-3 border-2 border-white/30 text-white hover:bg-white/10 font-semibold rounded-2xl transition-all duration-200"
+                        className="px-8 py-4 border-2 border-white/30 text-white hover:bg-white/10 font-semibold rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 icon-enhanced"
                       >
-                        <History className="w-4 h-4 mr-2" />
+                        <History className="w-5 h-5 mr-2" />
                         히스토리 보기
                       </Button>
                     </Link>
@@ -650,6 +651,7 @@ export default function HomePage() {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+              </div>
             </div>
           </motion.div>
         </motion.div>
