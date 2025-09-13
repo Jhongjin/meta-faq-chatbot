@@ -155,7 +155,7 @@ supabase_client = SupabaseClient(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and
 
 @app.get("/")
 async def root():
-    return {"message": "Meta FAQ AI Chatbot API", "status": "running"}
+    return {"status": "ok", "message": "Meta FAQ AI Chatbot API"}
 
 @app.get("/health")
 async def health_check():
