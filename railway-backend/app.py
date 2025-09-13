@@ -352,6 +352,40 @@ async def setup_required_models():
     
     return {"results": results}
 
+@app.get("/api/debug/ollama")
+async def debug_ollama_connection():
+    """Ollama 연결 상태 디버깅"""
+    debug_info = {
+        "ollama_base_url": OLLAMA_BASE_URL,
+        "embedding_model": EMBEDDING_MODEL,
+        "llm_model": LLM_MODEL,
+        "connection_test": None,
+        "tags_response": None,
+        "error": None
+    }
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            # 1. 기본 연결 테스트
+            async with session.get(f"{OLLAMA_BASE_URL}/") as response:
+                debug_info["connection_test"] = {
+                    "status": response.status,
+                    "text": await response.text()
+                }
+            
+            # 2. 모델 태그 확인
+            async with session.get(f"{OLLAMA_BASE_URL}/api/tags") as response:
+                debug_info["tags_response"] = {
+                    "status": response.status,
+                    "data": await response.json() if response.status == 200 else await response.text()
+                }
+                
+    except Exception as e:
+        debug_info["error"] = str(e)
+        logger.error(f"Ollama debug error: {e}")
+    
+    return debug_info
+
 # Railway에서 직접 실행을 위한 설정
 def get_port():
     """Railway PORT 환경변수 안전한 파싱"""
