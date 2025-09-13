@@ -160,7 +160,21 @@ async def root():
 @app.get("/health")
 async def health_check():
     """헬스 체크 엔드포인트"""
-    return {"status": "ok"}
+    try:
+        # Ollama 연결 상태 확인
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=5.0) as response:
+                ollama_status = "connected" if response.status == 200 else "disconnected"
+    except Exception as e:
+        logger.error(f"Ollama connection error: {e}")
+        ollama_status = "disconnected"
+    
+    return {
+        "status": "healthy",
+        "ollama_status": ollama_status,
+        "ollama_url": OLLAMA_BASE_URL,
+        "supabase_url": SUPABASE_URL
+    }
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(chat_message: ChatMessage):
@@ -270,14 +284,16 @@ if __name__ == "__main__":
     import uvicorn
     import sys
     
-    # Railway에서 PORT 환경변수가 제대로 작동하지 않으므로 하드코딩
-    port = 8000
-    print(f"Using hardcoded port: {port}")
-    print(f"Environment PORT value: '{os.getenv('PORT', 'NOT_SET')}'")
+    # Railway 권장 포트 설정 (5000+)
+    try:
+        port = int(os.getenv('PORT', '5050'))
+    except ValueError:
+        port = 5050
     
     print(f"Starting server on port {port}")
-    print(f"Environment variables: PORT={os.getenv('PORT')}")
+    print(f"Environment PORT value: '{os.getenv('PORT', 'NOT_SET')}'")
     print(f"Server will be available at: http://0.0.0.0:{port}")
+    print(f"All environment variables: OLLAMA_BASE_URL={OLLAMA_BASE_URL}, SUPABASE_URL={SUPABASE_URL}")
     
     # 더 안정적인 서버 설정
     try:

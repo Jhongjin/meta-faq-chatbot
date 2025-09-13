@@ -17,12 +17,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 애플리케이션 코드 복사
 COPY . .
 
-# 포트 노출
-EXPOSE 8000
+# 포트 노출 (Railway 권장 5000+)
+EXPOSE 5050
 
 # 환경 변수 설정
-ENV PORT=8000
+ENV PORT=5050
 ENV PYTHONPATH=/app
 
-# 애플리케이션 실행 (PORT 환경변수 사용)
-CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# 애플리케이션 실행 (Railway 표준 방식)
+CMD uvicorn app:app --host 0.0.0.0 --port $PORT
