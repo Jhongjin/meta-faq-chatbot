@@ -288,10 +288,7 @@ if __name__ == "__main__":
             app, 
             host="0.0.0.0", 
             port=port, 
-            log_level="info",
-            access_log=True,
-            timeout_keep_alive=30,
-            timeout_graceful_shutdown=30
+            log_level="info"
         )
     except Exception as e:
         print(f"Server startup error: {e}")
