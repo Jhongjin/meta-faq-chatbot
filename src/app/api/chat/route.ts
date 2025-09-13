@@ -352,20 +352,27 @@ async function generateStreamAnswerWithGemini(
       .map((result, index) => `[출처 ${index + 1}] ${result.content}`)
       .join('\n\n');
 
-    const prompt = `당신은 Meta 광고 전문가입니다. 다음 문서를 참고하여 사용자의 질문에 정확하고 도움이 되는 답변을 한국어로 제공하세요.
+    const prompt = `당신은 Meta 광고 정책 전문가이자 친근한 상담사입니다. 사용자의 질문에 대해 정확하고 도움이 되는 답변을 제공해주세요.
 
-문서 내용:
+**참고 문서:**
 ${context}
 
-질문: ${query}
+**사용자 질문:** ${query}
 
-**중요한 답변 규칙:**
-1. **절대 할루시네이션 금지**: 제공된 문서에 없는 정보는 절대 생성하지 마세요
-2. **문서 기반 답변만**: 반드시 제공된 문서 내용만을 바탕으로 답변하세요
-3. **모른다고 솔직히 말하기**: 문서에 답변이 없으면 "제공된 문서에서 해당 정보를 찾을 수 없습니다"라고 말하세요
-4. **추측 금지**: 확실하지 않은 정보는 추측하지 마세요
-5. **문서 인용**: 답변할 때 관련 문서를 명시하세요
-6. **한국어 답변**: 명확하고 이해하기 쉽게 한국어로 답변하세요
+**답변 가이드라인:**
+1. **정확성 우선**: 제공된 문서를 기반으로 정확한 정보를 전달하세요
+2. **친근한 톤**: 전문적이면서도 이해하기 쉽고 친근한 말투를 사용하세요
+3. **구체적 예시**: 가능한 경우 구체적인 예시나 시나리오를 포함하세요
+4. **실용적 조언**: 실제 업무에 도움이 되는 실용적인 조언을 제공하세요
+5. **단계별 설명**: 복잡한 내용은 단계별로 나누어 설명하세요
+6. **출처 명시**: 답변 근거가 되는 문서를 [출처 X] 형태로 명시하세요
+7. **추가 도움**: 필요시 관련된 다른 정보나 다음 단계에 대한 안내를 제공하세요
+
+**답변 형식:**
+- 핵심 답변을 먼저 제시
+- 구체적인 설명과 예시 제공
+- 실무 적용 방법 안내
+- 관련 출처 명시
 
 답변:`;
 
@@ -434,20 +441,27 @@ async function generateAnswerWithGemini(
       .map((result, index) => `[출처 ${index + 1}] ${result.content}`)
       .join('\n\n');
 
-    const prompt = `당신은 Meta 광고 전문가입니다. 다음 문서를 참고하여 사용자의 질문에 정확하고 도움이 되는 답변을 한국어로 제공하세요.
+    const prompt = `당신은 Meta 광고 정책 전문가이자 친근한 상담사입니다. 사용자의 질문에 대해 정확하고 도움이 되는 답변을 제공해주세요.
 
-문서 내용:
+**참고 문서:**
 ${context}
 
-질문: ${query}
+**사용자 질문:** ${query}
 
-**중요한 답변 규칙:**
-1. **절대 할루시네이션 금지**: 제공된 문서에 없는 정보는 절대 생성하지 마세요
-2. **문서 기반 답변만**: 반드시 제공된 문서 내용만을 바탕으로 답변하세요
-3. **모른다고 솔직히 말하기**: 문서에 답변이 없으면 "제공된 문서에서 해당 정보를 찾을 수 없습니다"라고 말하세요
-4. **추측 금지**: 확실하지 않은 정보는 추측하지 마세요
-5. **문서 인용**: 답변할 때 관련 문서를 명시하세요
-6. **한국어 답변**: 명확하고 이해하기 쉽게 한국어로 답변하세요
+**답변 가이드라인:**
+1. **정확성 우선**: 제공된 문서를 기반으로 정확한 정보를 전달하세요
+2. **친근한 톤**: 전문적이면서도 이해하기 쉽고 친근한 말투를 사용하세요
+3. **구체적 예시**: 가능한 경우 구체적인 예시나 시나리오를 포함하세요
+4. **실용적 조언**: 실제 업무에 도움이 되는 실용적인 조언을 제공하세요
+5. **단계별 설명**: 복잡한 내용은 단계별로 나누어 설명하세요
+6. **출처 명시**: 답변 근거가 되는 문서를 [출처 X] 형태로 명시하세요
+7. **추가 도움**: 필요시 관련된 다른 정보나 다음 단계에 대한 안내를 제공하세요
+
+**답변 형식:**
+- 핵심 답변을 먼저 제시
+- 구체적인 설명과 예시 제공
+- 실무 적용 방법 안내
+- 관련 출처 명시
 
 답변:`;
 
@@ -488,59 +502,113 @@ ${context}
 function generateFallbackAnswer(query: string, searchResults: SearchResult[]): string {
   const lowerQuery = query.toLowerCase();
   
+  // 더 다양하고 유용한 fallback 답변 생성
+  const getRandomGreeting = () => {
+    const greetings = [
+      "안녕하세요! Meta 광고 정책에 대해 궁금하신 점이 있으시군요.",
+      "좋은 질문이네요! Meta 광고 관련해서 도움을 드리겠습니다.",
+      "Meta 광고 정책에 대한 질문을 주셔서 감사합니다!",
+      "네, Meta 광고에 대해 자세히 설명해드리겠습니다."
+    ];
+    return greetings[Math.floor(Math.random() * greetings.length)];
+  };
+
+  const getRandomClosing = () => {
+    const closings = [
+      "이 정보가 도움이 되셨나요? 다른 궁금한 점이 있으시면 언제든지 물어보세요!",
+      "더 자세한 내용이 필요하시면 구체적인 질문을 해주시면 더 정확한 답변을 드릴 수 있습니다.",
+      "Meta 광고에 대해 더 알고 싶으시다면 다른 질문도 해주세요!",
+      "이 답변이 도움이 되었기를 바랍니다. 추가 질문이 있으시면 언제든지 말씀해주세요!"
+    ];
+    return closings[Math.floor(Math.random() * closings.length)];
+  };
+  
   if (lowerQuery.includes('광고') && lowerQuery.includes('정책')) {
-    return `**Meta 광고 정책 안내**
+    return `${getRandomGreeting()}
 
-Meta 광고 정책에 대한 질문이군요. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있어, 기본 정보를 제공해드립니다.
+**📋 Meta 광고 정책 핵심 내용**
 
-**주요 광고 정책:**
-- 광고는 정확하고 진실된 정보를 포함해야 합니다
-- 금지된 콘텐츠(폭력, 성인 콘텐츠, 허위 정보 등)는 광고에 사용할 수 없습니다
-- 개인정보 보호 및 데이터 사용에 대한 정책을 준수해야 합니다
+Meta의 광고 정책은 사용자 경험을 보호하고 신뢰할 수 있는 광고 환경을 조성하기 위해 마련되었습니다.
 
-**검색된 관련 정보:**
-${searchResults.map((result, index) => `${index + 1}. ${result.content.substring(0, 200)}...`).join('\n')}
+**✅ 준수해야 할 사항:**
+• **정확성**: 광고 내용은 정확하고 진실된 정보를 포함해야 합니다
+• **투명성**: 광고주 정보와 제품/서비스에 대한 명확한 설명이 필요합니다
+• **적절성**: 모든 연령대에 적합한 콘텐츠여야 합니다
+• **법적 준수**: 해당 지역의 법률과 규정을 준수해야 합니다
 
-**더 자세한 정보:**
-- Meta 비즈니스 도움말 센터: https://www.facebook.com/business/help
-- 광고 정책 센터: https://www.facebook.com/policies/ads
+**❌ 금지된 콘텐츠:**
+• 폭력, 성인 콘텐츠, 차별적 내용
+• 허위 정보나 오해를 불러일으킬 수 있는 내용
+• 개인정보를 부적절하게 수집하거나 사용하는 행위
+• 지적재산권 침해 콘텐츠
 
-*참고: 현재 Gemini API가 설정되지 않아 기본 답변을 제공하고 있습니다. GOOGLE_API_KEY를 설정해주세요.*`;
+**🔍 검색된 관련 정보:**
+${searchResults.map((result, index) => `• [출처 ${index + 1}] ${result.content.substring(0, 150)}...`).join('\n')}
+
+**📚 추가 자료:**
+• Meta 비즈니스 도움말: https://www.facebook.com/business/help
+• 광고 정책 센터: https://www.facebook.com/policies/ads
+• 광고 관리자: https://business.facebook.com
+
+${getRandomClosing()}
+
+*참고: 현재 AI 답변 생성 서비스가 일시적으로 제한되어 있어 기본 정보를 제공하고 있습니다.*`;
   }
   
   if (lowerQuery.includes('facebook') || lowerQuery.includes('instagram')) {
-    return `**Facebook/Instagram 광고 안내**
+    return `${getRandomGreeting()}
 
-Facebook이나 Instagram 관련 질문이군요. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있어, 기본 정보를 제공해드립니다.
+**📱 Facebook & Instagram 광고 플랫폼 안내**
 
-**주요 플랫폼 특징:**
-- Facebook: 광범위한 타겟팅 옵션과 다양한 광고 형식
-- Instagram: 시각적 콘텐츠 중심의 광고와 스토리 광고
-- 두 플랫폼 모두 Meta 광고 관리자에서 통합 관리 가능
+Meta의 두 주요 광고 플랫폼에 대해 설명해드리겠습니다.
 
-**검색된 관련 정보:**
-${searchResults.map((result, index) => `${index + 1}. ${result.content.substring(0, 200)}...`).join('\n')}
+**🔵 Facebook 광고:**
+• **타겟팅**: 연령, 성별, 관심사, 행동 패턴 등 세밀한 타겟팅
+• **광고 형식**: 이미지, 동영상, 캐러셀, 컬렉션 등 다양한 형식
+• **목표**: 브랜드 인지도, 웹사이트 트래픽, 전환 등 다양한 마케팅 목표
 
-**더 자세한 정보:**
-- Meta 비즈니스 도움말 센터에서 최신 정보를 확인하시거나, 관리자에게 문의해주세요.
+**📸 Instagram 광고:**
+• **시각적 중심**: 고품질 이미지와 동영상에 최적화
+• **스토리 광고**: 15초 이하의 짧고 임팩트 있는 콘텐츠
+• **릴스 광고**: 90초 이하의 동영상 콘텐츠
+• **쇼핑 태그**: 제품 태그를 통한 직접적인 구매 유도
 
-*참고: 현재 Gemini API가 설정되지 않아 기본 답변을 제공하고 있습니다. GOOGLE_API_KEY를 설정해주세요.*`;
+**🔍 검색된 관련 정보:**
+${searchResults.map((result, index) => `• [출처 ${index + 1}] ${result.content.substring(0, 150)}...`).join('\n')}
+
+**💡 실무 팁:**
+• 두 플랫폼을 통합 관리하여 일관된 브랜드 메시지 전달
+• 각 플랫폼의 특성에 맞는 콘텐츠 제작
+• A/B 테스트를 통한 최적화
+
+${getRandomClosing()}
+
+*참고: 현재 AI 답변 생성 서비스가 일시적으로 제한되어 있어 기본 정보를 제공하고 있습니다.*`;
   }
   
-  return `**Meta 광고 FAQ 안내**
+  return `${getRandomGreeting()}
 
-검색된 정보에 따르면:
+**📖 Meta 광고 FAQ**
 
-${searchResults[0]?.content.substring(0, 500) || 'Meta 광고에 대한 질문이군요. 현재 서비스가 일시적으로 제한되어 있어 기본 정보를 제공합니다.'}
+검색된 정보를 바탕으로 답변드리겠습니다:
 
-**추가 정보:**
-- Meta 비즈니스 도움말: https://www.facebook.com/business/help
-- 광고 정책: https://www.facebook.com/policies/ads
-- 광고 관리자: https://business.facebook.com
+${searchResults[0]?.content.substring(0, 400) || 'Meta 광고에 대한 질문이군요. 현재 서비스가 일시적으로 제한되어 있어 기본 정보를 제공합니다.'}
 
-이 정보가 도움이 되었나요? 더 자세한 내용이 필요하시면 다른 질문을 해주세요.
+**🔍 관련 정보:**
+${searchResults.slice(0, 3).map((result, index) => `• [출처 ${index + 1}] ${result.content.substring(0, 100)}...`).join('\n')}
 
-*참고: 현재 Gemini API가 설정되지 않아 기본 답변을 제공하고 있습니다. GOOGLE_API_KEY를 설정해주세요.*`;
+**📚 유용한 링크:**
+• Meta 비즈니스 도움말: https://www.facebook.com/business/help
+• 광고 정책: https://www.facebook.com/policies/ads
+• 광고 관리자: https://business.facebook.com
+• Instagram 비즈니스: https://business.instagram.com
+
+**💬 추가 도움:**
+더 구체적인 질문을 해주시면 더 정확하고 자세한 답변을 드릴 수 있습니다.
+
+${getRandomClosing()}
+
+*참고: 현재 AI 답변 생성 서비스가 일시적으로 제한되어 있어 기본 정보를 제공하고 있습니다.*`;
 }
 
 /**
