@@ -149,13 +149,30 @@ class SupabaseClient:
             logger.error(f"Supabase search error: {e}")
             return []
 
-# 클라이언트 초기화
-ollama_client = OllamaClient(OLLAMA_BASE_URL)
-supabase_client = SupabaseClient(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
+# 클라이언트 초기화 (지연 로딩)
+def get_ollama_client():
+    return OllamaClient(OLLAMA_BASE_URL)
+
+def get_supabase_client():
+    if SUPABASE_URL and SUPABASE_KEY:
+        return SupabaseClient(SUPABASE_URL, SUPABASE_KEY)
+    return None
+
+# 전역 클라이언트 (실제 사용 시점에 초기화)
+ollama_client = None
+supabase_client = None
 
 @app.get("/")
 async def root():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "message": "AdMate Railway API is running",
+        "version": "1.0.0",
+        "environment": {
+            "ollama_url": OLLAMA_BASE_URL,
+            "has_supabase": bool(SUPABASE_URL and SUPABASE_KEY)
+        }
+    }
 
 @app.get("/health")
 async def health_check():
@@ -179,6 +196,14 @@ async def health_check():
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(chat_message: ChatMessage):
     """채팅 메시지 처리"""
+    global ollama_client, supabase_client
+    
+    # 클라이언트 지연 초기화
+    if not ollama_client:
+        ollama_client = get_ollama_client()
+    if not supabase_client:
+        supabase_client = get_supabase_client()
+    
     start_time = datetime.now()
     
     try:
