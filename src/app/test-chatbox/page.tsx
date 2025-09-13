@@ -78,27 +78,27 @@ export default function TestChatboxPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <MessageCircle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">AdMate</h1>
-                <p className="text-sm text-gray-600">Meta 광고 FAQ AI 챗봇</p>
+                <h1 className="text-2xl font-bold text-white">AdMate</h1>
+                <p className="text-sm text-gray-400">Meta 광고 FAQ AI 챗봇</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <button className="modern-button-secondary">
-                <Clock className="w-4 h-4 mr-2" />
+              <button className="header-btn header-btn-primary">
+                <Clock className="w-4 h-4" />
                 히스토리
               </button>
-              <button className="modern-button-primary">
-                <MessageCircle className="w-4 h-4 mr-2" />
+              <button className="header-btn header-btn-secondary">
+                <MessageCircle className="w-4 h-4" />
                 채팅하기
               </button>
             </div>
@@ -115,10 +115,10 @@ export default function TestChatboxPage() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-5xl font-bold text-white mb-6">
             Meta 광고 정책 AI 챗봇
           </h1>
-          <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
             복잡한 Meta 광고 정책을 AI가 쉽게 설명해드립니다. 
             궁금한 것이 있으시면 언제든지 물어보세요.
           </p>
@@ -171,35 +171,35 @@ export default function TestChatboxPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mb-16"
         >
-          <h2 className="text-3xl font-bold text-gray-900 mb-4 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4 text-center">
             실시간 성능 지표
           </h2>
-          <p className="text-lg text-gray-600 mb-8 text-center">
+          <p className="text-lg text-gray-300 mb-8 text-center">
             시스템 성능과 사용자 만족도를 실시간으로 확인하세요
           </p>
           
-          <div className="modern-card p-8">
+          <div className="modern-card-dark p-8">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 modern-text-primary">지표</th>
-                    <th className="text-left py-3 px-4 modern-text-primary">현재 값</th>
-                    <th className="text-left py-3 px-4 modern-text-primary">변화율</th>
-                    <th className="text-left py-3 px-4 modern-text-primary">상태</th>
+                  <tr className="border-b border-gray-600">
+                    <th className="text-left py-3 px-4 modern-text-dark-primary">지표</th>
+                    <th className="text-left py-3 px-4 modern-text-dark-primary">현재 값</th>
+                    <th className="text-left py-3 px-4 modern-text-dark-primary">변화율</th>
+                    <th className="text-left py-3 px-4 modern-text-dark-primary">상태</th>
                   </tr>
                 </thead>
                 <tbody>
                   {performanceData.map((item, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 modern-text-secondary font-medium">{item.metric}</td>
-                      <td className="py-3 px-4 modern-text-primary font-semibold">{item.value}</td>
-                      <td className="py-3 px-4 text-green-600">{item.trend}</td>
+                    <tr key={index} className="border-b border-gray-700 hover:bg-gray-800/50">
+                      <td className="py-3 px-4 modern-text-dark-secondary font-medium">{item.metric}</td>
+                      <td className="py-3 px-4 modern-text-dark-primary font-semibold">{item.value}</td>
+                      <td className="py-3 px-4 text-green-400">{item.trend}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           item.status === 'excellent' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-blue-100 text-blue-800'
+                            ? 'bg-green-900/50 text-green-300 border border-green-700' 
+                            : 'bg-blue-900/50 text-blue-300 border border-blue-700'
                         }`}>
                           {item.status === 'excellent' ? '우수' : '양호'}
                         </span>
@@ -219,10 +219,10 @@ export default function TestChatboxPage() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mb-16"
         >
-          <h2 className="text-3xl font-bold text-center mb-4 text-gray-900">
-            강력한 기능으로 업무를 <span className="text-blue-600">혁신하세요</span>
+          <h2 className="text-3xl font-bold text-center mb-4 text-white">
+            강력한 기능으로 업무를 <span className="text-blue-400">혁신하세요</span>
           </h2>
-          <p className="text-lg text-gray-600 mb-12 text-center max-w-3xl mx-auto">
+          <p className="text-lg text-gray-300 mb-12 text-center max-w-3xl mx-auto">
             AI 기반의 스마트한 기능들로 Meta 광고 정책 관리의 새로운 차원을 경험하세요
           </p>
           
@@ -233,19 +233,19 @@ export default function TestChatboxPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 * index }}
-                className="modern-card group hover:-translate-y-2 transition-all duration-300"
+                className="modern-card-dark group hover:-translate-y-2 transition-all duration-300"
               >
                 <div className="p-8 h-full flex flex-col">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-6">
-                    <feature.icon className="w-8 h-8 text-gray-600" />
+                  <div className="w-16 h-16 bg-gray-800 rounded-2xl flex items-center justify-center mb-6">
+                    <feature.icon className="w-8 h-8 text-gray-300" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  <h3 className="text-xl font-bold text-white mb-4">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-gray-300 mb-6">
                     {feature.description}
                   </p>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-900/50 text-blue-300 border border-blue-700">
                     {feature.badge}
                   </span>
                 </div>
@@ -261,10 +261,10 @@ export default function TestChatboxPage() {
           transition={{ duration: 0.6, delay: 0.6 }}
           className="mb-16"
         >
-          <h2 className="text-3xl font-bold text-gray-900 mb-4 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4 text-center">
             실시간 통계
           </h2>
-          <p className="text-lg text-gray-600 mb-12 text-center">
+          <p className="text-lg text-gray-300 mb-12 text-center">
             시스템 사용 현황과 성능 지표를 확인하세요
           </p>
           
@@ -275,19 +275,19 @@ export default function TestChatboxPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 * index }}
-                className="modern-card group hover:-translate-y-2 transition-all duration-300"
+                className="modern-card-dark group hover:-translate-y-2 transition-all duration-300"
               >
                 <div className="p-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <BarChart3 className="w-8 h-8 text-gray-600" />
+                  <div className="w-16 h-16 bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <BarChart3 className="w-8 h-8 text-gray-300" />
                   </div>
-                  <h3 className="text-3xl font-bold text-gray-900 mb-3">
+                  <h3 className="text-3xl font-bold text-white mb-3">
                     {stat.value}
                   </h3>
-                  <p className="text-lg font-semibold text-gray-900 mb-2">
+                  <p className="text-lg font-semibold text-white mb-2">
                     {stat.label}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-300">
                     {stat.description}
                   </p>
                 </div>
@@ -296,7 +296,7 @@ export default function TestChatboxPage() {
           </div>
         </motion.div>
 
-        {/* CTA Section - Modern Style */}
+        {/* CTA Section - Dark Modern Style */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -304,12 +304,12 @@ export default function TestChatboxPage() {
           className="text-center"
         >
           <div className="w-full max-w-7xl mx-auto px-4">
-            <div className="modern-card p-12">
+            <div className="modern-card-dark p-12">
               <div className="text-center mb-8">
-                <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                <h2 className="text-4xl font-bold text-white mb-4">
                   지금 바로 시작해보세요
                 </h2>
-                <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                <p className="text-lg text-gray-300 max-w-3xl mx-auto">
                   Meta 광고 정책에 대한 궁금증을 AI 챗봇에게 물어보고, 업무 효율성을 극대화하세요
                 </p>
               </div>
