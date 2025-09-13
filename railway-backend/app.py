@@ -305,39 +305,46 @@ async def get_available_models():
         logger.error(f"Model list error: {e}")
         return {"models": []}
 
+# Railway에서 직접 실행을 위한 설정
+def get_port():
+    """Railway PORT 환경변수 안전한 파싱"""
+    port_env = os.getenv('PORT', '8000')
+    print(f"[STARTUP] Raw PORT environment variable: '{port_env}'")
+    
+    # Railway에서 $PORT가 문자열로 전달되는 경우 처리
+    if port_env == '$PORT' or not port_env.isdigit():
+        print(f"[STARTUP] Invalid PORT value '{port_env}', using default 8000")
+        return 8000
+    
+    try:
+        port = int(port_env)
+        print(f"[STARTUP] Successfully parsed PORT: {port}")
+        return port
+    except (ValueError, TypeError) as e:
+        print(f"[STARTUP] PORT parsing error: {e}, using default 8000")
+        return 8000
+
 if __name__ == "__main__":
     import uvicorn
     import sys
     
-    # Railway 포트 설정 (강화된 파싱)
-    port_env = os.getenv('PORT', '5050')
-    print(f"Raw PORT environment variable: '{port_env}'")
+    port = get_port()
     
-    try:
-        # PORT 환경변수가 '$PORT' 문자열인 경우 처리
-        if port_env == '$PORT':
-            print("WARNING: PORT is literal '$PORT' string, using fallback")
-            port = 5050
-        else:
-            port = int(port_env)
-            print(f"Successfully parsed PORT: {port}")
-    except (ValueError, TypeError) as e:
-        print(f"PORT parsing error: {e}, using fallback port 5050")
-        port = 5050
+    print(f"[STARTUP] Starting AdMate API server...")
+    print(f"[STARTUP] Host: 0.0.0.0, Port: {port}")
+    print(f"[STARTUP] OLLAMA_BASE_URL: {OLLAMA_BASE_URL}")
+    print(f"[STARTUP] SUPABASE_URL: {'***' if SUPABASE_URL else 'NOT_SET'}")
     
-    print(f"Starting server on port {port}")
-    print(f"Environment PORT value: '{os.getenv('PORT', 'NOT_SET')}'")
-    print(f"Server will be available at: http://0.0.0.0:{port}")
-    print(f"All environment variables: OLLAMA_BASE_URL={OLLAMA_BASE_URL}, SUPABASE_URL={SUPABASE_URL}")
-    
-    # 더 안정적인 서버 설정
     try:
         uvicorn.run(
-            app, 
+            "app:app",  # 모듈:앱 형식으로 지정
             host="0.0.0.0", 
             port=port, 
-            log_level="info"
+            log_level="info",
+            access_log=True
         )
     except Exception as e:
-        print(f"Server startup error: {e}")
+        print(f"[ERROR] Server startup failed: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
