@@ -1,11 +1,11 @@
 [start]
-cmd = "python -m uvicorn app:app --host 0.0.0.0 --port $PORT"
+cmd = "cd railway-backend && python -m uvicorn app:app --host 0.0.0.0 --port $PORT"
 
 [variables]
-PYTHONPATH = "/app"
+PYTHONPATH = "/app/railway-backend"
 
 [phases.setup]
 nixPkgs = ["python3", "gcc"]
 
 [phases.install]
-cmd = "pip install -r requirements.txt"
+cmd = "cd railway-backend && pip install -r requirements.txt"
