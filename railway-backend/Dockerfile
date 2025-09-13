@@ -24,5 +24,5 @@ EXPOSE 5050
 ENV PORT=5050
 ENV PYTHONPATH=/app
 
-# 애플리케이션 실행 (Railway 표준 방식)
-CMD uvicorn app:app --host 0.0.0.0 --port $PORT
+# 애플리케이션 실행 (Shell 형태로 환경변수 치환 보장)
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT}"]

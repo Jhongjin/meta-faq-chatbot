@@ -309,10 +309,20 @@ if __name__ == "__main__":
     import uvicorn
     import sys
     
-    # Railway 권장 포트 설정 (5000+)
+    # Railway 포트 설정 (강화된 파싱)
+    port_env = os.getenv('PORT', '5050')
+    print(f"Raw PORT environment variable: '{port_env}'")
+    
     try:
-        port = int(os.getenv('PORT', '5050'))
-    except ValueError:
+        # PORT 환경변수가 '$PORT' 문자열인 경우 처리
+        if port_env == '$PORT':
+            print("WARNING: PORT is literal '$PORT' string, using fallback")
+            port = 5050
+        else:
+            port = int(port_env)
+            print(f"Successfully parsed PORT: {port}")
+    except (ValueError, TypeError) as e:
+        print(f"PORT parsing error: {e}, using fallback port 5050")
         port = 5050
     
     print(f"Starting server on port {port}")
