@@ -305,6 +305,53 @@ async def get_available_models():
         logger.error(f"Model list error: {e}")
         return {"models": []}
 
+@app.post("/api/pull-model")
+async def pull_model(model_name: str):
+    """Ollama 모델 다운로드"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{OLLAMA_BASE_URL}/api/pull",
+                json={"name": model_name},
+                timeout=aiohttp.ClientTimeout(total=600)  # 10분 타임아웃
+            ) as response:
+                if response.status == 200:
+                    return {"status": "success", "message": f"Model {model_name} pulled successfully"}
+                else:
+                    error_text = await response.text()
+                    return {"status": "error", "message": f"Failed to pull model: {error_text}"}
+    except Exception as e:
+        logger.error(f"Model pull error: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/setup-models")
+async def setup_required_models():
+    """필수 모델들 자동 다운로드"""
+    models_to_pull = [EMBEDDING_MODEL, LLM_MODEL]
+    results = []
+    
+    for model in models_to_pull:
+        try:
+            logger.info(f"Pulling model: {model}")
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{OLLAMA_BASE_URL}/api/pull",
+                    json={"name": model},
+                    timeout=aiohttp.ClientTimeout(total=600)
+                ) as response:
+                    if response.status == 200:
+                        results.append({"model": model, "status": "success"})
+                        logger.info(f"Successfully pulled model: {model}")
+                    else:
+                        error_text = await response.text()
+                        results.append({"model": model, "status": "error", "message": error_text})
+                        logger.error(f"Failed to pull model {model}: {error_text}")
+        except Exception as e:
+            results.append({"model": model, "status": "error", "message": str(e)})
+            logger.error(f"Exception pulling model {model}: {e}")
+    
+    return {"results": results}
+
 # Railway에서 직접 실행을 위한 설정
 def get_port():
     """Railway PORT 환경변수 안전한 파싱"""
