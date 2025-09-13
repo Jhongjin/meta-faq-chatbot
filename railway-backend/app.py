@@ -160,17 +160,9 @@ async def root():
 @app.get("/health")
 async def health_check():
     """헬스 체크 엔드포인트"""
-    try:
-        # Ollama 연결 확인
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"{OLLAMA_BASE_URL}/api/tags") as response:
-                ollama_status = response.status == 200
-    except:
-        ollama_status = False
-    
     return {
-        "status": "healthy" if ollama_status else "degraded",
-        "ollama": "connected" if ollama_status else "disconnected",
+        "status": "healthy",
+        "service": "Meta FAQ AI Chatbot API",
         "timestamp": datetime.now().isoformat()
     }
 
