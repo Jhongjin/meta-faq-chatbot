@@ -160,11 +160,7 @@ async def root():
 @app.get("/health")
 async def health_check():
     """헬스 체크 엔드포인트"""
-    return {
-        "status": "healthy",
-        "service": "Meta FAQ AI Chatbot API",
-        "timestamp": datetime.now().isoformat()
-    }
+    return {"status": "ok"}
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(chat_message: ChatMessage):
