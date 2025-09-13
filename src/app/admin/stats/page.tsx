@@ -333,7 +333,7 @@ export default function StatisticsPage() {
                     {overviewStats.weeklyChange.questions > 0 ? "+" : ""}
                     {overviewStats.weeklyChange.questions}%
                   </span>
-                  <span className="text-xs text-gray-400">지난 주 대비</span>
+                  <span className="text-xs text-gray-200">지난 주 대비</span>
                 </div>
               </CardContent>
             </Card>
@@ -357,7 +357,7 @@ export default function StatisticsPage() {
                     {overviewStats.weeklyChange.users > 0 ? "+" : ""}
                     {overviewStats.weeklyChange.users}%
                   </span>
-                  <span className="text-xs text-gray-400">지난 주 대비</span>
+                  <span className="text-xs text-gray-200">지난 주 대비</span>
                 </div>
               </CardContent>
             </Card>
@@ -381,7 +381,7 @@ export default function StatisticsPage() {
                     {overviewStats.weeklyChange.responseTime < 0 ? "+" : ""}
                     {Math.abs(overviewStats.weeklyChange.responseTime)}%
                   </span>
-                  <span className="text-xs text-gray-400">지난 주 대비</span>
+                  <span className="text-xs text-gray-200">지난 주 대비</span>
                 </div>
               </CardContent>
             </Card>
@@ -405,7 +405,7 @@ export default function StatisticsPage() {
                     {overviewStats.weeklyChange.satisfaction > 0 ? "+" : ""}
                     {overviewStats.weeklyChange.satisfaction}%
                   </span>
-                  <span className="text-xs text-gray-400">지난 주 대비</span>
+                  <span className="text-xs text-gray-200">지난 주 대비</span>
                 </div>
               </CardContent>
             </Card>
@@ -647,19 +647,19 @@ export default function StatisticsPage() {
                         <div className="text-2xl font-bold text-white mb-1">
                           {feedbackStats?.total || 0}
                         </div>
-                        <p className="text-sm text-gray-300">총 피드백</p>
+                        <p className="text-sm text-gray-100">총 피드백</p>
                       </div>
                       <div className="text-center p-4 bg-green-700/30 rounded-lg">
                         <div className="text-2xl font-bold text-green-400 mb-1">
                           {feedbackStats?.positive || 0}
                         </div>
-                        <p className="text-sm text-gray-300">도움됨</p>
+                        <p className="text-sm text-gray-100">도움됨</p>
                       </div>
                       <div className="text-center p-4 bg-red-700/30 rounded-lg">
                         <div className="text-2xl font-bold text-red-400 mb-1">
                           {feedbackStats?.negative || 0}
                         </div>
-                        <p className="text-sm text-gray-300">도움안됨</p>
+                        <p className="text-sm text-gray-100">도움안됨</p>
                       </div>
                     </div>
                     
@@ -667,7 +667,7 @@ export default function StatisticsPage() {
                       <div className="text-3xl font-bold text-orange-400 mb-1">
                         {feedbackStats?.positivePercentage || 0}%
                       </div>
-                      <p className="text-sm text-gray-300">만족도</p>
+                      <p className="text-sm text-gray-100">만족도</p>
                       <div className="w-full bg-gray-600 rounded-full h-2 mt-2">
                         <div 
                           className="bg-orange-500 h-2 rounded-full transition-all duration-500" 

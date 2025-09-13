@@ -718,9 +718,9 @@ export default function AdminDashboardPage() {
                             "outline"
                           }
                           className={`text-xs px-3 py-1 font-semibold ${
-                            alert.priority === "high" ? "bg-red-500/20 text-red-300 border-red-400/50" :
-                            alert.priority === "medium" ? "bg-yellow-500/20 text-yellow-300 border-yellow-400/50" :
-                            "bg-gray-500/20 text-gray-300 border-gray-400/50"
+                            alert.priority === "high" ? "bg-red-500/30 text-red-200 border-red-400/70 shadow-lg shadow-red-500/20" :
+                            alert.priority === "medium" ? "bg-yellow-500/30 text-yellow-200 border-yellow-400/70 shadow-lg shadow-yellow-500/20" :
+                            "bg-blue-500/30 text-blue-200 border-blue-400/70 shadow-lg shadow-blue-500/20"
                           }`}
                         >
                           {alert.priority === "high" ? "높음" :

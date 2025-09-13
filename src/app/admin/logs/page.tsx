@@ -353,7 +353,7 @@ export default function LogsPage() {
                 시스템 로그
               </h1>
             </div>
-            <p className="text-gray-300 text-lg">
+            <p className="text-gray-100 text-lg">
               시스템 활동과 사용자 행동을 실시간으로 모니터링하여 문제를 조기에 발견하고 대응하세요.
             </p>
           </div>
@@ -531,7 +531,7 @@ export default function LogsPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-300 mb-2 block">로그 레벨</label>
+                <label className="text-sm font-medium text-gray-100 mb-2 block">로그 레벨</label>
                 <Select value={selectedLevel} onValueChange={setSelectedLevel}>
                   <SelectTrigger className="bg-gray-700/50 border-gray-600 text-white">
                     <SelectValue />
@@ -547,7 +547,7 @@ export default function LogsPage() {
               </div>
               
               <div>
-                <label className="text-sm font-medium text-gray-300 mb-2 block">로그 유형</label>
+                <label className="text-sm font-medium text-gray-100 mb-2 block">로그 유형</label>
                 <Select value={selectedType} onValueChange={setSelectedType}>
                   <SelectTrigger className="bg-gray-700/50 border-gray-600 text-white">
                     <SelectValue />
@@ -563,7 +563,7 @@ export default function LogsPage() {
               </div>
               
               <div>
-                <label className="text-sm font-medium text-gray-300 mb-2 block">사용자 ID</label>
+                <label className="text-sm font-medium text-gray-100 mb-2 block">사용자 ID</label>
                 <Input 
                   placeholder="사용자 ID 입력..." 
                   value={userId}
@@ -573,7 +573,7 @@ export default function LogsPage() {
               </div>
               
               <div>
-                <label className="text-sm font-medium text-gray-300 mb-2 block">검색</label>
+                <label className="text-sm font-medium text-gray-100 mb-2 block">검색</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300 w-4 h-4" />
                   <Input 
