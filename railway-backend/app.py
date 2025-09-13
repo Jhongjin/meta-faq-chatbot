@@ -207,10 +207,15 @@ async def chat_endpoint(chat_message: ChatMessage):
     start_time = datetime.now()
     
     try:
-        # 1. 질문 임베딩 생성
-        query_embedding = await ollama_client.generate_embedding(chat_message.message)
-        if not query_embedding:
-            raise HTTPException(status_code=500, detail="임베딩 생성 실패")
+        # 1. 질문 임베딩 생성 (백업 시스템 포함)
+        try:
+            query_embedding = await ollama_client.generate_embedding(chat_message.message)
+            if not query_embedding:
+                logger.warning("Embedding generation failed, using fallback")
+                return await fallback_chat_response(chat_message.message)
+        except Exception as e:
+            logger.error(f"Embedding error: {e}, using fallback")
+            return await fallback_chat_response(chat_message.message)
         
         # 2. 유사한 문서 검색
         search_results = []
@@ -385,6 +390,171 @@ async def debug_ollama_connection():
         logger.error(f"Ollama debug error: {e}")
     
     return debug_info
+
+@app.post("/api/fallback-chat")
+async def fallback_chat_endpoint(request: ChatRequest):
+    """Ollama 실패 시 백업 응답 시스템"""
+    try:
+        # 1. Supabase에서 관련 문서 검색
+        supabase_client = get_supabase_client()
+        if not supabase_client:
+            return {"answer": "죄송합니다. 현재 시스템에 일시적인 문제가 있습니다.", "sources": []}
+        
+        # 간단한 키워드 매칭으로 관련 문서 찾기
+        keywords = request.message.lower().split()
+        search_query = " | ".join(keywords[:3])  # 첫 3개 키워드로 검색
+        
+        response = supabase_client.table("documents").select("*").text_search("content", search_query).limit(3).execute()
+        
+        sources = []
+        context_text = ""
+        
+        if response.data:
+            for doc in response.data:
+                sources.append({
+                    "title": doc.get("title", "문서"),
+                    "content": doc.get("content", "")[:200] + "...",
+                    "url": doc.get("url", ""),
+                    "updated_at": doc.get("updated_at", "")
+                })
+                context_text += f"문서: {doc.get('title', '')}\n내용: {doc.get('content', '')[:500]}\n\n"
+        
+        # 2. 규칙 기반 응답 생성
+        answer = generate_rule_based_answer(request.message, context_text, sources)
+        
+        return {
+            "answer": answer,
+            "sources": sources,
+            "fallback_mode": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Fallback chat error: {e}")
+        return {
+            "answer": "죄송합니다. 현재 시스템에 문제가 있어 답변을 제공할 수 없습니다. 잠시 후 다시 시도해주세요.",
+            "sources": [],
+            "fallback_mode": True
+        }
+
+def generate_rule_based_answer(question: str, context: str, sources: list) -> str:
+    """규칙 기반 답변 생성"""
+    question_lower = question.lower()
+    
+    # Meta 광고 관련 키워드 매칭
+    if any(keyword in question_lower for keyword in ["광고", "캠페인", "메타", "페이스북", "인스타그램"]):
+        if context:
+            return f"""Meta 광고 관련 질문에 대한 답변입니다.
+
+**관련 정보:**
+{context[:800]}
+
+**추가 도움:**
+- 더 자세한 정보가 필요하시면 관련 문서를 확인해주세요.
+- 구체적인 정책이나 가이드라인은 최신 Meta 비즈니스 도움말 센터를 참조하시기 바랍니다.
+
+**출처:** {len(sources)}개의 관련 문서에서 정보를 수집했습니다."""
+        else:
+            return """Meta 광고에 대한 일반적인 안내입니다.
+
+**기본 정보:**
+- Meta 광고는 Facebook, Instagram, Threads 플랫폼에서 집행할 수 있습니다.
+- 광고 정책 준수가 필수이며, 정기적으로 업데이트됩니다.
+- 타겟팅, 예산, 크리에이티브 최적화가 성공의 핵심입니다.
+
+더 구체적인 질문을 해주시면 더 정확한 답변을 드릴 수 있습니다."""
+    
+    elif any(keyword in question_lower for keyword in ["정책", "가이드라인", "규정"]):
+        return f"""정책 및 가이드라인 관련 질문입니다.
+
+**중요 사항:**
+- 모든 광고는 Meta의 광고 정책을 준수해야 합니다.
+- 정책은 정기적으로 업데이트되므로 최신 버전 확인이 필요합니다.
+- 정책 위반 시 광고 거부 또는 계정 제재가 있을 수 있습니다.
+
+{context[:500] if context else ''}
+
+더 구체적인 정책 문의사항이 있으시면 상세히 질문해주세요."""
+    
+    elif any(keyword in question_lower for keyword in ["예산", "비용", "과금"]):
+        return f"""광고 예산 및 비용 관련 안내입니다.
+
+**기본 정보:**
+- 일일 예산과 총 예산 설정이 가능합니다.
+- CPC, CPM, CPA 등 다양한 과금 방식을 지원합니다.
+- 실시간 예산 모니터링과 조정이 가능합니다.
+
+{context[:500] if context else ''}
+
+구체적인 예산 전략에 대한 질문이 있으시면 더 자세히 문의해주세요."""
+    
+    else:
+        if context:
+            return f"""질문해주신 내용에 대한 관련 정보입니다.
+
+{context[:800]}
+
+**참고사항:**
+- 위 정보는 내부 문서에서 수집된 내용입니다.
+- 더 정확한 정보가 필요하시면 관련 담당자에게 문의하시기 바랍니다.
+
+추가 질문이 있으시면 언제든 말씀해주세요."""
+        else:
+            return f""""{question}"에 대한 질문을 주셨습니다.
+
+현재 관련된 구체적인 문서를 찾지 못했습니다. 
+
+**도움이 될 수 있는 방법:**
+- 더 구체적인 키워드로 질문해주세요
+- Meta 광고, 정책, 가이드라인 등 관련 용어를 포함해주세요
+- 특정 상황이나 문제에 대해 자세히 설명해주세요
+
+언제든 다시 질문해주시면 더 나은 답변을 드리겠습니다."""
+
+async def fallback_chat_response(message: str) -> ChatResponse:
+    """백업 채팅 응답 생성"""
+    try:
+        # Supabase에서 키워드 기반 검색
+        supabase_client = get_supabase_client()
+        sources = []
+        context_text = ""
+        
+        if supabase_client:
+            keywords = message.lower().split()[:3]
+            search_query = " | ".join(keywords)
+            
+            try:
+                response = supabase_client.table("documents").select("*").text_search("content", search_query).limit(3).execute()
+                
+                if response.data:
+                    for doc in response.data:
+                        sources.append({
+                            "title": doc.get("title", "문서"),
+                            "content": doc.get("content", "")[:200] + "...",
+                            "url": doc.get("url", ""),
+                            "updated_at": doc.get("updated_at", "")
+                        })
+                        context_text += f"문서: {doc.get('title', '')}\n내용: {doc.get('content', '')[:500]}\n\n"
+            except Exception as e:
+                logger.error(f"Fallback search error: {e}")
+        
+        # 규칙 기반 답변 생성
+        answer = generate_rule_based_answer(message, context_text, sources)
+        
+        return ChatResponse(
+            answer=answer,
+            sources=sources,
+            response_time=1.0,
+            fallback_mode=True
+        )
+        
+    except Exception as e:
+        logger.error(f"Fallback response error: {e}")
+        return ChatResponse(
+            answer="죄송합니다. 현재 시스템에 일시적인 문제가 있습니다. 잠시 후 다시 시도해주세요.",
+            sources=[],
+            response_time=1.0,
+            fallback_mode=True
+        )
 
 # Railway에서 직접 실행을 위한 설정
 def get_port():
