@@ -155,7 +155,7 @@ supabase_client = SupabaseClient(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and
 
 @app.get("/")
 async def root():
-    return {"status": "ok", "message": "Meta FAQ AI Chatbot API"}
+    return {"status": "ok"}
 
 @app.get("/health")
 async def health_check():
@@ -269,4 +269,6 @@ async def get_available_models():
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    print(f"Starting server on port {port}")
+    print(f"Environment variables: PORT={os.getenv('PORT')}")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
