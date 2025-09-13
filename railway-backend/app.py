@@ -274,17 +274,16 @@ if __name__ == "__main__":
     port_str = os.getenv("PORT", "8000")
     print(f"Raw PORT value: '{port_str}'")
     
-    # PORT 값 정리 (공백, 특수문자 제거)
-    port_str = str(port_str).strip()
-    if not port_str or port_str == "$PORT":
-        print("PORT is empty or not set, using default 8000")
+    # Railway에서 PORT가 제대로 설정되지 않는 경우를 대비한 하드코딩
+    if not port_str or port_str == "$PORT" or port_str.strip() == "":
+        print("PORT is not properly set, using hardcoded 8000")
         port = 8000
     else:
         try:
-            port = int(port_str)
+            port = int(str(port_str).strip())
             print(f"Successfully parsed PORT: {port}")
         except (ValueError, TypeError) as e:
-            print(f"Invalid PORT value: '{port_str}', error: {e}, using default 8000")
+            print(f"Invalid PORT value: '{port_str}', error: {e}, using hardcoded 8000")
             port = 8000
     
     print(f"Starting server on port {port}")
