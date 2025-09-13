@@ -25,4 +25,4 @@ ENV PORT=8000
 ENV PYTHONPATH=/app
 
 # 애플리케이션 실행 (PORT 환경변수 사용)
-CMD ["sh", "-c", "python -m uvicorn app:app --host 0.0.0.0 --port 8000"]
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
