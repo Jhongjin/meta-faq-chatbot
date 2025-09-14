@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/admin/globals.admin.css";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -200,12 +201,12 @@ export default function StatisticsPage() {
       <div className="mb-6">
         <Alert className="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-500/50 text-blue-100 backdrop-blur-sm">
           <Info className="h-4 w-4 text-blue-300" />
-          <AlertTitle className="text-blue-100 font-semibold">📊 실시간 통계 업데이트</AlertTitle>
-          <AlertDescription className="text-blue-200">
+          <AlertTitle className="text-primary-enhanced font-bold">📊 실시간 통계 업데이트</AlertTitle>
+          <AlertDescription className="text-secondary-enhanced">
             통계 데이터는 5분마다 자동으로 업데이트됩니다. 실시간 데이터를 보려면 새로고침 버튼을 클릭하세요.
             <br />
             {isClient && lastUpdated && (
-              <span className="text-blue-300 text-sm">
+              <span className="text-white font-semibold text-sm">
                 마지막 업데이트: {lastUpdated.toLocaleString()}
               </span>
             )}
@@ -312,13 +313,13 @@ export default function StatisticsPage() {
           ))
         ) : (
           <>
-            <Card className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 border-blue-500/30 hover:from-blue-900/40 hover:to-blue-800/30 transition-all duration-300">
+            <Card className="performance-card bg-gradient-to-br from-blue-900/30 to-blue-800/20 border-blue-500/30 hover:from-blue-900/40 hover:to-blue-800/30 transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-blue-200">총 질문 수</CardTitle>
+                <CardTitle className="text-sm font-bold text-primary-enhanced">총 질문 수</CardTitle>
                 <MessageSquare className="w-5 h-5 text-blue-400" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-white mb-2">
+                <div className="text-3xl font-black text-white mb-2 text-enhanced">
                   {overviewStats.totalQuestions.toLocaleString()}
                 </div>
                 <div className="flex items-center space-x-2">
@@ -327,85 +328,85 @@ export default function StatisticsPage() {
                   ) : (
                     <TrendingDown className="w-4 h-4 text-red-400" />
                   )}
-                  <span className={`text-sm font-medium ${
+                  <span className={`text-sm font-bold ${
                     overviewStats.weeklyChange.questions > 0 ? "text-green-400" : "text-red-400"
                   }`}>
                     {overviewStats.weeklyChange.questions > 0 ? "+" : ""}
                     {overviewStats.weeklyChange.questions}%
                   </span>
-                  <span className="text-xs text-gray-200">지난 주 대비</span>
+                  <span className="text-xs text-secondary-enhanced font-semibold">지난 주 대비</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-green-900/30 to-green-800/20 border-green-500/30 hover:from-green-900/40 hover:to-green-800/30 transition-all duration-300">
+            <Card className="performance-card bg-gradient-to-br from-green-900/30 to-green-800/20 border-green-500/30 hover:from-green-900/40 hover:to-green-800/30 transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-green-200">활성 사용자</CardTitle>
+                <CardTitle className="text-sm font-bold text-primary-enhanced">활성 사용자</CardTitle>
                 <Users className="w-5 h-5 text-green-400" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-white mb-2">{overviewStats.activeUsers}</div>
+                <div className="text-3xl font-black text-white mb-2 text-enhanced">{overviewStats.activeUsers}</div>
                 <div className="flex items-center space-x-2">
                   {overviewStats.weeklyChange.users > 0 ? (
                     <TrendingUp className="w-4 h-4 text-green-400" />
                   ) : (
                     <TrendingDown className="w-4 h-4 text-red-400" />
                   )}
-                  <span className={`text-sm font-medium ${
+                  <span className={`text-sm font-bold ${
                     overviewStats.weeklyChange.users > 0 ? "text-green-400" : "text-red-400"
                   }`}>
                     {overviewStats.weeklyChange.users > 0 ? "+" : ""}
                     {overviewStats.weeklyChange.users}%
                   </span>
-                  <span className="text-xs text-gray-200">지난 주 대비</span>
+                  <span className="text-xs text-secondary-enhanced font-semibold">지난 주 대비</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 border-purple-500/30 hover:from-purple-900/40 hover:to-purple-800/30 transition-all duration-300">
+            <Card className="performance-card bg-gradient-to-br from-purple-900/30 to-purple-800/20 border-purple-500/30 hover:from-purple-900/40 hover:to-purple-800/30 transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-purple-200">평균 응답 시간</CardTitle>
+                <CardTitle className="text-sm font-bold text-primary-enhanced">평균 응답 시간</CardTitle>
                 <Clock className="w-5 h-5 text-purple-400" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-white mb-2">{overviewStats.avgResponseTime}</div>
+                <div className="text-3xl font-black text-white mb-2 text-enhanced">{overviewStats.avgResponseTime}</div>
                 <div className="flex items-center space-x-2">
                   {overviewStats.weeklyChange.responseTime < 0 ? (
                     <TrendingUp className="w-4 h-4 text-green-400" />
                   ) : (
                     <TrendingDown className="w-4 h-4 text-red-400" />
                   )}
-                  <span className={`text-sm font-medium ${
+                  <span className={`text-sm font-bold ${
                     overviewStats.weeklyChange.responseTime < 0 ? "text-green-400" : "text-red-400"
                   }`}>
                     {overviewStats.weeklyChange.responseTime < 0 ? "+" : ""}
                     {Math.abs(overviewStats.weeklyChange.responseTime)}%
                   </span>
-                  <span className="text-xs text-gray-200">지난 주 대비</span>
+                  <span className="text-xs text-secondary-enhanced font-semibold">지난 주 대비</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-yellow-900/30 to-yellow-800/20 border-yellow-500/30 hover:from-yellow-900/40 hover:to-yellow-800/30 transition-all duration-300">
+            <Card className="performance-card bg-gradient-to-br from-yellow-900/30 to-yellow-800/20 border-yellow-500/30 hover:from-yellow-900/40 hover:to-yellow-800/30 transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-yellow-200">만족도</CardTitle>
+                <CardTitle className="text-sm font-bold text-primary-enhanced">만족도</CardTitle>
                 <Star className="w-5 h-5 text-yellow-400" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-white mb-2">{overviewStats.satisfactionRate}%</div>
+                <div className="text-3xl font-black text-white mb-2 text-enhanced">{overviewStats.satisfactionRate}%</div>
                 <div className="flex items-center space-x-2">
                   {overviewStats.weeklyChange.satisfaction > 0 ? (
                     <TrendingUp className="w-4 h-4 text-green-400" />
                   ) : (
                     <TrendingDown className="w-4 h-4 text-red-400" />
                   )}
-                  <span className={`text-sm font-medium ${
+                  <span className={`text-sm font-bold ${
                     overviewStats.weeklyChange.satisfaction > 0 ? "text-green-400" : "text-red-400"
                   }`}>
                     {overviewStats.weeklyChange.satisfaction > 0 ? "+" : ""}
                     {overviewStats.weeklyChange.satisfaction}%
                   </span>
-                  <span className="text-xs text-gray-200">지난 주 대비</span>
+                  <span className="text-xs text-secondary-enhanced font-semibold">지난 주 대비</span>
                 </div>
               </CardContent>
             </Card>
