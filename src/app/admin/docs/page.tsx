@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import "@/app/admin/globals.admin.css";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import DocumentUpload from "@/components/admin/DocumentUpload";
 import HybridCrawlingManager from "@/components/admin/HybridCrawlingManager";

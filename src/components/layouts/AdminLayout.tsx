@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import "@/app/admin/globals.admin.css";
 import { Menu, BarChart3, FileText, Activity, Users, Settings, LogOut, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -23,7 +24,7 @@ export default function AdminLayout({ children, currentPage = "dashboard" }: Adm
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="admin-container min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Header - Modern glassmorphism design */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -294,11 +294,11 @@ export default function AdminDashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Alert className="bg-blue-900/20 border-blue-500/30 text-blue-100 rounded-xl">
+        <Alert className="alert-enhanced alert-info">
           <Info className="h-4 w-4 text-blue-300" />
-          <AlertTitle className="text-blue-100 font-semibold">시스템 상태</AlertTitle>
-          <AlertDescription className="text-blue-200">
-            모든 시스템이 정상적으로 작동 중입니다. 마지막 업데이트: {systemStatus.lastUpdate}
+          <AlertTitle className="text-primary-enhanced font-semibold">✅ 시스템 상태</AlertTitle>
+          <AlertDescription className="text-secondary-enhanced">
+            🟢 모든 시스템이 정상적으로 작동 중입니다. 마지막 업데이트: {systemStatus.lastUpdate}
           </AlertDescription>
         </Alert>
       </motion.div>
@@ -313,20 +313,20 @@ export default function AdminDashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <motion.h1 
-              className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2"
+              className="text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent mb-2 text-enhanced"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              관리자 대시보드
+              📊 관리자 대시보드
             </motion.h1>
             <motion.p 
-              className="text-gray-300 text-lg"
+              className="text-secondary-enhanced text-lg"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              시스템 전반의 상태를 모니터링하고 관리 작업을 수행하세요.
+              🔧 시스템 전반의 상태를 모니터링하고 관리 작업을 수행하세요.
             </motion.p>
           </div>
           <motion.div
@@ -340,10 +340,10 @@ export default function AdminDashboardPage() {
               disabled={isLoading}
               variant="outline"
               size="sm"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white disabled:opacity-50"
+              className="btn-enhanced border-blue-500/30 text-blue-300 hover:bg-blue-600 hover:text-white disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              새로고침
+              🔄 새로고침
             </Button>
             <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm rounded-xl p-4 border border-blue-500/20">
               <Sparkles className="w-5 h-5 text-blue-400" />
@@ -418,15 +418,15 @@ export default function AdminDashboardPage() {
                 <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
                   <Shield className="w-4 h-4 text-white" />
                 </div>
-                <CardTitle className="text-sm font-medium text-gray-300">전체 상태</CardTitle>
+                <CardTitle className="text-sm font-medium text-primary-enhanced">전체 상태</CardTitle>
               </div>
               {getStatusIcon(systemStatus.overall)}
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white capitalize mb-1">
+              <div className="text-2xl font-bold text-primary-enhanced capitalize mb-1 text-enhanced">
                 {systemStatus.overall}
               </div>
-              <p className="text-xs text-gray-400">시스템 전반 상태</p>
+              <p className="text-xs text-muted-enhanced">시스템 전반 상태</p>
               <div className="mt-3 progress-with-percentage">
                 <div className="progress-enhanced progress-success">
                   <div className="progress-fill" style={{ width: '95%' }}></div>
