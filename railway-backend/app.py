@@ -209,9 +209,13 @@ async def chat_endpoint(chat_message: ChatMessage):
     try:
         # 1. 질문 임베딩 생성 (백업 시스템 포함)
         try:
-            query_embedding = await ollama_client.generate_embedding(chat_message.message)
-            if not query_embedding:
-                logger.warning("Embedding generation failed, using fallback")
+            if ollama_client:
+                query_embedding = await ollama_client.generate_embedding(chat_message.message)
+                if not query_embedding:
+                    logger.warning("Embedding generation failed, using fallback")
+                    return await fallback_chat_response(chat_message.message)
+            else:
+                logger.warning("Ollama client unavailable, using fallback")
                 return await fallback_chat_response(chat_message.message)
         except Exception as e:
             logger.error(f"Embedding error: {e}, using fallback")
@@ -437,11 +441,39 @@ async def fallback_chat_endpoint(request: ChatRequest):
         }
 
 def generate_rule_based_answer(question: str, context: str, sources: list) -> str:
-    """규칙 기반 답변 생성"""
+    """고도화된 규칙 기반 답변 생성"""
     question_lower = question.lower()
     
-    # Meta 광고 관련 키워드 매칭
-    if any(keyword in question_lower for keyword in ["광고", "캠페인", "메타", "페이스북", "인스타그램"]):
+    # 고급 키워드 매칭 시스템
+    meta_keywords = ["광고", "캠페인", "메타", "페이스북", "인스타그램", "threads", "리드", "전환", "타겟팅", "오디언스"]
+    policy_keywords = ["정책", "가이드라인", "규정", "규칙", "승인", "거부", "제재", "위반", "금지"]
+    budget_keywords = ["예산", "비용", "과금", "요금", "결제", "cpc", "cpm", "cpa", "roas", "roi"]
+    creative_keywords = ["크리에이티브", "이미지", "동영상", "텍스트", "제목", "설명", "소재", "배너"]
+    targeting_keywords = ["타겟팅", "오디언스", "관심사", "행동", "인구통계", "지역", "연령", "성별"]
+    optimization_keywords = ["최적화", "성과", "개선", "향상", "효율", "품질", "점수", "순위"]
+    
+    # 키워드 점수 계산
+    meta_score = sum(1 for keyword in meta_keywords if keyword in question_lower)
+    policy_score = sum(1 for keyword in policy_keywords if keyword in question_lower)
+    budget_score = sum(1 for keyword in budget_keywords if keyword in question_lower)
+    creative_score = sum(1 for keyword in creative_keywords if keyword in question_lower)
+    targeting_score = sum(1 for keyword in targeting_keywords if keyword in question_lower)
+    optimization_score = sum(1 for keyword in optimization_keywords if keyword in question_lower)
+    
+    # 가장 높은 점수의 카테고리 결정
+    scores = {
+        'meta': meta_score,
+        'policy': policy_score, 
+        'budget': budget_score,
+        'creative': creative_score,
+        'targeting': targeting_score,
+        'optimization': optimization_score
+    }
+    
+    primary_category = max(scores.keys(), key=lambda k: scores[k])
+    
+    # Meta 광고 관련 응답
+    if primary_category == 'meta' or meta_score > 0:
         if context:
             return f"""Meta 광고 관련 질문에 대한 답변입니다.
 
@@ -463,29 +495,135 @@ def generate_rule_based_answer(question: str, context: str, sources: list) -> st
 
 더 구체적인 질문을 해주시면 더 정확한 답변을 드릴 수 있습니다."""
     
-    elif any(keyword in question_lower for keyword in ["정책", "가이드라인", "규정"]):
-        return f"""정책 및 가이드라인 관련 질문입니다.
+    elif primary_category == 'policy':
+        return f"""📋 **Meta 광고 정책 및 가이드라인**
 
-**중요 사항:**
-- 모든 광고는 Meta의 광고 정책을 준수해야 합니다.
-- 정책은 정기적으로 업데이트되므로 최신 버전 확인이 필요합니다.
-- 정책 위반 시 광고 거부 또는 계정 제재가 있을 수 있습니다.
+**🔍 주요 정책 사항:**
+- ✅ 모든 광고는 Meta의 커뮤니티 표준 및 광고 정책을 준수해야 합니다
+- 📅 정책은 정기적으로 업데이트되므로 최신 버전 확인이 필수입니다
+- ⚠️ 정책 위반 시 광고 거부, 계정 제한 또는 영구 정지가 있을 수 있습니다
+- 🔄 정책 검토는 자동화 시스템과 수동 검토를 병행합니다
 
-{context[:500] if context else ''}
+**📚 관련 문서 정보:**
+{context[:600] if context else '구체적인 정책 문서가 필요하시면 Meta 비즈니스 도움말 센터를 참조하세요.'}
 
-더 구체적인 정책 문의사항이 있으시면 상세히 질문해주세요."""
+**💡 추가 도움:**
+- 특정 업종별 정책이 궁금하시면 업종명을 함께 문의해주세요
+- 광고 승인 거부 사유가 궁금하시면 구체적인 상황을 알려주세요
+- 정책 업데이트 알림을 받고 싶으시면 Meta Business 뉴스레터를 구독하세요"""
+
+    elif primary_category == 'budget':
+        return f"""💰 **Meta 광고 예산 및 비용 관리**
+
+**💳 예산 설정 옵션:**
+- 📊 일일 예산: 하루에 소비할 최대 금액 설정
+- 📈 총 예산: 캠페인 전체 기간 동안의 총 소비 한도
+- ⏰ 예산 스케줄링: 특정 시간대/요일별 예산 조정 가능
+
+**💸 과금 방식:**
+- 🖱️ CPC (클릭당 과금): 광고 클릭 시에만 과금
+- 👀 CPM (1000회 노출당 과금): 광고 노출 1000회당 과금  
+- 🎯 CPA (전환당 과금): 설정한 전환 액션 발생 시에만 과금
+- 📹 ThruPlay (동영상 완전 재생당 과금): 15초 이상 재생 시 과금
+
+**📊 성과 지표:**
+- ROAS (광고비 대비 매출): 투자 수익률 측정
+- ROI (투자 수익률): 순이익 대비 투자 비용
+- CTR (클릭률): 노출 대비 클릭 비율
+- CVR (전환율): 클릭 대비 전환 비율
+
+**📚 관련 정보:**
+{context[:400] if context else ''}
+
+**🎯 최적화 팁:**
+예산 효율성을 높이려면 타겟팅 정밀도를 높이고 A/B 테스트를 통해 최적의 입찰가를 찾으세요."""
+
+    elif primary_category == 'creative':
+        return f"""🎨 **Meta 광고 크리에이티브 가이드**
+
+**📸 이미지 광고:**
+- 📐 권장 비율: 1:1 (정사각형), 4:5 (세로형), 16:9 (가로형)
+- 📏 최소 해상도: 1080x1080px (정사각형 기준)
+- 📝 텍스트 비율: 이미지 내 텍스트는 20% 이하 권장
+- 🎯 고품질 이미지 사용으로 더 나은 성과 달성
+
+**🎬 동영상 광고:**
+- ⏱️ 권장 길이: 15-30초 (피드), 6초 (스토리)
+- 🔊 자막 필수: 많은 사용자가 무음으로 시청
+- 🎬 첫 3초가 핵심: 즉시 관심을 끌 수 있는 내용
+- 📱 모바일 최적화: 세로 또는 정사각형 비율
+
+**✍️ 텍스트 및 카피:**
+- 🎯 명확한 CTA (Call-to-Action): "지금 구매", "자세히 보기" 등
+- 💬 타겟 오디언스 맞춤 메시지
+- 🔥 긴급성과 희소성 활용
+- ✨ 혜택 중심의 메시지 작성
+
+**📚 관련 정보:**
+{context[:400] if context else ''}
+
+**💡 성과 향상 팁:**
+여러 크리에이티브 버전을 A/B 테스트하여 최적의 조합을 찾으세요."""
+
+    elif primary_category == 'targeting':
+        return f"""🎯 **Meta 광고 타겟팅 전략**
+
+**👥 오디언스 유형:**
+- 🎯 핵심 오디언스: 인구통계, 관심사, 행동 기반 타겟팅
+- 🔄 맞춤 오디언스: 기존 고객 데이터 활용 (이메일, 전화번호 등)
+- 👥 유사 오디언스: 기존 고객과 유사한 특성의 신규 오디언스
+- 🔥 재타겟팅: 웹사이트 방문자 또는 앱 사용자 대상
+
+**📊 타겟팅 옵션:**
+- 📍 지역: 국가, 지역, 도시, 반경 기반 타겟팅
+- 👤 인구통계: 연령, 성별, 학력, 직업, 소득 등
+- ❤️ 관심사: 취미, 선호 브랜드, 활동 등
+- 🛒 행동: 구매 이력, 디바이스 사용, 여행 패턴 등
+
+**🎯 고급 타겟팅:**
+- ⏰ 시간대별 타겟팅: 특정 시간에만 광고 노출
+- 📱 디바이스별 타겟팅: 모바일, 데스크톱 구분
+- 🌐 언어별 타겟팅: 사용자 언어 설정 기반
+- 🔗 연결 상태: Wi-Fi vs 모바일 데이터 사용자
+
+**📚 관련 정보:**
+{context[:400] if context else ''}
+
+**⚡ 최적화 전략:**
+너무 좁은 타겟팅보다는 적정 규모(1만명 이상)의 오디언스로 시작하여 성과 데이터를 바탕으로 점진적으로 정밀화하세요."""
+
+    elif primary_category == 'optimization':
+        return f"""📈 **Meta 광고 최적화 전략**
+
+**🔍 성과 분석 지표:**
+- 📊 CTR (클릭률): 노출 대비 클릭 비율 - 업계 평균 0.5-2%
+- 💰 CPC (클릭당 비용): 클릭 한 번당 지불 비용
+- 🎯 CVR (전환율): 클릭 대비 전환 비율
+- 💎 품질 순위: 광고 품질, 예상 액션률, 사용자 경험 종합 점수
+
+**⚡ 최적화 방법:**
+- 🔄 A/B 테스트: 크리에이티브, 오디언스, 배치 등 다양한 요소 테스트
+- 📱 자동 배치: 모든 배치에서 자동 최적화 활용
+- 🎯 전환 최적화: 픽셀을 통한 전환 추적 및 최적화
+- ⏰ 예산 페이싱: 예산을 효율적으로 분배하여 지속적 노출
+
+**📊 캠페인 구조 최적화:**
+- 🎯 단일 목표: 캠페인당 하나의 명확한 목표 설정
+- 📈 광고 세트 분리: 서로 다른 오디언스는 별도 광고 세트
+- 🎨 크리에이티브 다양화: 광고 세트당 3-5개 크리에이티브
+- 💰 예산 배분: 성과 좋은 광고 세트에 예산 집중
+
+**🚀 고급 최적화:**
+- 🤖 자동 규칙: 성과 기준 자동 예산 조정
+- 📈 동적 광고: 제품 카탈로그 연동 개인화 광고
+- 🎯 전환 API: 서버 간 전환 데이터 전송으로 추적 정확도 향상
+
+**📚 관련 정보:**
+{context[:400] if context else ''}
+
+**💡 핵심 팁:**
+최소 2주간 충분한 데이터를 수집한 후 최적화를 진행하고, 한 번에 하나의 요소만 변경하여 정확한 성과 분석을 하세요."""
     
-    elif any(keyword in question_lower for keyword in ["예산", "비용", "과금"]):
-        return f"""광고 예산 및 비용 관련 안내입니다.
-
-**기본 정보:**
-- 일일 예산과 총 예산 설정이 가능합니다.
-- CPC, CPM, CPA 등 다양한 과금 방식을 지원합니다.
-- 실시간 예산 모니터링과 조정이 가능합니다.
-
-{context[:500] if context else ''}
-
-구체적인 예산 전략에 대한 질문이 있으시면 더 자세히 문의해주세요."""
     
     else:
         if context:
