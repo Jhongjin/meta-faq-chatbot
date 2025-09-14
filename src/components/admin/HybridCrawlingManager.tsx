@@ -748,7 +748,7 @@ export default function HybridCrawlingManager({ onCrawlingComplete }: HybridCraw
               className={`cursor-pointer transition-all duration-300 rounded-xl group ${
                 crawlingMode === 'predefined' 
                   ? 'ring-2 ring-blue-500 bg-blue-500/20 border-blue-500/50 shadow-lg shadow-blue-500/20' 
-                  : 'hover:bg-gray-700/40 border-gray-600/50 hover:border-blue-400/30 hover:shadow-lg hover:shadow-blue-500/10'
+                  : 'bg-gray-700/60 border-gray-600/70 hover:bg-gray-700/80 hover:border-blue-400/30 hover:shadow-lg hover:shadow-blue-500/10'
               }`}
               onClick={() => setCrawlingMode('predefined')}
             >
@@ -765,7 +765,7 @@ export default function HybridCrawlingManager({ onCrawlingComplete }: HybridCraw
                     <CardTitle className="text-lg text-white font-semibold group-hover:text-blue-300 transition-colors duration-200">
                       미리 정의된 URL
                     </CardTitle>
-                    <CardDescription className="text-gray-100 group-hover:text-white transition-colors duration-200">
+                    <CardDescription className="text-white font-medium group-hover:text-blue-100 transition-colors duration-200">
                       검증된 URL 템플릿만 사용
                     </CardDescription>
                   </div>
@@ -785,7 +785,7 @@ export default function HybridCrawlingManager({ onCrawlingComplete }: HybridCraw
               className={`cursor-pointer transition-all duration-300 rounded-xl group ${
                 crawlingMode === 'custom' 
                   ? 'ring-2 ring-green-500 bg-green-500/20 border-green-500/50 shadow-lg shadow-green-500/20' 
-                  : 'hover:bg-gray-700/40 border-gray-600/50 hover:border-green-400/30 hover:shadow-lg hover:shadow-green-500/10'
+                  : 'bg-gray-700/60 border-gray-600/70 hover:bg-gray-700/80 hover:border-green-400/30 hover:shadow-lg hover:shadow-green-500/10'
               }`}
               onClick={() => setCrawlingMode('custom')}
             >
@@ -802,7 +802,7 @@ export default function HybridCrawlingManager({ onCrawlingComplete }: HybridCraw
                     <CardTitle className="text-lg text-white font-semibold group-hover:text-green-300 transition-colors duration-200">
                       사용자 정의 URL
                     </CardTitle>
-                    <CardDescription className="text-gray-100 group-hover:text-white transition-colors duration-200">
+                    <CardDescription className="text-white font-medium group-hover:text-green-100 transition-colors duration-200">
                       직접 URL 입력
                     </CardDescription>
                   </div>
@@ -822,7 +822,7 @@ export default function HybridCrawlingManager({ onCrawlingComplete }: HybridCraw
               className={`cursor-pointer transition-all duration-300 rounded-xl group ${
                 crawlingMode === 'hybrid' 
                   ? 'ring-2 ring-purple-500 bg-purple-500/20 border-purple-500/50 shadow-lg shadow-purple-500/20' 
-                  : 'hover:bg-gray-700/40 border-gray-600/50 hover:border-purple-400/30 hover:shadow-lg hover:shadow-purple-500/10'
+                  : 'bg-gray-700/60 border-gray-600/70 hover:bg-gray-700/80 hover:border-purple-400/30 hover:shadow-lg hover:shadow-purple-500/10'
               }`}
               onClick={() => setCrawlingMode('hybrid')}
             >
@@ -839,7 +839,7 @@ export default function HybridCrawlingManager({ onCrawlingComplete }: HybridCraw
                     <CardTitle className="text-lg text-white font-semibold group-hover:text-purple-300 transition-colors duration-200">
                       하이브리드
                     </CardTitle>
-                    <CardDescription className="text-gray-100 group-hover:text-white transition-colors duration-200">
+                    <CardDescription className="text-white font-medium group-hover:text-purple-100 transition-colors duration-200">
                       템플릿 + 사용자 정의
                     </CardDescription>
                   </div>
