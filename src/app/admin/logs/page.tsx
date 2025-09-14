@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/admin/globals.admin.css";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -326,14 +327,14 @@ export default function LogsPage() {
     <AdminLayout currentPage="logs">
       {/* System Alert */}
       <div className="mb-6">
-        <Alert className="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-500/50 text-blue-100 backdrop-blur-sm">
-          <Activity className="h-4 w-4 text-blue-300" />
-          <AlertTitle className="text-blue-100 font-semibold">🔍 실시간 로그 모니터링</AlertTitle>
-          <AlertDescription className="text-blue-200">
+        <Alert className="alert-enhanced bg-gradient-to-r from-slate-800/95 to-slate-700/95 border-slate-500/40 text-white backdrop-blur-md shadow-xl">
+          <Activity className="h-5 w-5 text-green-400" />
+          <AlertTitle className="text-white font-bold text-lg">🔍 실시간 로그 모니터링</AlertTitle>
+          <AlertDescription className="text-slate-100 font-medium">
             시스템 활동과 사용자 행동을 실시간으로 모니터링하여 문제를 조기에 발견하고 대응하세요.
             <br />
             {isClient && lastUpdated && (
-              <span className="text-blue-300 text-sm">
+              <span className="text-white font-bold text-sm bg-green-600/20 px-2 py-1 rounded-md mt-2 inline-block">
                 마지막 업데이트: {lastUpdated.toLocaleString()}
               </span>
             )}
@@ -468,53 +469,53 @@ export default function LogsPage() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 border-blue-500/30 backdrop-blur-sm">
+        <Card className="log-card bg-gradient-to-br from-blue-900/40 to-blue-800/30 border-blue-500/50 backdrop-blur-sm shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-200">총 로그 수</CardTitle>
-            <MessageSquare className="h-4 w-4 text-blue-400" />
+            <CardTitle className="text-sm font-bold text-primary-enhanced">📊 총 로그 수</CardTitle>
+            <MessageSquare className="h-5 w-5 text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{logs.length}</div>
-            <p className="text-xs text-blue-300 mt-1">오늘 생성된 로그</p>
+            <div className="text-3xl font-black text-white text-enhanced">{logs.length}</div>
+            <p className="text-xs text-secondary-enhanced font-semibold mt-1">오늘 생성된 로그</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-900/20 to-red-800/20 border-red-500/30 backdrop-blur-sm">
+        <Card className="log-card bg-gradient-to-br from-red-900/40 to-red-800/30 border-red-500/50 backdrop-blur-sm shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-200">오류</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-400" />
+            <CardTitle className="text-sm font-bold text-primary-enhanced">🚨 오류</CardTitle>
+            <AlertTriangle className="h-5 w-5 text-red-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-3xl font-black text-white text-enhanced">
               {logs.filter(log => log.level === "error").length}
             </div>
-            <p className="text-xs text-red-300 mt-1">주의가 필요한 로그</p>
+            <p className="text-xs text-secondary-enhanced font-semibold mt-1">주의가 필요한 로그</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-yellow-900/20 to-yellow-800/20 border-yellow-500/30 backdrop-blur-sm">
+        <Card className="log-card bg-gradient-to-br from-yellow-900/40 to-yellow-800/30 border-yellow-500/50 backdrop-blur-sm shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-yellow-200">경고</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-400" />
+            <CardTitle className="text-sm font-bold text-primary-enhanced">⚠️ 경고</CardTitle>
+            <AlertTriangle className="h-5 w-5 text-yellow-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-3xl font-black text-white text-enhanced">
               {logs.filter(log => log.level === "warning").length}
             </div>
-            <p className="text-xs text-yellow-300 mt-1">모니터링 필요</p>
+            <p className="text-xs text-secondary-enhanced font-semibold mt-1">모니터링 필요</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-900/20 to-green-800/20 border-green-500/30 backdrop-blur-sm">
+        <Card className="log-card bg-gradient-to-br from-green-900/40 to-green-800/30 border-green-500/50 backdrop-blur-sm shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-200">사용자 활동</CardTitle>
-            <User className="h-4 w-4 text-green-400" />
+            <CardTitle className="text-sm font-bold text-primary-enhanced">👤 사용자 활동</CardTitle>
+            <User className="h-5 w-5 text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-3xl font-black text-white text-enhanced">
               {logs.filter(log => log.type === "user").length}
             </div>
-            <p className="text-xs text-green-300 mt-1">사용자 행동 로그</p>
+            <p className="text-xs text-secondary-enhanced font-semibold mt-1">사용자 행동 로그</p>
           </CardContent>
         </Card>
       </div>

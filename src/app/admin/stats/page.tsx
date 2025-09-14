@@ -199,14 +199,14 @@ export default function StatisticsPage() {
     <AdminLayout currentPage="stats">
       {/* System Alert */}
       <div className="mb-6">
-        <Alert className="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-500/50 text-blue-100 backdrop-blur-sm">
-          <Info className="h-4 w-4 text-blue-300" />
-          <AlertTitle className="text-primary-enhanced font-bold">📊 실시간 통계 업데이트</AlertTitle>
-          <AlertDescription className="text-secondary-enhanced">
+        <Alert className="alert-enhanced bg-gradient-to-r from-slate-800/95 to-slate-700/95 border-slate-500/40 text-white backdrop-blur-md shadow-xl">
+          <Info className="h-5 w-5 text-blue-400" />
+          <AlertTitle className="text-white font-bold text-lg">📊 실시간 통계 업데이트</AlertTitle>
+          <AlertDescription className="text-slate-100 font-medium">
             통계 데이터는 5분마다 자동으로 업데이트됩니다. 실시간 데이터를 보려면 새로고침 버튼을 클릭하세요.
             <br />
             {isClient && lastUpdated && (
-              <span className="text-white font-semibold text-sm">
+              <span className="text-white font-bold text-sm bg-blue-600/20 px-2 py-1 rounded-md mt-2 inline-block">
                 마지막 업데이트: {lastUpdated.toLocaleString()}
               </span>
             )}
@@ -921,41 +921,41 @@ export default function StatisticsPage() {
       </Tabs>
 
       {/* Performance Metrics */}
-      <Card className="mb-8 bg-gradient-to-r from-gray-800/50 to-gray-700/50 border-gray-600">
+      <Card className="card-enhanced mb-8 bg-gradient-to-r from-slate-800/90 to-slate-700/90 border-slate-500/50">
         <CardHeader>
-          <CardTitle className="text-white flex items-center">
+          <CardTitle className="text-primary-enhanced flex items-center">
             <Zap className="w-5 h-5 mr-2 text-yellow-400" />
-            시스템 성능 지표
+            ⚡ 시스템 성능 지표
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="text-center p-4 bg-gray-700/30 rounded-lg">
-              <div className="text-3xl font-bold text-green-400 mb-1">99.2%</div>
-              <p className="text-sm text-gray-300">시스템 가동률</p>
-              <div className="w-full bg-gray-600 rounded-full h-2 mt-2">
-                <div className="bg-green-500 h-2 rounded-full" style={{ width: '99.2%' }}></div>
+            <div className="text-center p-4 bg-slate-700/60 rounded-lg border border-slate-600/50 hover:bg-slate-700/80 transition-all duration-300">
+              <div className="text-3xl font-black text-white mb-1 text-enhanced">99.2%</div>
+              <p className="text-sm text-secondary-enhanced font-semibold">시스템 가동률</p>
+              <div className="progress-enhanced mt-2">
+                <div className="progress-fill bg-green-500" style={{ width: '99.2%' }}></div>
               </div>
             </div>
-            <div className="text-center p-4 bg-gray-700/30 rounded-lg">
-              <div className="text-3xl font-bold text-blue-400 mb-1">2.3초</div>
-              <p className="text-sm text-gray-300">평균 응답 시간</p>
-              <div className="w-full bg-gray-600 rounded-full h-2 mt-2">
-                <div className="bg-blue-500 h-2 rounded-full" style={{ width: '76%' }}></div>
+            <div className="text-center p-4 bg-slate-700/60 rounded-lg border border-slate-600/50 hover:bg-slate-700/80 transition-all duration-300">
+              <div className="text-3xl font-black text-white mb-1 text-enhanced">2.3초</div>
+              <p className="text-sm text-secondary-enhanced font-semibold">평균 응답 시간</p>
+              <div className="progress-enhanced mt-2">
+                <div className="progress-fill bg-blue-500" style={{ width: '76%' }}></div>
               </div>
             </div>
-            <div className="text-center p-4 bg-gray-700/30 rounded-lg">
-              <div className="text-3xl font-bold text-purple-400 mb-1">50명</div>
-              <p className="text-sm text-gray-300">최대 동시 사용자</p>
-              <div className="w-full bg-gray-600 rounded-full h-2 mt-2">
-                <div className="bg-purple-500 h-2 rounded-full" style={{ width: '83%' }}></div>
+            <div className="text-center p-4 bg-slate-700/60 rounded-lg border border-slate-600/50 hover:bg-slate-700/80 transition-all duration-300">
+              <div className="text-3xl font-black text-white mb-1 text-enhanced">50명</div>
+              <p className="text-sm text-secondary-enhanced font-semibold">최대 동시 사용자</p>
+              <div className="progress-enhanced mt-2">
+                <div className="progress-fill bg-purple-500" style={{ width: '83%' }}></div>
               </div>
             </div>
-            <div className="text-center p-4 bg-gray-700/30 rounded-lg">
-              <div className="text-3xl font-bold text-orange-400 mb-1">1.2GB</div>
-              <p className="text-sm text-gray-300">벡터 인덱스 크기</p>
-              <div className="w-full bg-gray-600 rounded-full h-2 mt-2">
-                <div className="bg-orange-500 h-2 rounded-full" style={{ width: '60%' }}></div>
+            <div className="text-center p-4 bg-slate-700/60 rounded-lg border border-slate-600/50 hover:bg-slate-700/80 transition-all duration-300">
+              <div className="text-3xl font-black text-white mb-1 text-enhanced">1.2GB</div>
+              <p className="text-sm text-secondary-enhanced font-semibold">벡터 인덱스 크기</p>
+              <div className="progress-enhanced mt-2">
+                <div className="progress-fill bg-orange-500" style={{ width: '60%' }}></div>
               </div>
             </div>
           </div>
@@ -963,41 +963,41 @@ export default function StatisticsPage() {
       </Card>
 
       {/* Export Options */}
-      <Card className="bg-gradient-to-r from-gray-800/50 to-gray-700/50 border-gray-600">
+      <Card className="card-enhanced bg-gradient-to-r from-slate-800/90 to-slate-700/90 border-slate-500/50">
         <CardHeader>
-          <CardTitle className="text-white flex items-center">
+          <CardTitle className="text-primary-enhanced flex items-center">
             <Download className="w-5 h-5 mr-2 text-blue-400" />
-            데이터 내보내기
+            📥 데이터 내보내기
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button 
               variant="outline" 
-              className="h-24 flex-col space-y-2 bg-gray-700/50 border-gray-600 text-white hover:bg-gray-600/50 hover:border-gray-500"
+              className="export-button h-24 flex-col space-y-2 bg-slate-700/60 border-slate-600/70 text-white hover:bg-slate-600/80 hover:border-slate-500/80"
               onClick={exportToCSV}
             >
               <Download className="w-6 h-6 text-blue-400" />
-              <span className="font-medium">CSV 내보내기</span>
-              <span className="text-xs text-gray-400">엑셀에서 분석</span>
+              <span className="font-bold text-white">CSV 내보내기</span>
+              <span className="text-xs text-secondary-enhanced font-medium">엑셀에서 분석</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-24 flex-col space-y-2 bg-gray-700/50 border-gray-600 text-white hover:bg-gray-600/50 hover:border-gray-500"
+              className="export-button h-24 flex-col space-y-2 bg-slate-700/60 border-slate-600/70 text-white hover:bg-slate-600/80 hover:border-slate-500/80"
               onClick={exportToPDF}
             >
               <Download className="w-6 h-6 text-green-400" />
-              <span className="font-medium">PDF 리포트</span>
-              <span className="text-xs text-gray-400">공식 문서용</span>
+              <span className="font-bold text-white">PDF 리포트</span>
+              <span className="text-xs text-secondary-enhanced font-medium">공식 문서용</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-24 flex-col space-y-2 bg-gray-700/50 border-gray-600 text-white hover:bg-gray-600/50 hover:border-gray-500"
+              className="export-button h-24 flex-col space-y-2 bg-slate-700/60 border-slate-600/70 text-white hover:bg-slate-600/80 hover:border-slate-500/80"
               onClick={exportToJSON}
             >
               <Download className="w-6 h-6 text-purple-400" />
-              <span className="font-medium">JSON 데이터</span>
-              <span className="text-xs text-gray-400">개발자용</span>
+              <span className="font-bold text-white">JSON 데이터</span>
+              <span className="text-xs text-secondary-enhanced font-medium">개발자용</span>
             </Button>
           </div>
         </CardContent>
