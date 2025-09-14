@@ -699,18 +699,18 @@ export default function AdminDashboardPage() {
             ))
           ) : (
             recentAlerts.map((alert) => (
-              <Card key={alert.id} className="modern-card-dark hover:shadow-2xl transition-all duration-300 group border-gray-600/50">
+              <Card key={alert.id} className="card-enhanced log-card hover:shadow-2xl transition-all duration-300 group">
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0">
                       {getStatusIcon(alert.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-semibold text-white mb-2 group-hover:text-blue-300 transition-colors duration-200">
+                      <p className="text-base font-bold text-primary-enhanced mb-2 group-hover:text-blue-300 transition-colors duration-200">
                         {alert.message}
                       </p>
                       <div className="flex items-center space-x-3">
-                        <span className="text-sm text-gray-300 font-medium">{alert.timestamp}</span>
+                        <span className="text-sm text-secondary-enhanced font-semibold">{alert.timestamp}</span>
                         <Badge 
                           variant={
                             alert.priority === "high" ? "destructive" :
@@ -781,56 +781,56 @@ export default function AdminDashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.5 }}
       >
-        <Card className="card-enhanced hover:shadow-xl transition-all duration-300">
+        <Card className="card-enhanced performance-card hover:shadow-2xl transition-all duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-white">
+            <CardTitle className="flex items-center space-x-2 text-primary-enhanced">
               <Clock className="w-5 h-5 text-blue-400" />
-              <span>시스템 정보</span>
+              <span>📊 시스템 정보</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-400">마지막 업데이트:</span>
-              <span className="text-sm font-medium text-white">{systemStatus.lastUpdate}</span>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary-enhanced font-semibold">마지막 업데이트:</span>
+              <span className="text-sm font-bold text-primary-enhanced">{systemStatus.lastUpdate}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-400">시스템 버전:</span>
-              <span className="text-sm font-medium text-white">v1.0.0</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary-enhanced font-semibold">시스템 버전:</span>
+              <span className="text-sm font-bold text-primary-enhanced">v1.0.0</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-400">데이터베이스 크기:</span>
-              <span className="text-sm font-medium text-white">2.4 GB</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary-enhanced font-semibold">데이터베이스 크기:</span>
+              <span className="text-sm font-bold text-primary-enhanced">2.4 GB</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-400">인덱싱된 문서:</span>
-              <span className="text-sm font-medium text-white">1,247개</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary-enhanced font-semibold">인덱싱된 문서:</span>
+              <span className="text-sm font-bold text-primary-enhanced">1,247개</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="card-enhanced hover:shadow-xl transition-all duration-300">
+        <Card className="card-enhanced performance-card hover:shadow-2xl transition-all duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-white">
+            <CardTitle className="flex items-center space-x-2 text-primary-enhanced">
               <TrendingUp className="w-5 h-5 text-green-400" />
-              <span>성능 지표</span>
+              <span>⚡ 성능 지표</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-400">평균 응답 시간:</span>
-              <span className="text-sm font-medium text-white">2.3초</span>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary-enhanced font-semibold">평균 응답 시간:</span>
+              <span className="text-sm font-bold text-primary-enhanced">2.3초</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-400">동시 사용자:</span>
-              <span className="text-sm font-medium text-white">24명</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary-enhanced font-semibold">동시 사용자:</span>
+              <span className="text-sm font-bold text-primary-enhanced">24명</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-400">CPU 사용률:</span>
-              <span className="text-sm font-medium text-white">23%</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary-enhanced font-semibold">CPU 사용률:</span>
+              <span className="text-sm font-bold text-primary-enhanced">23%</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-400">메모리 사용률:</span>
-              <span className="text-sm font-medium text-white">67%</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-secondary-enhanced font-semibold">메모리 사용률:</span>
+              <span className="text-sm font-bold text-primary-enhanced">67%</span>
             </div>
           </CardContent>
         </Card>
