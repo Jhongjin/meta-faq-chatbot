@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import "@/app/admin/globals.admin.css";
-import { Menu, BarChart3, FileText, Activity, Users, Settings, LogOut, ArrowLeft } from "lucide-react";
+import { Menu, BarChart3, FileText, Activity, Users, LogOut, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Link from "next/link";
@@ -29,8 +29,8 @@ export default function AdminLayout({ children, currentPage = "dashboard" }: Adm
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 py-3">
-            {/* AdMate 로고 */}
-            <div className="flex items-center space-x-3">
+            {/* AdMate 로고 - 완전히 왼쪽으로 이동 */}
+            <div className="flex items-center">
               <Link href="/" className="block">
                 <motion.div 
                   className="cursor-pointer"
@@ -51,16 +51,14 @@ export default function AdminLayout({ children, currentPage = "dashboard" }: Adm
                   />
                 </motion.div>
               </Link>
-              <div className="hidden md:block">
+            </div>
+            
+            {/* 관리자 대시보드 텍스트 - 우측으로 이동 */}
+            <div className="flex items-center space-x-2">
+              <div className="hidden md:block text-right">
                 <h1 className="text-lg font-semibold text-white">관리자 대시보드</h1>
                 <p className="text-xs text-gray-300">시스템 관리 및 모니터링</p>
               </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hidden sm:flex text-white hover:bg-white/10">
-                <Settings className="h-4 w-4" />
-              </Button>
               
               {/* Mobile menu */}
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
