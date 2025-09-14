@@ -765,7 +765,7 @@ export default function HybridCrawlingManager({ onCrawlingComplete }: HybridCraw
                     <CardTitle className="text-lg text-white font-semibold group-hover:text-blue-300 transition-colors duration-200">
                       미리 정의된 URL
                     </CardTitle>
-                    <CardDescription className="text-gray-200 group-hover:text-white transition-colors duration-200">
+                    <CardDescription className="text-gray-100 group-hover:text-white transition-colors duration-200">
                       검증된 URL 템플릿만 사용
                     </CardDescription>
                   </div>
@@ -802,7 +802,7 @@ export default function HybridCrawlingManager({ onCrawlingComplete }: HybridCraw
                     <CardTitle className="text-lg text-white font-semibold group-hover:text-green-300 transition-colors duration-200">
                       사용자 정의 URL
                     </CardTitle>
-                    <CardDescription className="text-gray-200 group-hover:text-white transition-colors duration-200">
+                    <CardDescription className="text-gray-100 group-hover:text-white transition-colors duration-200">
                       직접 URL 입력
                     </CardDescription>
                   </div>
@@ -839,7 +839,7 @@ export default function HybridCrawlingManager({ onCrawlingComplete }: HybridCraw
                     <CardTitle className="text-lg text-white font-semibold group-hover:text-purple-300 transition-colors duration-200">
                       하이브리드
                     </CardTitle>
-                    <CardDescription className="text-gray-200 group-hover:text-white transition-colors duration-200">
+                    <CardDescription className="text-gray-100 group-hover:text-white transition-colors duration-200">
                       템플릿 + 사용자 정의
                     </CardDescription>
                   </div>
