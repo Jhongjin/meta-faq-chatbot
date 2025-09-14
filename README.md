@@ -8,6 +8,7 @@ RAG(Retrieval-Augmented Generation) 기반의 AI 챗봇으로 Meta 광고 집행
 - **히스토리 관리**: 이전 질문과 답변을 언제든지 확인 가능
 - **보안 & 권한 관리**: 사내 보안 정책에 맞춘 접근 제어와 데이터 보호
 - **실시간 동기화**: 최신 정책과 가이드라인이 실시간으로 반영
+- **스마트 메일 알림**: 답변 불가 시 담당팀 자동 연결 및 시스템 오류 알림
 
 ## 🛠️ 기술 스택
 
@@ -106,6 +107,59 @@ src/
 - `GET /api/documents`: 문서 목록 조회
 - `POST /api/feedback`: 피드백 저장
 - `GET /api/feedback/stats`: 피드백 통계
+- `POST /api/contact`: 담당팀 문의 메일 발송
+- `POST /api/admin/logs/create`: 시스템 로그 생성 및 알림
+- `POST /api/admin/logs/process-alerts`: 대기 중인 알림 처리
+
+## 📧 메일 알림 시스템
+
+### 1. 사용자 문의 메일 자동 발송
+**기능**: Chat 페이지에서 AI가 적절한 답변을 찾지 못할 경우 자동으로 담당팀에 문의 메일 발송
+
+**구현 위치**:
+- `src/app/api/contact/route.ts`: 메일 발송 API
+- `src/app/chat/page.tsx`: 문의 메일 발송 로직
+- `src/components/chat/ChatBubble.tsx`: 담당팀 문의 버튼
+
+**발송 정보**:
+- **수신자**: `fb@nasmedia.co.kr` (Meta 담당팀)
+- **발송 조건**: AI가 관련 정보를 찾지 못해 답변할 수 없을 때
+- **포함 정보**: 사용자 질문 내용, 문의 시간
+- **발송 방식**: `mailto:` 링크를 통한 사용자 메일 클라이언트 연동
+
+**사용 흐름**:
+1. 사용자가 질문 입력
+2. AI가 관련 문서를 찾지 못함
+3. "담당팀에 문의하기" 버튼 표시
+4. 사용자 클릭 시 자동으로 메일 클라이언트 실행
+5. 미리 작성된 메일 내용으로 발송 가능
+
+### 2. 관리자 알람 메일 자동 발송
+**기능**: 시스템에서 오류/경고 로그 발생 시 관리자에게 자동 메일 발송
+
+**구현 위치**:
+- `src/lib/services/EmailAlertService.ts`: 메일 알림 서비스
+- `src/app/api/admin/logs/create/route.ts`: 로그 생성 시 알림 트리거
+- `src/app/api/admin/logs/process-alerts/route.ts`: 대기 중인 알림 처리
+
+**발송 정보**:
+- **수신자**: `adso@nasmedia.co.kr` (시스템 관리자)
+- **발송 조건**: `warning` 또는 `error` 레벨의 로그 생성 시
+- **반복 발송**: 관리자가 확인 전까지 **1시간 간격**으로 재발송
+- **포함 정보**: 로그 레벨, 오류 메시지, 발생 시간, IP 주소, 사용자 정보
+
+**알림 처리 프로세스**:
+1. 시스템에서 warning/error 로그 생성
+2. `EmailAlertService.createOrUpdateAlert()` 호출
+3. 알림 데이터베이스에 저장 (`log_alerts` 테이블)
+4. 1시간 후 `processPendingAlerts()` 실행
+5. 미확인 알림에 대해 메일 발송
+6. 관리자가 확인할 때까지 반복
+
+**관리 기능**:
+- 알림 확인: `/admin/logs/acknowledge/{alertId}` 페이지
+- 알림 상태: `pending` → `acknowledged` → `resolved`
+- 알림 목록: 관리자 로그 페이지에서 활성 알림 표시
 
 ## 📊 데이터베이스 스키마
 
@@ -114,6 +168,32 @@ src/
 - `document_chunks`: 문서 청크 및 임베딩
 - `conversations`: 대화 기록
 - `feedback`: 사용자 피드백
+- `log_alerts`: 시스템 알림 및 메일 발송 기록
+
+### 메일 알림 관련 테이블
+#### `log_alerts` 테이블
+```sql
+CREATE TABLE log_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  log_id TEXT NOT NULL,
+  log_level TEXT NOT NULL,
+  log_type TEXT NOT NULL,
+  log_message TEXT NOT NULL,
+  log_timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+  user_id TEXT,
+  ip_address TEXT,
+  alert_status TEXT DEFAULT 'pending' CHECK (alert_status IN ('pending', 'acknowledged', 'resolved')),
+  email_count INTEGER DEFAULT 0,
+  first_sent_at TIMESTAMP WITH TIME ZONE,
+  last_sent_at TIMESTAMP WITH TIME ZONE,
+  next_send_at TIMESTAMP WITH TIME ZONE,
+  acknowledged_by TEXT,
+  acknowledged_at TIMESTAMP WITH TIME ZONE,
+  resolved_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
 
 ## 🤝 기여하기
 
