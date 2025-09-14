@@ -166,12 +166,7 @@ supabase_client = None
 async def root():
     return {
         "status": "ok",
-        "message": "AdMate Railway API is running",
-        "version": "1.0.0",
-        "environment": {
-            "ollama_url": OLLAMA_BASE_URL,
-            "has_supabase": bool(SUPABASE_URL and SUPABASE_KEY)
-        }
+        "message": "AdMate Railway API is running"
     }
 
 @app.get("/health")
