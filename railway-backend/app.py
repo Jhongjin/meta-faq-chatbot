@@ -198,11 +198,20 @@ async def chat_endpoint(chat_message: ChatMessage):
     """채팅 메시지 처리"""
     global ollama_client, supabase_client
     
-    # 클라이언트 지연 초기화
-    if not ollama_client:
-        ollama_client = get_ollama_client()
-    if not supabase_client:
-        supabase_client = get_supabase_client()
+    # 클라이언트 지연 초기화 (안전한 방식)
+    try:
+        if not ollama_client:
+            ollama_client = get_ollama_client()
+    except Exception as e:
+        logger.warning(f"Ollama client initialization failed: {e}")
+        ollama_client = None
+    
+    try:
+        if not supabase_client:
+            supabase_client = get_supabase_client()
+    except Exception as e:
+        logger.warning(f"Supabase client initialization failed: {e}")
+        supabase_client = None
     
     start_time = datetime.now()
     
