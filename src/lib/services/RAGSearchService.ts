@@ -4,9 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { OllamaEmbeddingService } from './OllamaEmbeddingService';
 import { SimpleEmbeddingService } from './SimpleEmbeddingService';
-import { llmService, LLMResponse } from './LLMService';
 
 export interface SearchResult {
   id: string;
@@ -30,7 +28,7 @@ export interface ChatResponse {
 
 export class RAGSearchService {
   private supabase;
-  private embeddingService: OllamaEmbeddingService | SimpleEmbeddingService;
+  private embeddingService: SimpleEmbeddingService;
 
   constructor() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -61,15 +59,9 @@ export class RAGSearchService {
     try {
       this.supabase = createClient(supabaseUrl, supabaseKey);
       
-      // 먼저 Ollama 임베딩 서비스 시도
-      try {
-        this.embeddingService = new OllamaEmbeddingService();
-        console.log('✅ RAGSearchService 초기화 완료 (Ollama 임베딩 서비스)');
-      } catch (error) {
-        console.warn('⚠️ Ollama 임베딩 서비스 실패, 간단한 임베딩 서비스로 전환:', error);
-        this.embeddingService = new SimpleEmbeddingService();
-        console.log('✅ RAGSearchService 초기화 완료 (간단한 임베딩 서비스)');
-      }
+      // SimpleEmbeddingService 사용
+      this.embeddingService = new SimpleEmbeddingService();
+      console.log('✅ RAGSearchService 초기화 완료 (SimpleEmbeddingService)');
     } catch (error) {
       console.error('❌ RAGSearchService 초기화 실패:', error);
       throw new Error(`RAGSearchService 초기화 실패: ${error}`);
