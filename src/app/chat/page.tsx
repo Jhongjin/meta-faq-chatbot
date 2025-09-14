@@ -847,7 +847,7 @@ function ChatPageContent() {
   };
 
   const chatHeader = (
-    <div className="card-enhanced border-b border-white/20 px-4 py-3">
+    <div className="card-enhanced border-b border-white/20 px-4 py-3 rounded-none">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
@@ -868,7 +868,7 @@ function ChatPageContent() {
             variant="ghost"
             size="sm"
             onClick={toggleRightPanel}
-            className="hidden lg:flex items-center space-x-2 h-8 px-3 text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all duration-200"
+            className="hidden lg:flex items-center space-x-2 h-8 px-3 text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all duration-200 rounded-md"
           >
             {isRightPanelCollapsed ? (
               <PanelRight className="w-4 h-4" />
@@ -887,7 +887,7 @@ function ChatPageContent() {
             variant="ghost"
             size="sm"
             onClick={handleNewChat}
-            className="flex items-center space-x-2 h-8 px-3 text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all duration-200"
+            className="flex items-center space-x-2 h-8 px-3 text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all duration-200 rounded-md"
           >
             <MessageSquare className="w-4 h-4" />
             <span className="text-xs">새 대화</span>
