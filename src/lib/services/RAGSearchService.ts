@@ -276,31 +276,10 @@ export class RAGSearchService {
         return this.generateFallbackAnswer(query, searchResults);
       }
 
-      // Ollama 서비스 상태 확인
-      console.log('🔍 Ollama 서비스 상태 확인 중...');
-      const isOllamaAvailable = await llmService.checkOllamaStatus();
-      
-      if (!isOllamaAvailable) {
-        console.log('⚠️ Ollama 서비스가 사용 불가능합니다. 기본 답변 생성 모드로 전환합니다.');
-        return this.generateFallbackAnswer(query, searchResults);
-      }
-
-      console.log('✅ Ollama 서비스 사용 가능, 답변 생성 시작');
-      
-      // 검색 결과를 컨텍스트로 구성
-      const context = this.buildContextFromSearchResults(searchResults);
-      console.log(`📝 컨텍스트 길이: ${context.length}자`);
-      
-      // Ollama를 통한 답변 생성
-      const llmResponse = await llmService.generateFastAnswer(
-        `질문: ${query}\n\n관련 문서 내용:\n${context}`,
-        context
-      );
-
-      console.log(`✅ Ollama 답변 생성 완료: ${llmResponse.processingTime}ms, 신뢰도: ${llmResponse.confidence}`);
-      console.log(`📝 생성된 답변 길이: ${llmResponse.answer.length}자`);
-      
-      return llmResponse.answer;
+      // Vercel + Gemini 시스템에서는 chat API에서 직접 Gemini를 사용하므로
+      // RAGSearchService는 검색 기능만 담당하고 fallback 답변을 반환
+      console.log('⚠️ RAGSearchService는 검색 전용입니다. Fallback 답변을 반환합니다.');
+      return this.generateFallbackAnswer(query, searchResults);
 
     } catch (error) {
       console.error('LLM 답변 생성 실패:', error);
@@ -449,8 +428,8 @@ ${content}
       // 4. 처리 시간 계산
       const processingTime = Date.now() - startTime;
       
-      // 5. LLM 사용 여부 확인
-      const isLLMGenerated = await llmService.checkOllamaStatus();
+      // 5. LLM 사용 여부 확인 (Vercel + Gemini 시스템에서는 항상 false)
+      const isLLMGenerated = false;
 
       console.log(`✅ RAG 응답 생성 완료: ${processingTime}ms, 신뢰도: ${confidence}`);
 
