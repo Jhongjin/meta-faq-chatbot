@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "src/app/api/**/*.ts": {
+    "app/api/**/*.ts": {
       "maxDuration": 30
     }
   },
