@@ -54,7 +54,7 @@ export async function POST() {
         // 임베딩 생성 (1024차원)
         const embeddingResult = await embeddingService.generateEmbedding(
           chunk.content,
-          'ollama-embedding'
+          { model: 'bge-m3' }
         );
         
         // 임베딩 업데이트 (기존 임베딩 덮어쓰기) - updated_at 제외
