@@ -90,6 +90,95 @@ function getFallbackSearchResults(query: string, limit: number): SearchResult[] 
 }
 
 /**
+ * Hugging Face API를 통한 답변 생성 (Fallback)
+ */
+async function generateAnswerWithHuggingFace(
+  message: string, 
+  searchResults: SearchResult[]
+): Promise<string> {
+  try {
+    console.log('🤖 Hugging Face API 답변 생성 시작');
+    
+    const huggingfaceApiKey = process.env.HUGGINGFACE_API_KEY;
+    if (!huggingfaceApiKey) {
+      throw new Error('HUGGINGFACE_API_KEY가 설정되지 않았습니다');
+    }
+    
+    // 검색 결과를 컨텍스트로 변환
+    const context = searchResults.map(result => 
+      `[${result.metadata?.title || '문서'}]: ${result.content.substring(0, 300)}`
+    ).join('\n');
+    
+    // 프롬프트 구성
+    const prompt = `다음은 Meta 광고 정책과 관련된 문서들입니다. 사용자의 질문에 대해 이 정보를 바탕으로 정확하고 도움이 되는 답변을 한국어로 제공해주세요.
+
+사용자 질문: ${message}
+
+관련 문서 정보:
+${context}
+
+답변 요구사항:
+1. 제공된 문서 정보를 바탕으로 정확한 답변을 제공하세요
+2. 답변은 한국어로 작성하세요
+3. 답변이 불확실한 경우 그렇게 명시하세요
+4. 답변 끝에 관련 출처를 간단히 언급하세요
+
+답변:`;
+
+    // Hugging Face API 호출
+    const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${huggingfaceApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_length: 500,
+          temperature: 0.7,
+          do_sample: true
+        }
+      }),
+      signal: AbortSignal.timeout(30000)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Hugging Face API 오류:', errorText);
+      throw new Error(`Hugging Face API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Hugging Face API 답변 생성 완료');
+    
+    return data[0]?.generated_text?.trim() || '답변을 생성할 수 없습니다.';
+
+  } catch (error) {
+    console.error('❌ Hugging Face API 답변 생성 실패:', error);
+    
+    // 최종 fallback 답변 생성
+    if (searchResults.length > 0) {
+      const topResult = searchResults[0];
+      return `**Meta 광고 정책 안내**
+
+${topResult.content.substring(0, 400)}${topResult.content.length > 400 ? '...' : ''}
+
+**검색된 관련 정보:**
+${searchResults.map((result, index) => `${index + 1}. ${result.metadata?.title || '문서'}: ${result.content.substring(0, 100)}...`).join('\n')}
+
+**더 자세한 정보:**
+- Meta 비즈니스 도움말 센터: https://www.facebook.com/business/help
+- 광고 정책 센터: https://www.facebook.com/policies/ads
+
+관리자에게 문의하시면 더 구체적인 답변을 받으실 수 있습니다.`;
+    }
+    
+    return '죄송합니다. 현재 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+  }
+}
+
+/**
  * Vultr Ollama 프록시를 통한 답변 생성
  */
 async function generateAnswerWithOllamaProxy(
@@ -257,7 +346,14 @@ export async function POST(request: NextRequest) {
     // 3. Vultr+Ollama 답변 생성 (프록시 API 사용)
     console.log('🚀 Vultr+Ollama 프록시 답변 생성 시작');
     
-    const answer = await generateAnswerWithOllamaProxy(message, searchResults);
+    let answer: string;
+    try {
+      answer = await generateAnswerWithOllamaProxy(message, searchResults);
+    } catch (error) {
+      console.error('❌ Vultr Ollama 프록시 실패, Hugging Face API로 fallback:', error);
+      // Hugging Face API로 fallback
+      answer = await generateAnswerWithHuggingFace(message, searchResults);
+    }
     
     // 신뢰도 계산
     const confidence = calculateConfidence(searchResults);
