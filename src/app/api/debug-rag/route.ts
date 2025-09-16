@@ -28,8 +28,10 @@ export async function GET() {
     // 검색 테스트
     let searchResults: any[] = [];
     try {
-      searchResults = await ragService.searchSimilarChunks('광고 정책', 3);
-      console.log('✅ 검색 테스트 성공:', searchResults.length, '개 결과');
+      if (ragService) {
+        searchResults = await ragService.searchSimilarChunks('광고 정책', 3);
+        console.log('✅ 검색 테스트 성공:', searchResults.length, '개 결과');
+      }
     } catch (error) {
       console.error('❌ 검색 테스트 실패:', error);
     }
@@ -37,8 +39,10 @@ export async function GET() {
     // 답변 생성 테스트
     let answer = '';
     try {
-      answer = await ragService.generateAnswer('광고 정책에 대해 알려주세요', searchResults);
-      console.log('✅ 답변 생성 테스트 성공');
+      if (ragService) {
+        answer = await ragService.generateAnswer('광고 정책에 대해 알려주세요', searchResults);
+        console.log('✅ 답변 생성 테스트 성공');
+      }
     } catch (error) {
       console.error('❌ 답변 생성 테스트 실패:', error);
     }
