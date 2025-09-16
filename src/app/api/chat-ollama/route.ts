@@ -122,7 +122,11 @@ ${context}
 
     // Vercel 프록시 API 호출 (절대 URL 사용)
     const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/proxy-ollama`, {
+    const proxyUrl = `${baseUrl}/api/proxy-ollama`;
+    console.log('🔗 프록시 URL:', proxyUrl);
+    
+    console.log('📤 프록시 API 요청 시작');
+    const response = await fetch(proxyUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -139,14 +143,16 @@ ${context}
       signal: AbortSignal.timeout(30000)
     });
 
+    console.log('📡 프록시 API 응답 상태:', response.status);
+    
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ 프록시 API 오류:', errorText);
-      throw new Error(`프록시 API error: ${response.status}`);
+      throw new Error(`프록시 API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('✅ Vultr Ollama 프록시 답변 생성 완료');
+    console.log('✅ Vultr Ollama 프록시 답변 생성 완료:', data);
     
     return data.response?.trim() || '답변을 생성할 수 없습니다.';
 
