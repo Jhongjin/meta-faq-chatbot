@@ -161,7 +161,7 @@ export class RAGSearchService {
         
         // 각 청크의 유사도 계산 과정 로그
         console.log('🔍 유사도 계산 과정:');
-        searchResults.slice(0, 3).forEach((chunk, index) => {
+        searchResults.slice(0, 3).forEach((chunk: any, index: number) => {
           if (chunk.embedding) {
             try {
               let storedEmbedding;
