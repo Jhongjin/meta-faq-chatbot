@@ -357,13 +357,7 @@ export class RAGSearchService {
     }
 
     try {
-      // Fallback 모드인 경우 간단한 답변 생성
-      if (!this.supabase) {
-        console.log('⚠️ Fallback 모드: 간단한 답변 생성');
-        return this.generateFallbackAnswer(query, searchResults);
-      }
-
-      // Ollama를 사용한 답변 생성
+      // Ollama를 사용한 답변 생성 (Supabase 상태와 관계없이)
       console.log('🤖 Ollama를 사용한 답변 생성 시작');
       
       // 검색 결과를 컨텍스트로 구성
