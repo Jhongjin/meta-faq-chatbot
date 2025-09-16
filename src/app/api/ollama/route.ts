@@ -111,7 +111,7 @@ export async function GET() {
         healthy: isHealthy,
         baseUrl: baseUrl,
         actualUrl: baseUrl,
-        availableModels: models.map(model => ({
+        availableModels: models.map((model: any) => ({
           name: model.name,
           size: `${(model.size / 1024 / 1024 / 1024).toFixed(2)}GB`,
           modifiedAt: model.modified_at
