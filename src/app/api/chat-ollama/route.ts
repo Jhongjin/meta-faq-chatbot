@@ -120,8 +120,9 @@ ${context}
 
 답변:`;
 
-    // Vercel 프록시 API 호출
-    const response = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/proxy-ollama`, {
+    // Vercel 프록시 API 호출 (절대 URL 사용)
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/proxy-ollama`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -247,22 +248,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. RAGSearchService를 사용한 답변 생성
-    console.log('🚀 RAGSearchService를 사용한 답변 생성 시작');
+    // 3. Vultr+Ollama 답변 생성 (프록시 API 사용)
+    console.log('🚀 Vultr+Ollama 프록시 답변 생성 시작');
     
-    // SearchResult 타입 변환
-    const ragSearchResults = searchResults.map(result => ({
-      id: result.chunk_id,
-      content: result.content,
-      similarity: result.similarity,
-      documentId: result.chunk_id.split('_chunk_')[0] || result.chunk_id,
-      documentTitle: result.metadata?.title || 'Meta 광고 정책 문서',
-      documentUrl: result.metadata?.url,
-      chunkIndex: parseInt(result.chunk_id.split('_chunk_')[1]) || 0,
-      metadata: result.metadata
-    }));
-    
-    // Vultr+Ollama 답변 생성 (프록시 API 사용)
     const answer = await generateAnswerWithOllamaProxy(message, searchResults);
     
     // 신뢰도 계산
