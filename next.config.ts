@@ -21,7 +21,6 @@ const nextConfig: NextConfig = {
   // 실험적 기능 설정
   experimental: {
     optimizeCss: true,
-    serverComponentsExternalPackages: ['@xenova/transformers'],
   },
   
   // 캐시 무효화를 위한 설정

@@ -58,7 +58,7 @@ async function searchWithOllamaRAG(
     console.log(`📊 Vultr+Ollama RAG 검색 결과: ${searchResults.length}개`);
     
     return searchResults.map(result => ({
-      chunk_id: result.chunk_id,
+      chunk_id: result.id,
       content: result.content,
       similarity: result.similarity,
       metadata: result.metadata
