@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const keywords = query.toLowerCase().split(' ').filter((word: string) => word.length > 2);
     console.log('🔍 추출된 키워드:', keywords);
     
-    let keywordResults = [];
+    let keywordResults: any[] = [];
     if (keywords.length > 0) {
       const { data: keywordData, error: keywordError } = await supabase
         .from('document_chunks')
