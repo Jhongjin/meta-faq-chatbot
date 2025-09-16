@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
   
   // 실험적 기능 설정
   experimental: {
-    optimizeCss: true,
+    // optimizeCss: true, // Vercel에서 critters 모듈 문제로 비활성화
   },
   
   // 캐시 무효화를 위한 설정
