@@ -385,8 +385,10 @@ ${context}
 
 답변:`;
 
-      // Ollama를 통한 답변 생성
-      const answer = await generateResponse(prompt, 'tinyllama:1.1b');
+      // Ollama를 통한 답변 생성 (환경변수에서 모델 가져오기)
+      const model = process.env.OLLAMA_DEFAULT_MODEL || 'tinyllama:1.1b';
+      console.log(`🤖 사용할 모델: ${model}`);
+      const answer = await generateResponse(prompt, model);
       
       console.log('✅ Ollama 답변 생성 완료');
       return answer;
