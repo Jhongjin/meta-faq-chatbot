@@ -96,8 +96,8 @@ export async function GET() {
       }
     } catch (error) {
       console.error('❌ Ollama 서버 연결 오류:', {
-        error: error.message,
-        name: error.name,
+        error: error instanceof Error ? error.message : String(error),
+        name: error instanceof Error ? error.name : 'Unknown',
         url: baseUrl
       });
       isHealthy = false;
