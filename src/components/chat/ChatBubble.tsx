@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ThumbsUp, ThumbsDown, ExternalLink, Calendar, FileText, User, Download, Globe } from "lucide-react";
+import { ThumbsUp, ThumbsDown, ExternalLink, Calendar, FileText, User, Download, Globe, Bot, Clock, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +30,9 @@ interface ChatBubbleProps {
   onFeedback?: (helpful: boolean) => void;
   noDataFound?: boolean;
   showContactOption?: boolean;
+  confidence?: number;
+  processingTime?: number;
+  model?: string;
 }
 
 export default function ChatBubble({
@@ -41,6 +44,9 @@ export default function ChatBubble({
   onFeedback,
   noDataFound = false,
   showContactOption = false,
+  confidence,
+  processingTime,
+  model,
 }: ChatBubbleProps) {
   const [showSources, setShowSources] = useState(false);
 
@@ -287,6 +293,30 @@ export default function ChatBubble({
                       </div>
                     </CardContent>
                   </Card>
+                )}
+
+                {/* Vultr+Ollama 정보 표시 */}
+                {(confidence !== undefined || processingTime !== undefined || model) && (
+                  <div className="mt-3 flex items-center gap-3 text-xs text-gray-400">
+                    {confidence !== undefined && (
+                      <span className="flex items-center gap-1">
+                        <Activity className="h-3 w-3" />
+                        신뢰도: {Math.round(confidence)}%
+                      </span>
+                    )}
+                    {processingTime !== undefined && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {processingTime}ms
+                      </span>
+                    )}
+                    {model && (
+                      <span className="flex items-center gap-1">
+                        <Bot className="h-3 w-3" />
+                        {model}
+                      </span>
+                    )}
+                  </div>
                 )}
 
                 {/* Feedback buttons for assistant messages */}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { generateResponse, checkOllamaHealth } from '@/lib/services/ollama';
 
 // 검색 결과에 문서 메타데이터 추가 (임시 폴더와 동일한 방식)
 async function enrichSearchResults(searchResults: any[]) {
@@ -131,63 +132,46 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // RAG 서비스 동적 import 시도
+    // Ollama 서버 상태 확인
+    const isOllamaHealthy = await checkOllamaHealth();
+    console.log('🔍 Ollama 서버 상태:', isOllamaHealthy ? '정상' : '오류');
+
+    // Ollama 단일 모델 사용 (백업 제거)
     let response;
-    try {
-      const { getRAGSearchService } = await import('@/lib/services/RAGSearchService');
-      console.log('🤖 RAG 서비스 호출');
-      const ragService = getRAGSearchService();
-      response = await ragService.generateChatResponse(message.trim());
-      
-      // 검색 결과에 문서 메타데이터 추가 (임시 폴더와 동일한 방식)
-      const enrichedSources = await enrichSearchResults(response.sources);
-      response.sources = enrichedSources;
-      
-      console.log('✅ RAG 응답 완료');
-    } catch (ragError) {
-      console.error('❌ RAG 서비스 오류:', ragError);
-      
-      // Supabase 연결 오류인 경우 특별한 처리
-      if (ragError instanceof Error && ragError.message.includes('Supabase')) {
-        response = {
-          answer: '죄송합니다. 현재 데이터베이스 연결 설정이 완료되지 않았습니다. 관리자에게 문의하시거나 잠시 후 다시 시도해주세요.\n\n임시로 Meta 광고 정책 관련 질문은 Meta 비즈니스 도움말 센터에서 확인하실 수 있습니다.',
-          sources: [],
-          confidence: 0.1,
-          processingTime: 100,
-          model: 'error',
-          isLLMGenerated: false
-        };
-      } else {
-        // 기타 오류에 대한 Fallback 응답 - 검색 결과 기반 답변 시도
-        console.log('⚠️ RAG 서비스 오류로 인한 fallback 모드 활성화');
+    
+    if (isOllamaHealthy) {
+      try {
+        // RAG + Ollama 서비스 사용
+        console.log('🤖 RAG + Ollama 서비스 호출');
+        const { getRAGSearchService } = await import('@/lib/services/RAGSearchService');
+        const ragService = getRAGSearchService();
+        response = await ragService.generateChatResponse(message.trim());
         
-        // 간단한 검색 시도
+        // 검색 결과에 문서 메타데이터 추가
+        const enrichedSources = await enrichSearchResults(response.sources);
+        response.sources = enrichedSources;
+        
+        console.log('✅ RAG + Ollama 응답 완료');
+      } catch (ragError) {
+        console.error('❌ RAG + Ollama 서비스 오류:', ragError);
+        
+        // RAG 오류 시 직접 Ollama 사용
         try {
-          const { getRAGSearchService } = await import('@/lib/services/RAGSearchService');
-          const ragService = getRAGSearchService();
-          const searchResults = await ragService.searchSimilarChunks(message.trim(), 3, 0.01);
+          console.log('🤖 직접 Ollama 서버 사용 시도');
+          const ollamaResponse = await generateResponse(message.trim(), 'tinyllama:1.1b');
           
-          if (searchResults.length > 0) {
-            response = {
-              answer: `검색된 정보에 따르면:\n\n${searchResults[0].content.substring(0, 500)}...\n\n이 정보가 도움이 되었나요?`,
-              sources: searchResults,
-              confidence: 0.6,
-              processingTime: 1000,
-              model: 'search-fallback',
-              isLLMGenerated: false
-            };
-          } else {
-            response = {
-              answer: '죄송합니다. 현재 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
-              sources: [],
-              confidence: 0.1,
-              processingTime: 100,
-              model: 'error',
-              isLLMGenerated: false
-            };
-          }
-        } catch (searchError) {
-          console.error('Fallback 검색도 실패:', searchError);
+          response = {
+            answer: ollamaResponse,
+            sources: [],
+            confidence: 0.7,
+            processingTime: 2000,
+            model: 'tinyllama:1.1b',
+            isLLMGenerated: true
+          };
+          
+          console.log('✅ 직접 Ollama 응답 완료');
+        } catch (ollamaError) {
+          console.error('❌ 직접 Ollama도 실패:', ollamaError);
           response = {
             answer: '죄송합니다. 현재 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
             sources: [],
@@ -198,13 +182,36 @@ export async function POST(request: NextRequest) {
           };
         }
       }
+    } else {
+      // Ollama 서버가 비정상인 경우 오류 응답
+      console.error('❌ Ollama 서버 비정상 - 서비스 중단');
+      response = {
+        answer: '죄송합니다. 현재 AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        sources: [],
+        confidence: 0.1,
+        processingTime: 100,
+        model: 'error',
+        isLLMGenerated: false
+      };
     }
 
-    // 응답 구성
-    console.log('📊 RAG 응답 데이터:', {
+    // 응답 구성 및 모니터링 로그
+    console.log('📊 웹 통합 서비스 응답 데이터:', {
       answer: response.answer,
       sourcesCount: response.sources?.length || 0,
-      sources: response.sources
+      sources: response.sources,
+      model: response.model,
+      isLLMGenerated: response.isLLMGenerated,
+      confidence: response.confidence,
+      processingTime: response.processingTime
+    });
+    
+    // 모니터링을 위한 상세 로그
+    console.log('🔍 Vultr+Ollama 서비스 상태:', {
+      ollamaHealthy: isOllamaHealthy,
+      primaryModel: response.model,
+      responseQuality: response.confidence > 0.7 ? '높음' : response.confidence > 0.4 ? '보통' : '낮음',
+      sourcesFound: response.sources?.length || 0
     });
 
     const apiResponse = {

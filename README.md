@@ -1,6 +1,6 @@
-# AdMate - Meta 광고 정책 AI 챗봇
+# Meta 광고 FAQ AI 챗봇 - Vultr+Ollama 전용
 
-RAG(Retrieval-Augmented Generation) 기반의 AI 챗봇으로 Meta 광고 집행 관련 내부 FAQ에 대한 즉각적인 한국어 답변을 제공합니다.
+RAG(Retrieval-Augmented Generation) 기반의 AI 챗봇으로 Meta 광고 집행 관련 내부 FAQ에 대한 즉각적인 한국어 답변을 제공합니다. Vultr VPS에서 호스팅되는 Ollama 서버를 사용하여 완전히 독립적인 AI 시스템을 구축했습니다.
 
 ## 🚀 주요 기능
 
@@ -22,7 +22,8 @@ RAG(Retrieval-Augmented Generation) 기반의 AI 챗봇으로 Meta 광고 집행
 ### Backend & Database
 - **Supabase**: 백엔드 서비스 (PostgreSQL + pgvector)
 - **Vercel**: 프론트엔드 호스팅 및 서버리스 함수
-- **Google Gemini**: LLM (Large Language Model)
+- **Vultr VPS**: Ollama 서버 호스팅
+- **Ollama**: 로컬 LLM 서버 (tinyllama, llama2, mistral 등)
 
 ### RAG 시스템
 - **pgvector**: 벡터 임베딩 저장 및 유사도 검색
@@ -51,13 +52,12 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# Google Gemini
-GEMINI_API_KEY=your_gemini_api_key
-GOOGLE_API_KEY=your_google_api_key
-GOOGLE_MODEL=gemini-2.0-flash-exp
+# Ollama (Vultr VPS)
+OLLAMA_BASE_URL=https://your-vultr-server.com/ollama
+OLLAMA_DEFAULT_MODEL=tinyllama:1.1b
 
 # 기타 설정
-EMBEDDING_DIM=768
+EMBEDDING_DIM=1024
 TOP_K=5
 ```
 
@@ -76,8 +76,11 @@ npm run dev
 3. 환경 변수 설정
 4. 자동 배포 완료
 
-### Railway 배포 (Ollama 버전)
-Railway+Ollama 기반 서비스는 별도 브랜치에서 관리됩니다.
+### Vultr VPS 설정
+1. Vultr VPS 서버 생성 및 Ollama 설치
+2. Nginx 리버스 프록시 설정
+3. 방화벽 포트 11434 열기
+4. Ollama 모델 다운로드 (tinyllama, llama2 등)
 
 ## 📁 프로젝트 구조
 
@@ -102,7 +105,7 @@ src/
 
 ## 🔧 주요 API 엔드포인트
 
-- `POST /api/chat`: 채팅 메시지 처리
+- `POST /api/chat-ollama`: Ollama 기반 채팅 메시지 처리
 - `POST /api/upload`: 문서 업로드
 - `GET /api/documents`: 문서 목록 조회
 - `POST /api/feedback`: 피드백 저장
@@ -213,5 +216,5 @@ CREATE TABLE log_alerts (
 
 ---
 
-**태그**: `vercel_gemini_최종완료`
+**태그**: `vultr_ollama_독립시스템_완료`
 

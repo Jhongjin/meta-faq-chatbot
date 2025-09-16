@@ -79,12 +79,12 @@ export class SimpleEmbeddingService {
    * 해시 기반 임베딩 생성
    */
   private generateHashEmbedding(text: string): number[] {
-    const embedding = new Array(768).fill(0);
+    const embedding = new Array(1024).fill(0); // 1024차원으로 변경
     
-    // 텍스트를 768개 청크로 나누어 해시 생성
-    const chunkSize = Math.max(1, Math.floor(text.length / 768));
+    // 텍스트를 1024개 청크로 나누어 해시 생성
+    const chunkSize = Math.max(1, Math.floor(text.length / 1024));
     
-    for (let i = 0; i < 768; i++) {
+    for (let i = 0; i < 1024; i++) {
       const start = i * chunkSize;
       const end = Math.min(start + chunkSize, text.length);
       const chunk = text.substring(start, end);

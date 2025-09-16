@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { SimpleEmbeddingService } from './SimpleEmbeddingService';
+import { generateResponse } from './ollama';
 
 export interface SearchResult {
   id: string;
@@ -90,18 +91,57 @@ export class RAGSearchService {
       const queryEmbedding = queryEmbeddingResult.embedding;
       console.log(`📊 질문 임베딩 생성 완료: ${queryEmbedding.length}차원`);
 
-      // 직접 SQL 쿼리 사용 (RPC 함수 문제 우회)
-      const queryVectorString = `[${queryEmbedding.join(',')}]`;
+      // 벡터 검색을 위한 RPC 함수 호출 시도
+      let searchResults;
+      let error;
       
-      const { data: searchResults, error } = await this.supabase
-        .from('document_chunks')
-        .select(`
-          chunk_id,
-          content,
-          metadata,
-          embedding
-        `)
-        .limit(limit * 2); // 더 많은 결과를 가져와서 클라이언트에서 필터링
+      try {
+        console.log('🔍 벡터 검색 RPC 함수 호출 시도');
+        const { data, error: rpcError } = await this.supabase.rpc('search_ollama_documents', {
+          query_embedding: queryEmbedding,
+          match_threshold: 0.001,
+          match_count: limit
+        });
+        
+        if (rpcError) {
+          console.warn('⚠️ RPC 함수 오류, 직접 쿼리로 전환:', rpcError);
+          throw rpcError;
+        }
+        
+        searchResults = data;
+        console.log('✅ 벡터 검색 RPC 함수 성공');
+      } catch (rpcError) {
+        console.log('⚠️ RPC 함수 실패, 키워드 검색으로 전환');
+        
+        // RPC 함수 실패 시 키워드 기반 검색 사용
+        const keywords = query.toLowerCase().split(' ').filter(word => word.length > 2);
+        console.log('🔍 키워드 검색:', keywords);
+        
+        let keywordQuery = this.supabase
+          .from('ollama_document_chunks')
+          .select(`
+            chunk_id,
+            content,
+            metadata,
+            embedding
+          `);
+        
+        // 키워드가 있으면 ILIKE 검색 추가
+        if (keywords.length > 0) {
+          const keywordConditions = keywords.map(keyword => `content.ilike.%${keyword}%`);
+          console.log('🔍 키워드 검색 조건:', keywordConditions);
+          keywordQuery = keywordQuery.or(keywordConditions.join(','));
+        } else {
+          // 키워드가 없으면 모든 청크 가져오기
+          console.log('🔍 키워드 없음, 모든 청크 조회');
+        }
+        
+        const { data, error: directError } = await keywordQuery.limit(limit * 5);
+        
+        searchResults = data;
+        error = directError;
+        console.log(`📊 키워드 검색 결과: ${searchResults?.length || 0}개`);
+      }
 
       if (error) {
         console.error('벡터 검색 오류:', error);
@@ -109,6 +149,47 @@ export class RAGSearchService {
       }
 
       console.log(`📊 데이터베이스 조회 결과: ${searchResults?.length || 0}개`);
+      
+      // 디버깅을 위한 상세 로그
+      if (searchResults && searchResults.length > 0) {
+        console.log('🔍 검색된 청크 샘플:', searchResults.slice(0, 2).map(chunk => ({
+          chunk_id: chunk.chunk_id,
+          content_preview: chunk.content?.substring(0, 100) + '...',
+          has_embedding: !!chunk.embedding,
+          metadata: chunk.metadata
+        })));
+        
+        // 각 청크의 유사도 계산 과정 로그
+        console.log('🔍 유사도 계산 과정:');
+        searchResults.slice(0, 3).forEach((chunk, index) => {
+          if (chunk.embedding) {
+            try {
+              let storedEmbedding;
+              if (typeof chunk.embedding === 'string') {
+                storedEmbedding = JSON.parse(chunk.embedding);
+              } else if (Array.isArray(chunk.embedding)) {
+                storedEmbedding = chunk.embedding;
+              } else {
+                console.log(`  청크 ${index + 1}: ${chunk.chunk_id} = 알 수 없는 임베딩 형식: ${typeof chunk.embedding}`);
+                return;
+              }
+              
+              if (storedEmbedding && Array.isArray(storedEmbedding) && storedEmbedding.length > 0) {
+                const similarity = this.calculateCosineSimilarity(queryEmbedding, storedEmbedding);
+                console.log(`  청크 ${index + 1}: ${chunk.chunk_id} = ${similarity.toFixed(6)}`);
+              } else {
+                console.log(`  청크 ${index + 1}: ${chunk.chunk_id} = 유효하지 않은 임베딩 배열`);
+              }
+            } catch (error) {
+              console.log(`  청크 ${index + 1}: ${chunk.chunk_id} = 임베딩 파싱 실패: ${error}`);
+            }
+          } else {
+            console.log(`  청크 ${index + 1}: ${chunk.chunk_id} = 임베딩 없음`);
+          }
+        });
+      } else {
+        console.log('⚠️ 검색 결과가 없습니다. 데이터베이스에 문서가 있는지 확인하세요.');
+      }
 
       // 클라이언트에서 유사도 계산 및 필터링
       const filteredResults = (searchResults || [])
@@ -122,6 +203,12 @@ export class RAGSearchService {
               storedEmbedding = result.embedding;
             } else {
               console.warn(`알 수 없는 임베딩 형식: ${typeof result.embedding}`);
+              return null;
+            }
+            
+            // 임베딩 배열 유효성 검사
+            if (!Array.isArray(storedEmbedding) || storedEmbedding.length === 0) {
+              console.warn(`유효하지 않은 임베딩 배열: ${storedEmbedding}`);
               return null;
             }
           } catch (error) {
@@ -144,7 +231,7 @@ export class RAGSearchService {
             metadata: result.metadata
           };
         })
-        .filter((result: any) => result !== null && result.similarity > 0.01)
+        .filter((result: any) => result !== null) // 임계값 완전 제거 - 모든 결과 확인
         .sort((a: any, b: any) => b.similarity - a.similarity)
         .slice(0, limit);
 
@@ -262,7 +349,7 @@ export class RAGSearchService {
   }
 
   /**
-   * 검색 결과를 바탕으로 답변 생성 (LLM 사용)
+   * 검색 결과를 바탕으로 답변 생성 (Ollama LLM 사용)
    */
   async generateAnswer(query: string, searchResults: SearchResult[]): Promise<string> {
     if (searchResults.length === 0) {
@@ -276,13 +363,36 @@ export class RAGSearchService {
         return this.generateFallbackAnswer(query, searchResults);
       }
 
-      // Vercel + Gemini 시스템에서는 chat API에서 직접 Gemini를 사용하므로
-      // RAGSearchService는 검색 기능만 담당하고 fallback 답변을 반환
-      console.log('⚠️ RAGSearchService는 검색 전용입니다. Fallback 답변을 반환합니다.');
-      return this.generateFallbackAnswer(query, searchResults);
+      // Ollama를 사용한 답변 생성
+      console.log('🤖 Ollama를 사용한 답변 생성 시작');
+      
+      // 검색 결과를 컨텍스트로 구성
+      const context = this.buildContextFromSearchResults(searchResults);
+      
+      // Ollama 프롬프트 구성
+      const prompt = `다음은 Meta 광고 정책과 관련된 문서들입니다. 사용자의 질문에 대해 이 정보를 바탕으로 정확하고 도움이 되는 답변을 한국어로 제공해주세요.
+
+사용자 질문: ${query}
+
+관련 문서 정보:
+${context}
+
+답변 요구사항:
+1. 제공된 문서 정보를 바탕으로 정확한 답변을 제공하세요
+2. 답변은 한국어로 작성하세요
+3. 답변이 불확실한 경우 그렇게 명시하세요
+4. 답변 끝에 관련 출처를 간단히 언급하세요
+
+답변:`;
+
+      // Ollama를 통한 답변 생성
+      const answer = await generateResponse(prompt, 'tinyllama:1.1b');
+      
+      console.log('✅ Ollama 답변 생성 완료');
+      return answer;
 
     } catch (error) {
-      console.error('LLM 답변 생성 실패:', error);
+      console.error('Ollama 답변 생성 실패:', error);
       return this.generateFallbackAnswer(query, searchResults);
     }
   }
@@ -428,8 +538,8 @@ ${content}
       // 4. 처리 시간 계산
       const processingTime = Date.now() - startTime;
       
-      // 5. LLM 사용 여부 확인 (Vercel + Gemini 시스템에서는 항상 false)
-      const isLLMGenerated = false;
+      // 5. LLM 사용 여부 확인 (Ollama 시스템에서는 항상 true)
+      const isLLMGenerated = true;
 
       console.log(`✅ RAG 응답 생성 완료: ${processingTime}ms, 신뢰도: ${confidence}`);
 
@@ -438,7 +548,7 @@ ${content}
         sources: searchResults,
         confidence,
         processingTime,
-        model: isLLMGenerated ? 'qwen2.5:1.5b' : 'fallback',
+        model: isLLMGenerated ? 'tinyllama:1.1b' : 'fallback',
         isLLMGenerated
       };
 

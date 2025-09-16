@@ -26,7 +26,9 @@ import {
   Brain,
   Info,
   AlertTriangle,
-  Rocket
+  Rocket,
+  Bot,
+  Database
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useRef } from "react";
@@ -62,9 +64,9 @@ export default function HomePage() {
         return;
       }
       
-      // 즉시 채팅 페이지로 이동 (지연 제거)
+      // Vultr+Ollama 프로젝트이므로 chat-ollama로 이동
       const encodedQuestion = encodeURIComponent(chatInput.trim());
-      router.push(`/chat?q=${encodedQuestion}`);
+      router.push(`/chat-ollama?q=${encodedQuestion}`);
       
     } catch (error) {
       console.error('Chat submit error:', error);
@@ -320,6 +322,7 @@ export default function HomePage() {
           </motion.div>
         </div>
       </motion.div>
+
 
       {/* Content Container - Lovable.dev Style */}
       <div className="relative max-w-7xl mx-auto px-6 py-12">

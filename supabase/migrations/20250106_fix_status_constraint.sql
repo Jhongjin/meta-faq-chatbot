@@ -27,3 +27,6 @@ SET status = 'completed', updated_at = NOW()
 WHERE status = 'indexed';
 
 
+
+
+
