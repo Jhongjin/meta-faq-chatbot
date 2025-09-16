@@ -58,7 +58,7 @@ export async function GET() {
           documentIds: [...new Set(chunks?.map(chunk => chunk.document_id) || [])]
         }
       },
-      recommendations: []
+      recommendations: [] as string[]
     };
     
     // 5. 권장사항 생성

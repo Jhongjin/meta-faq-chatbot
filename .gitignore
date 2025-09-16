@@ -137,3 +137,4 @@ railway.json
 
 # Preview files
 preview/
+.vercel
