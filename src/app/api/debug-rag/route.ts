@@ -26,7 +26,7 @@ export async function GET() {
     }
     
     // 검색 테스트
-    let searchResults = [];
+    let searchResults: any[] = [];
     try {
       searchResults = await ragService.searchSimilarChunks('광고 정책', 3);
       console.log('✅ 검색 테스트 성공:', searchResults.length, '개 결과');
