@@ -11,6 +11,7 @@
     "TOP_K": "5",
     "OLLAMA_BASE_URL": "http://141.164.52.52:11434",
     "OLLAMA_DEFAULT_MODEL": "mistral:7b",
-    "VULTR_OLLAMA_URL": "http://141.164.52.52"
+    "VULTR_OLLAMA_URL": "http://141.164.52.52",
+    "RAILWAY_OLLAMA_URL": "https://meta-faq-ollama-production.up.railway.app"
   }
 }

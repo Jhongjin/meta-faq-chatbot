@@ -1,90 +1,72 @@
-# Railway + Ollama + Vercel 배포 가이드
+# Railway + Ollama 배포 가이드
 
-## 1. Railway에서 Ollama 서버 설정
+## 🚂 Railway에 Ollama 배포하기
 
-### Railway 프로젝트 생성
-```bash
-# Railway CLI 설치
-npm install -g @railway/cli
+### 1. Railway 계정 생성 및 프로젝트 생성
 
-# Railway 로그인
-railway login
+1. [Railway.app](https://railway.app)에 접속하여 GitHub 계정으로 로그인
+2. "New Project" 클릭
+3. "Deploy from GitHub repo" 선택
+4. `meta-faq-chatbot` 저장소 선택
 
-# 새 프로젝트 생성
-railway new meta-faq-ollama
+### 2. Ollama 서비스 배포
 
-# Ollama 서비스 추가
-railway add ollama
+Railway에서 새 서비스를 생성하고 다음 설정을 적용:
+
+#### Dockerfile 생성
+```dockerfile
+FROM ollama/ollama:latest
+
+# Ollama 서비스 시작
+CMD ["ollama", "serve"]
 ```
 
-### Railway 설정 파일
-```yaml
-# railway.toml
-[build]
-builder = "nixpacks"
-
-[deploy]
-startCommand = "ollama serve"
+#### Railway 환경변수 설정
 ```
-
-### 환경변수 설정
-```bash
-# Railway에서 환경변수 설정
-railway variables set OLLAMA_MODELS=llama3.2:3b
-railway variables set OLLAMA_HOST=0.0.0.0
-railway variables set OLLAMA_PORT=11434
-```
-
-## 2. Vercel에서 Railway API 호출
-
-### API 라우트 수정
-```typescript
-// src/app/api/chat-railway/route.ts
-const RAILWAY_OLLAMA_URL = process.env.RAILWAY_OLLAMA_URL;
-
-export async function POST(request: NextRequest) {
-  const { message } = await request.json();
-  
-  const response = await fetch(`${RAILWAY_OLLAMA_URL}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'llama3.2:3b',
-      prompt: message,
-      stream: false
-    })
-  });
-  
-  const data = await response.json();
-  return NextResponse.json({ answer: data.response });
-}
-```
-
-## 3. 환경변수 설정
-
-### Vercel 환경변수
-```bash
-RAILWAY_OLLAMA_URL=https://meta-faq-ollama-production.up.railway.app
-```
-
-### Railway 환경변수
-```bash
-OLLAMA_MODELS=llama3.2:3b
 OLLAMA_HOST=0.0.0.0
-OLLAMA_PORT=11434
+OLLAMA_ORIGINS=*
 ```
 
-## 4. 배포 순서
+### 3. 모델 설치
 
-1. Railway에서 Ollama 서버 배포
-2. Vercel에서 Railway API 호출하도록 수정
-3. 환경변수 설정
-4. 테스트 및 검증
+Railway 콘솔에서 다음 명령어 실행:
 
-## 5. 비용 비교
+```bash
+# mistral:7b 모델 설치
+ollama pull mistral:7b
 
-- **Railway**: 월 $5 (기본 플랜)
-- **Vultr**: 월 $6 (1GB RAM)
-- **Hugging Face**: 월 $9 (Pro 플랜)
+# 모델 확인
+ollama list
+```
 
-Railway가 가장 경제적이고 Vercel과 호환성이 좋습니다.
+### 4. Vercel 환경변수 업데이트
+
+Vercel 대시보드에서 다음 환경변수 추가:
+
+```
+RAILWAY_OLLAMA_URL=https://your-railway-app.up.railway.app
+```
+
+### 5. 테스트
+
+Railway 서비스가 정상 작동하는지 확인:
+
+```bash
+curl -X POST "https://your-railway-app.up.railway.app/api/generate" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"mistral:7b","prompt":"안녕하세요","stream":false}'
+```
+
+## 🔄 Vercel에서 Railway 사용
+
+Railway 배포 완료 후, Vercel에서 `/api/chat-railway` 엔드포인트를 사용하여 Ollama에 연결할 수 있습니다.
+
+### 장점:
+- ✅ Vercel 타임아웃 제한 없음
+- ✅ 안정적인 Ollama 서비스
+- ✅ 자동 스케일링
+- ✅ HTTPS 지원
+
+### 비용:
+- Railway 무료 플랜: 월 $5 크레딧
+- Ollama 모델: 약 $2-3/월

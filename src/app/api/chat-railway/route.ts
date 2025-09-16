@@ -1,42 +1,90 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { RAGSearchService } from '@/lib/services/RAGSearchService';
+import { SearchResult } from '@/lib/services/VectorStorageService';
 
-// Railway + Ollama 전용 시스템 초기화
-console.log('🔑 Railway+Ollama 환경변수 확인:');
-console.log('- RAILWAY_OLLAMA_URL:', process.env.RAILWAY_OLLAMA_URL ? '설정됨' : '설정되지 않음');
-console.log('- NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? '설정됨' : '설정되지 않음');
-console.log('- SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '설정됨' : '설정되지 않음');
+/**
+ * Fallback 검색 결과 (검색 결과가 없을 때 사용)
+ */
+function getFallbackSearchResults(query: string, limit: number): SearchResult[] {
+  return [
+    {
+      id: 'fallback_instagram_ad_specs_0',
+      content: `인스타그램 광고 사양 가이드
 
-// Supabase 클라이언트 초기화
-const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY 
-  ? createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    )
-  : null;
+**스토리 광고**
+- 크기: 1080x1920 픽셀 (9:16 비율)
+- 최대 파일 크기: 30MB
+- 지원 형식: MP4, MOV
+- 최대 길이: 15초
 
-interface SearchResult {
-  chunk_id: string;
-  content: string;
-  similarity: number;
-  metadata: any;
+**피드 광고**
+- 크기: 1080x1080 픽셀 (1:1 비율)
+- 최대 파일 크기: 30MB
+- 지원 형식: MP4, MOV
+- 최대 길이: 60초
+
+**릴스 광고**
+- 크기: 1080x1920 픽셀 (9:16 비율)
+- 최대 파일 크기: 30MB
+- 지원 형식: MP4, MOV
+- 최대 길이: 90초
+
+**텍스트 제한**
+- 제목: 최대 30자
+- 설명: 최대 2,200자
+- 해시태그: 최대 30개`,
+      similarity: 0.85,
+      metadata: {
+        title: '인스타그램 광고 사양 가이드',
+        url: 'https://www.facebook.com/business/help/instagram/ads-specs'
+      }
+    },
+    {
+      id: 'fallback_facebook_ad_policy_0',
+      content: `페이스북 광고 정책
+
+**이미지 광고**
+- 크기: 1200x628 픽셀 (1.91:1 비율)
+- 최대 파일 크기: 30MB
+- 지원 형식: JPG, PNG
+- 텍스트 제한: 이미지의 20% 이하
+
+**동영상 광고**
+- 크기: 1280x720 픽셀 (16:9 비율)
+- 최대 파일 크기: 4GB
+- 지원 형식: MP4, MOV, AVI
+- 최대 길이: 240초
+
+**카루셀 광고**
+- 크기: 1080x1080 픽셀 (1:1 비율)
+- 최대 파일 크기: 30MB
+- 지원 형식: JPG, PNG
+- 최대 10개 이미지
+
+**광고 승인**
+- 모든 광고는 Meta의 광고 정책을 준수해야 합니다.
+- 정책 위반 시 광고가 거부될 수 있습니다.`,
+      similarity: 0.8,
+      metadata: {
+        title: '페이스북 광고 정책',
+        url: 'https://www.facebook.com/policies/ads'
+      }
+    }
+  ];
 }
 
 /**
- * Railway Ollama를 통한 답변 생성
+ * Railway Ollama 연결을 통한 답변 생성
  */
 async function generateAnswerWithRailwayOllama(
   message: string, 
   searchResults: SearchResult[]
 ): Promise<string> {
   try {
-    console.log('🤖 Railway Ollama 답변 생성 시작');
+    console.log('🚂 Railway Ollama 연결 답변 생성 시작');
     
-    const railwayUrl = process.env.RAILWAY_OLLAMA_URL;
-    if (!railwayUrl) {
-      throw new Error('RAILWAY_OLLAMA_URL이 설정되지 않았습니다');
-    }
+    const railwayUrl = process.env.RAILWAY_OLLAMA_URL || 'https://meta-faq-ollama-production.up.railway.app';
+    console.log('🔗 Railway URL:', railwayUrl);
     
     // 검색 결과를 컨텍스트로 변환
     const context = searchResults.map(result => 
@@ -59,108 +107,46 @@ ${context}
 
 답변:`;
 
-    // Railway Ollama API 호출
+    console.log('📤 Railway Ollama 요청 시작');
+    
+    // Railway Ollama 서버로 요청
     const response = await fetch(`${railwayUrl}/api/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'User-Agent': 'Meta-FAQ-Chatbot/1.0',
+        'Connection': 'keep-alive'
       },
       body: JSON.stringify({
-        model: 'llama3.2:3b',
+        model: 'mistral:7b',
         prompt: prompt,
         stream: false,
         options: {
           temperature: 0.7,
-          top_p: 0.9
+          top_p: 0.9,
+          num_predict: 1000
         }
       }),
       signal: AbortSignal.timeout(30000) // 30초 타임아웃
     });
 
+    console.log('📡 Railway Ollama 응답 상태:', response.status);
+    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Railway Ollama API 오류:', errorText);
-      throw new Error(`Railway Ollama API error: ${response.status}`);
+      console.error('❌ Railway Ollama 응답 오류:', errorText);
+      throw new Error(`Railway Ollama error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('✅ Railway Ollama 답변 생성 완료');
+    console.log('✅ Railway Ollama 답변 생성 완료:', data);
     
     return data.response?.trim() || '답변을 생성할 수 없습니다.';
 
   } catch (error) {
     console.error('❌ Railway Ollama 답변 생성 실패:', error);
-    
-    // Fallback 답변 생성
-    if (searchResults.length > 0) {
-      const topResult = searchResults[0];
-      return `**Meta 광고 정책 안내**
-
-${topResult.content.substring(0, 400)}${topResult.content.length > 400 ? '...' : ''}
-
-**검색된 관련 정보:**
-${searchResults.map((result, index) => `${index + 1}. ${result.metadata?.title || '문서'}: ${result.content.substring(0, 100)}...`).join('\n')}
-
-**더 자세한 정보:**
-- Meta 비즈니스 도움말 센터: https://www.facebook.com/business/help
-- 광고 정책 센터: https://www.facebook.com/policies/ads
-
-관리자에게 문의하시면 더 구체적인 답변을 받으실 수 있습니다.`;
-    }
-    
-    return '죄송합니다. 현재 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+    throw error;
   }
-}
-
-/**
- * Railway Ollama RAG 검색
- */
-async function searchWithRailwayRAG(
-  query: string,
-  limit: number = 5
-): Promise<SearchResult[]> {
-  try {
-    console.log(`🔍 Railway RAG 검색 시작: "${query}"`);
-    
-    if (!supabase) {
-      console.warn('⚠️ Supabase 클라이언트가 없음. Fallback 데이터 사용');
-      return getFallbackSearchResults(query, limit);
-    }
-
-    // RAGSearchService 사용
-    const ragService = new RAGSearchService();
-    const searchResults = await ragService.searchSimilarChunks(query, limit);
-    
-    console.log(`📊 Railway RAG 검색 결과: ${searchResults.length}개`);
-    
-    return searchResults.map(result => ({
-      chunk_id: result.id,
-      content: result.content,
-      similarity: result.similarity,
-      metadata: result.metadata
-    }));
-    
-  } catch (error) {
-    console.error('❌ Railway RAG 검색 실패:', error);
-    return getFallbackSearchResults(query, limit);
-  }
-}
-
-/**
- * Fallback 검색 결과
- */
-function getFallbackSearchResults(query: string, limit: number): SearchResult[] {
-  return [
-    {
-      chunk_id: 'fallback-1',
-      content: 'Meta 광고 정책에 대한 기본 정보입니다. 더 자세한 내용은 관리자에게 문의해주세요.',
-      similarity: 0.5,
-      metadata: {
-        title: 'Meta 광고 정책 기본 정보',
-        type: 'fallback'
-      }
-    }
-  ];
 }
 
 /**
@@ -168,37 +154,31 @@ function getFallbackSearchResults(query: string, limit: number): SearchResult[] 
  */
 function calculateConfidence(searchResults: SearchResult[]): number {
   if (searchResults.length === 0) return 0;
-  
-  const avgSimilarity = searchResults.reduce((sum, result) => sum + result.similarity, 0) / searchResults.length;
-  return Math.min(avgSimilarity * 100, 100);
+  const totalSimilarity = searchResults.reduce((sum, result) => sum + result.similarity, 0);
+  return totalSimilarity / searchResults.length;
 }
 
 /**
- * Railway + Ollama 전용 Chat API
+ * Railway+Ollama 전용 Chat API
  * POST /api/chat-railway
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  
+  let ragService: RAGSearchService | undefined;
+
   try {
-    const requestBody = await request.json();
-    const { message, conversationHistory } = requestBody;
-    
-    if (!message || typeof message !== 'string') {
-      return NextResponse.json(
-        { error: '메시지가 필요합니다.' },
-        { status: 400 }
-      );
-    }
+    const { message } = await request.json();
+    console.log(`🚂 Railway+Ollama RAG 챗봇 응답 생성 시작: "${message}"`);
 
-    console.log(`🚀 Railway+Ollama RAG 챗봇 응답 생성 시작: "${message}"`);
-
-    // 1. Railway RAG 검색
-    const searchResults = await searchWithRailwayRAG(message, 3);
-    console.log(`📊 Railway 검색 결과: ${searchResults.length}개`);
+    // 1. RAGSearchService 초기화 및 검색
+    console.log('🔍 Railway+Ollama RAG 검색 시작:', `"${message}"`);
+    ragService = new RAGSearchService();
+    const searchResults = await ragService.searchSimilarChunks(message, parseInt(process.env.TOP_K || '5'));
+    console.log(`📊 Railway+Ollama 검색 결과: ${searchResults.length}개`);
 
     // 2. 검색 결과가 없으면 관련 내용 없음 응답
     if (searchResults.length === 0) {
+      console.log('⚠️ Railway+Ollama RAG 검색 결과가 없음. 관련 내용 없음 응답');
       return NextResponse.json({
         response: {
           message: "죄송합니다. 현재 제공된 문서에서 관련 정보를 찾을 수 없습니다. 더 구체적인 질문을 해주시거나 다른 키워드로 시도해보세요.",
@@ -213,56 +193,73 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. Railway Ollama 답변 생성
-    console.log('🚀 Railway Ollama 답변 생성 시작');
+    // 3. Railway+Ollama 답변 생성
+    console.log('🚂 Railway+Ollama 답변 생성 시작');
     
+    let answer: string;
+    try {
+      answer = await generateAnswerWithRailwayOllama(message, searchResults);
+    } catch (error) {
+      console.error('❌ Railway Ollama 연결 실패:', error);
+      
+      // Railway Ollama 서버 연결 실패 시 적절한 오류 메시지 반환
+      return NextResponse.json({
+        response: {
+          message: "Railway Ollama 서버에 연결할 수 없습니다. 서버 상태를 확인해주세요.",
+          content: "Railway Ollama 서버에 연결할 수 없습니다. 서버 상태를 확인해주세요.",
+          sources: [],
+          noDataFound: false,
+          showContactOption: true,
+          error: true
+        },
+        confidence: 0,
+        processingTime: Date.now() - startTime,
+        model: 'railway-ollama-connection-failed'
+      });
+    }
+    
+    // 신뢰도 계산
     const confidence = calculateConfidence(searchResults);
+    
+    // 처리 시간 계산
     const processingTime = Date.now() - startTime;
 
     // 출처 정보 생성
     const sources = searchResults.map(result => ({
-      id: result.chunk_id,
-      title: result.metadata?.title || 'Meta 광고 정책 문서',
-      url: result.metadata?.url || '',
-      updatedAt: result.metadata?.updatedAt || new Date().toISOString(),
-      excerpt: result.content.substring(0, 200) + (result.content.length > 200 ? '...' : ''),
-      similarity: result.similarity,
-      sourceType: result.metadata?.type || 'document',
-      documentType: result.metadata?.documentType || 'policy'
+      title: result.metadata?.title || '문서',
+      url: result.metadata?.url || '#',
+      content: result.content.substring(0, 150) + '...'
     }));
 
-    // Railway Ollama 답변 생성
-    const answer = await generateAnswerWithRailwayOllama(message, searchResults);
-    
+    console.log('✅ Railway+Ollama RAG 챗봇 응답 생성 완료');
+
     return NextResponse.json({
       response: {
         message: answer,
         content: answer,
-        sources,
+        sources: sources,
         noDataFound: false,
         showContactOption: false
       },
-      confidence,
-      processingTime,
-      model: 'railway-ollama-llama3.2'
+      confidence: confidence,
+      processingTime: processingTime,
+      model: process.env.OLLAMA_DEFAULT_MODEL || 'mistral:7b'
     });
 
   } catch (error) {
-    console.error('❌ Railway+Ollama RAG 응답 생성 실패:', error);
-    
-    const processingTime = Date.now() - startTime;
-    
+    console.error('❌ Railway+Ollama RAG 챗봇 응답 생성 실패:', error);
     return NextResponse.json({
       response: {
-        message: '죄송합니다. 현재 Railway+Ollama 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
-        content: '죄송합니다. 현재 Railway+Ollama 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        message: "죄송합니다. 서비스 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+        content: "죄송합니다. 서비스 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
         sources: [],
         noDataFound: true,
-        showContactOption: true
+        showContactOption: true,
+        error: true
       },
       confidence: 0,
-      processingTime,
-      model: 'railway-ollama-error'
+      processingTime: Date.now() - startTime,
+      model: 'error-fallback'
     }, { status: 500 });
   }
 }
