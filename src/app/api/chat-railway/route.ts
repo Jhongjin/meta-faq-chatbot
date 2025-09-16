@@ -8,7 +8,7 @@ import { SearchResult } from '@/lib/services/VectorStorageService';
 function getFallbackSearchResults(query: string, limit: number): SearchResult[] {
   return [
     {
-      id: 'fallback_instagram_ad_specs_0',
+      chunk_id: 'fallback_instagram_ad_specs_0',
       content: `인스타그램 광고 사양 가이드
 
 **스토리 광고**
@@ -40,7 +40,7 @@ function getFallbackSearchResults(query: string, limit: number): SearchResult[] 
       }
     },
     {
-      id: 'fallback_facebook_ad_policy_0',
+      chunk_id: 'fallback_facebook_ad_policy_0',
       content: `페이스북 광고 정책
 
 **이미지 광고**
