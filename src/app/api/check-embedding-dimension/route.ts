@@ -95,7 +95,7 @@ export async function GET() {
         dimensionCounts,
         samples: dimensionAnalysis.samples.slice(0, 3)
       },
-      recommendations: []
+      recommendations: [] as string[]
     };
     
     // 5. 권장사항 생성
