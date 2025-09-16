@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { RAGSearchService } from '@/lib/services/RAGSearchService';
+import { RAGSearchService, SearchResult as RAGSearchResult } from '@/lib/services/RAGSearchService';
 import { SearchResult } from '@/lib/services/VectorStorageService';
+
+/**
+ * RAGSearchResult를 VectorStorageService SearchResult로 변환
+ */
+function convertRAGSearchResults(ragResults: RAGSearchResult[]): SearchResult[] {
+  return ragResults.map(result => ({
+    chunk_id: result.id,
+    content: result.content,
+    similarity: result.similarity,
+    metadata: {
+      title: result.documentTitle,
+      url: result.documentUrl,
+      ...result.metadata
+    }
+  }));
+}
 
 /**
  * Fallback 검색 결과 (검색 결과가 없을 때 사용)
@@ -173,8 +189,11 @@ export async function POST(request: NextRequest) {
     // 1. RAGSearchService 초기화 및 검색
     console.log('🔍 Railway+Ollama RAG 검색 시작:', `"${message}"`);
     ragService = new RAGSearchService();
-    const searchResults = await ragService.searchSimilarChunks(message, parseInt(process.env.TOP_K || '5'));
-    console.log(`📊 Railway+Ollama 검색 결과: ${searchResults.length}개`);
+    const ragSearchResults = await ragService.searchSimilarChunks(message, parseInt(process.env.TOP_K || '5'));
+    console.log(`📊 Railway+Ollama 검색 결과: ${ragSearchResults.length}개`);
+    
+    // RAGSearchResult를 VectorStorageService SearchResult로 변환
+    const searchResults = convertRAGSearchResults(ragSearchResults);
 
     // 2. 검색 결과가 없으면 관련 내용 없음 응답
     if (searchResults.length === 0) {
