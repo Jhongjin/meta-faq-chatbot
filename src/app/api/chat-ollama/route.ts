@@ -166,8 +166,20 @@ export async function POST(request: NextRequest) {
     // 3. RAGSearchService를 사용한 답변 생성
     console.log('🚀 RAGSearchService를 사용한 답변 생성 시작');
     
+    // SearchResult 타입 변환
+    const ragSearchResults = searchResults.map(result => ({
+      id: result.chunk_id,
+      content: result.content,
+      similarity: result.similarity,
+      documentId: result.chunk_id.split('_chunk_')[0] || result.chunk_id,
+      documentTitle: result.metadata?.title || 'Meta 광고 정책 문서',
+      documentUrl: result.metadata?.url,
+      chunkIndex: parseInt(result.chunk_id.split('_chunk_')[1]) || 0,
+      metadata: result.metadata
+    }));
+    
     const ragService = new RAGSearchService();
-    const answer = await ragService.generateAnswer(message, searchResults);
+    const answer = await ragService.generateAnswer(message, ragSearchResults);
     
     // 신뢰도 계산
     const confidence = calculateConfidence(searchResults);
