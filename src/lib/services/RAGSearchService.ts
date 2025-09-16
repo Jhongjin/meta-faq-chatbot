@@ -152,7 +152,7 @@ export class RAGSearchService {
       
       // 디버깅을 위한 상세 로그
       if (searchResults && searchResults.length > 0) {
-        console.log('🔍 검색된 청크 샘플:', searchResults.slice(0, 2).map(chunk => ({
+        console.log('🔍 검색된 청크 샘플:', searchResults.slice(0, 2).map((chunk: any) => ({
           chunk_id: chunk.chunk_id,
           content_preview: chunk.content?.substring(0, 100) + '...',
           has_embedding: !!chunk.embedding,
