@@ -114,20 +114,35 @@ async function generateAnswerWithOllama(
       `[${result.metadata?.title || '문서'}]: ${result.content.substring(0, 300)}`
     ).join('\n');
     
-    // 프롬프트 구성 (최적화)
-    const prompt = `Q: ${message}\nA: ${context}`;
+    // 프롬프트 구성 (개선된 버전)
+    const prompt = `다음은 Meta 광고 정책과 관련된 문서들입니다. 사용자의 질문에 대해 이 정보를 바탕으로 정확하고 도움이 되는 답변을 한국어로 제공해주세요.
+
+사용자 질문: ${message}
+
+관련 문서 정보:
+${context}
+
+답변 요구사항:
+1. 제공된 문서 정보를 바탕으로 정확한 답변을 제공하세요
+2. 답변은 한국어로 작성하세요
+3. 답변이 불확실한 경우 그렇게 명시하세요
+4. 답변 끝에 관련 출처를 간단히 언급하세요
+
+답변:`;
 
     console.log('📝 Ollama 프롬프트 생성 완료');
     
-    // Ollama API 직접 호출 (더 가벼운 모델 시도)
+    // Ollama API 직접 호출 (환경변수에서 모델 가져오기)
+    const model = process.env.OLLAMA_DEFAULT_MODEL || 'tinyllama:1.1b';
+    console.log(`🤖 사용할 모델: ${model}`);
+    
     let response;
     try {
-      // 먼저 tinyllama 시도
-      response = await generateResponse(prompt, 'tinyllama:1.1b');
+      response = await generateResponse(prompt, model);
     } catch (error) {
-      console.log('⚠️ tinyllama 실패, 다른 모델 시도');
-      // 다른 모델 시도 (llama2:7b가 더 안정적일 수 있음)
-      response = await generateResponse(prompt, 'llama2:7b');
+      console.log(`⚠️ ${model} 실패, fallback 모델 시도`);
+      // Fallback 모델 시도
+      response = await generateResponse(prompt, 'tinyllama:1.1b');
     }
     
     console.log('✅ Vultr+Ollama 답변 생성 완료');
