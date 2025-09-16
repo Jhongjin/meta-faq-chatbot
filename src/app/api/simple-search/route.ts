@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       const { data: keywordData, error: keywordError } = await supabase
         .from('document_chunks')
         .select('chunk_id, content, metadata, embedding')
-        .or(keywords.map(keyword => `content.ilike.%${keyword}%`).join(','))
+        .or(keywords.map((keyword: string) => `content.ilike.%${keyword}%`).join(','))
         .limit(5);
       
       if (keywordError) {
