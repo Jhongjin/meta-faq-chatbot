@@ -219,7 +219,7 @@ export default function TestOllamaPage() {
 
               {serverStatus.server && (
                 <div className="space-y-2">
-                  <p><strong>서버 URL:</strong> {serverStatus.server.actualUrl || serverStatus.server.baseUrl}</p>
+                  <p><strong>서버 URL:</strong> {serverStatus.server.baseUrl}</p>
                   <p><strong>상태:</strong> 
                     <span className={`ml-2 px-2 py-1 rounded text-sm ${
                       serverStatus.server.healthy 
