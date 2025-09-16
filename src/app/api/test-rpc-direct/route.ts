@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     const analysis = {
       rpc_results: rpcData?.length || 0,
       direct_results: directData?.length || 0,
-      rpc_sample: rpcData?.slice(0, 2).map(item => ({
+      rpc_sample: rpcData?.slice(0, 2).map((item: any) => ({
         chunk_id: item.chunk_id,
         has_content: !!item.content,
         has_embedding: !!item.embedding,
