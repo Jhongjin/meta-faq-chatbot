@@ -333,7 +333,27 @@ export async function POST(request: NextRequest) {
     console.log('🚀 Vultr+Ollama 프록시 답변 생성 시작');
     
     // Ollama만 사용 - fallback 없음
-    const answer = await generateAnswerWithOllamaDirect(message, searchResults);
+    let answer: string;
+    try {
+      answer = await generateAnswerWithOllamaDirect(message, searchResults);
+    } catch (error) {
+      console.error('❌ Ollama 연결 실패:', error);
+      
+      // Ollama 서버 연결 실패 시 적절한 오류 메시지 반환
+      return NextResponse.json({
+        response: {
+          message: "Ollama 서버에 연결할 수 없습니다. Vultr 서버에서 Ollama 서비스를 시작해주세요.",
+          content: "Ollama 서버에 연결할 수 없습니다. Vultr 서버에서 Ollama 서비스를 시작해주세요.",
+          sources: [],
+          noDataFound: false,
+          showContactOption: true,
+          error: true
+        },
+        confidence: 0,
+        processingTime: Date.now() - startTime,
+        model: 'ollama-connection-failed'
+      });
+    }
     
     // 신뢰도 계산
     const confidence = calculateConfidence(searchResults);
