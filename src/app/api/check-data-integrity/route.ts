@@ -77,7 +77,7 @@ export async function GET() {
           orphanedChunkIds: orphanedChunks.slice(0, 10) // 처음 10개만 표시
         }
       },
-      recommendations: []
+      recommendations: [] as string[]
     };
     
     // 4. 권장사항 생성
