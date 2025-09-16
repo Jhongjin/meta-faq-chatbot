@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     
     // 2. 키워드 검색
     console.log('🔍 키워드 검색:', query);
-    const keywords = query.toLowerCase().split(' ').filter(word => word.length > 2);
+    const keywords = query.toLowerCase().split(' ').filter((word: string) => word.length > 2);
     console.log('🔍 추출된 키워드:', keywords);
     
     let keywordResults = [];
