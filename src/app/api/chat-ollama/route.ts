@@ -99,80 +99,6 @@ function calculateConfidence(searchResults: SearchResult[]): number {
   return Math.min(avgSimilarity * 100, 100);
 }
 
-/**
- * Ollama를 사용한 답변 생성
- */
-async function generateAnswerWithOllama(
-  message: string, 
-  searchResults: SearchResult[]
-): Promise<string> {
-  try {
-    console.log('🤖 Vultr+Ollama 답변 생성 시작');
-    
-    // 검색 결과를 컨텍스트로 변환 (최적화된 길이 제한)
-    const context = searchResults.map(result => 
-      `[${result.metadata?.title || '문서'}]: ${result.content.substring(0, 300)}`
-    ).join('\n');
-    
-    // 프롬프트 구성 (개선된 버전)
-    const prompt = `다음은 Meta 광고 정책과 관련된 문서들입니다. 사용자의 질문에 대해 이 정보를 바탕으로 정확하고 도움이 되는 답변을 한국어로 제공해주세요.
-
-사용자 질문: ${message}
-
-관련 문서 정보:
-${context}
-
-답변 요구사항:
-1. 제공된 문서 정보를 바탕으로 정확한 답변을 제공하세요
-2. 답변은 한국어로 작성하세요
-3. 답변이 불확실한 경우 그렇게 명시하세요
-4. 답변 끝에 관련 출처를 간단히 언급하세요
-
-답변:`;
-
-    console.log('📝 Ollama 프롬프트 생성 완료');
-    
-    // Ollama API 직접 호출 (환경변수에서 모델 가져오기)
-    const model = process.env.OLLAMA_DEFAULT_MODEL || 'tinyllama:1.1b';
-    console.log(`🤖 사용할 모델: ${model}`);
-    
-    let response;
-    try {
-      response = await generateResponse(prompt, model);
-    } catch (error) {
-      console.log(`⚠️ ${model} 실패, fallback 모델 시도`);
-      // Fallback 모델 시도
-      response = await generateResponse(prompt, 'tinyllama:1.1b');
-    }
-    
-    console.log('✅ Vultr+Ollama 답변 생성 완료');
-    return response;
-    
-  } catch (error) {
-    console.error('❌ Vultr+Ollama 답변 생성 실패:', error);
-    
-    // RAG 결과가 있으면 Fallback 답변 생성
-    if (searchResults.length > 0) {
-      console.log('⚠️ Ollama 실패, RAG 결과 기반 Fallback 답변 생성');
-      
-      // RAG 결과를 기반으로 최적화된 답변 생성
-      const topResult = searchResults[0]; // 가장 관련성 높은 결과
-      const fallbackAnswer = `관련 정보를 찾았습니다:
-
-**${topResult.metadata?.title || 'Meta 광고 정책'}**
-${topResult.content.substring(0, 400)}${topResult.content.length > 400 ? '...' : ''}
-
-${searchResults.length > 1 ? `\n*추가로 ${searchResults.length - 1}개의 관련 문서가 있습니다.` : ''}
-
-*AI 답변 생성 중이므로 관련 문서 정보를 먼저 제공합니다.`;
-      
-      return fallbackAnswer;
-    }
-    
-    // RAG 결과도 없으면 기본 에러 메시지
-    return '죄송합니다. 현재 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
-  }
-}
 
 /**
  * Vultr+Ollama 전용 Chat API
@@ -237,8 +163,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. Vultr+Ollama 답변 생성
-    console.log('🚀 Vultr+Ollama 답변 생성 시작');
+    // 3. RAGSearchService를 사용한 답변 생성
+    console.log('🚀 RAGSearchService를 사용한 답변 생성 시작');
+    
+    const ragService = new RAGSearchService();
+    const answer = await ragService.generateAnswer(message, searchResults);
     
     // 신뢰도 계산
     const confidence = calculateConfidence(searchResults);
@@ -260,9 +189,6 @@ export async function POST(request: NextRequest) {
         documentType: result.metadata?.documentType || 'policy'
       };
     });
-
-    // Vultr+Ollama 답변 생성
-    const answer = await generateAnswerWithOllama(message, searchResults);
     
     return NextResponse.json({
       response: {
