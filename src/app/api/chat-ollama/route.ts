@@ -272,6 +272,79 @@ ${searchResults.map((result, index) => `${index + 1}. ${result.metadata?.title |
 }
 
 /**
+ * Vultr Ollama 직접 연결을 통한 답변 생성
+ */
+async function generateAnswerWithOllamaDirect(
+  message: string, 
+  searchResults: SearchResult[]
+): Promise<string> {
+  try {
+    console.log('🤖 Vultr Ollama 직접 연결 답변 생성 시작');
+    
+    const vultrUrl = process.env.VULTR_OLLAMA_URL || 'http://141.164.52.52:11434';
+    console.log('🔗 Vultr URL:', vultrUrl);
+    
+    // 검색 결과를 컨텍스트로 변환
+    const context = searchResults.map(result => 
+      `[${result.metadata?.title || '문서'}]: ${result.content.substring(0, 300)}`
+    ).join('\n');
+    
+    // 프롬프트 구성
+    const prompt = `다음은 Meta 광고 정책과 관련된 문서들입니다. 사용자의 질문에 대해 이 정보를 바탕으로 정확하고 도움이 되는 답변을 한국어로 제공해주세요.
+
+사용자 질문: ${message}
+
+관련 문서 정보:
+${context}
+
+답변 요구사항:
+1. 제공된 문서 정보를 바탕으로 정확한 답변을 제공하세요
+2. 답변은 한국어로 작성하세요
+3. 답변이 불확실한 경우 그렇게 명시하세요
+4. 답변 끝에 관련 출처를 간단히 언급하세요
+
+답변:`;
+
+    console.log('📤 Vultr Ollama 직접 요청 시작');
+    
+    // Vultr Ollama 서버로 직접 요청
+    const response = await fetch(`${vultrUrl}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama3.2:3b',
+        prompt: prompt,
+        stream: false,
+        options: {
+          temperature: 0.7,
+          top_p: 0.9
+        }
+      }),
+      signal: AbortSignal.timeout(30000)
+    });
+
+    console.log('📡 Vultr Ollama 응답 상태:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Vultr Ollama 응답 오류:', errorText);
+      throw new Error(`Vultr Ollama error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Vultr Ollama 직접 답변 생성 완료:', data);
+    
+    return data.response?.trim() || '답변을 생성할 수 없습니다.';
+
+  } catch (error) {
+    console.error('❌ Vultr Ollama 직접 답변 생성 실패:', error);
+    throw error; // 상위로 에러 전달
+  }
+}
+
+/**
  * Vultr Ollama 프록시를 통한 답변 생성
  */
 async function generateAnswerWithOllamaProxy(
@@ -441,9 +514,9 @@ export async function POST(request: NextRequest) {
     
     let answer: string;
     try {
-      answer = await generateAnswerWithOllamaProxy(message, searchResults);
+      answer = await generateAnswerWithOllamaDirect(message, searchResults);
     } catch (error) {
-      console.error('❌ Vultr Ollama 프록시 실패, Google AI API로 fallback:', error);
+      console.error('❌ Vultr Ollama 직접 연결 실패, Google AI API로 fallback:', error);
       // Google AI API로 fallback
       answer = await generateAnswerWithGoogleAI(message, searchResults);
     }
