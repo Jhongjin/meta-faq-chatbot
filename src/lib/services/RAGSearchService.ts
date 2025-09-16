@@ -356,41 +356,14 @@ export class RAGSearchService {
       return '죄송합니다. 질문과 관련된 정보를 찾을 수 없습니다. 다른 질문을 시도해보시거나 관리자에게 문의해주세요.';
     }
 
-    try {
-      // Ollama를 사용한 답변 생성 (Supabase 상태와 관계없이)
-      console.log('🤖 Ollama를 사용한 답변 생성 시작');
-      
-      // 검색 결과를 컨텍스트로 구성
-      const context = this.buildContextFromSearchResults(searchResults);
-      
-      // Ollama 프롬프트 구성
-      const prompt = `다음은 Meta 광고 정책과 관련된 문서들입니다. 사용자의 질문에 대해 이 정보를 바탕으로 정확하고 도움이 되는 답변을 한국어로 제공해주세요.
-
-사용자 질문: ${query}
-
-관련 문서 정보:
-${context}
-
-답변 요구사항:
-1. 제공된 문서 정보를 바탕으로 정확한 답변을 제공하세요
-2. 답변은 한국어로 작성하세요
-3. 답변이 불확실한 경우 그렇게 명시하세요
-4. 답변 끝에 관련 출처를 간단히 언급하세요
-
-답변:`;
-
-      // Ollama를 통한 답변 생성 (환경변수에서 모델 가져오기)
-      const model = process.env.OLLAMA_DEFAULT_MODEL || 'tinyllama:1.1b';
-      console.log(`🤖 사용할 모델: ${model}`);
-      const answer = await generateResponse(prompt, model);
-      
-      console.log('✅ Ollama 답변 생성 완료');
-      return answer;
-
-    } catch (error) {
-      console.error('Ollama 답변 생성 실패:', error);
-      return this.generateFallbackAnswer(query, searchResults);
-    }
+    // 검색 결과를 기반으로 한 지능적인 답변 생성
+    console.log('🤖 검색 결과 기반 답변 생성 시작');
+    
+    const context = this.buildContextFromSearchResults(searchResults);
+    const answer = this.generateIntelligentAnswer(query, searchResults, context);
+    
+    console.log('✅ 답변 생성 완료');
+    return answer;
   }
 
   /**
@@ -400,6 +373,96 @@ ${context}
     return searchResults
       .map((result, index) => `[출처 ${index + 1}] ${result.content}`)
       .join('\n\n');
+  }
+
+  /**
+   * 검색 결과를 기반으로 한 지능적인 답변 생성
+   */
+  private generateIntelligentAnswer(query: string, searchResults: SearchResult[], context: string): string {
+    const lowerQuery = query.toLowerCase();
+    
+    // Meta 광고 정책 관련 질문
+    if (lowerQuery.includes('광고') && lowerQuery.includes('정책')) {
+      return this.generatePolicyAnswer(query, searchResults, context);
+    }
+    
+    // Facebook/Instagram 관련 질문
+    if (lowerQuery.includes('facebook') || lowerQuery.includes('instagram')) {
+      return this.generatePlatformAnswer(query, searchResults, context);
+    }
+    
+    // 일반적인 질문
+    return this.generateGeneralAnswer(query, searchResults, context);
+  }
+
+  /**
+   * 광고 정책 관련 답변 생성
+   */
+  private generatePolicyAnswer(query: string, searchResults: SearchResult[], context: string): string {
+    const relevantContent = this.extractRelevantContent(context, query);
+    
+    return `**Meta 광고 정책 안내**
+
+${relevantContent}
+
+**주요 광고 정책:**
+- 광고는 정확하고 진실된 정보를 포함해야 합니다
+- 금지된 콘텐츠(폭력, 성인 콘텐츠, 허위 정보 등)는 광고에 사용할 수 없습니다
+- 개인정보 보호 및 데이터 사용에 대한 정책을 준수해야 합니다
+
+**검색된 관련 정보:**
+${searchResults.map((result, index) => `${index + 1}. ${result.documentTitle}: ${result.content.substring(0, 150)}...`).join('\n')}
+
+**더 자세한 정보:**
+- Meta 비즈니스 도움말 센터: https://www.facebook.com/business/help
+- 광고 정책 센터: https://www.facebook.com/policies/ads
+
+이 정보가 도움이 되었나요? 더 구체적인 질문이 있으시면 언제든지 문의해주세요.`;
+  }
+
+  /**
+   * 플랫폼 관련 답변 생성
+   */
+  private generatePlatformAnswer(query: string, searchResults: SearchResult[], context: string): string {
+    const relevantContent = this.extractRelevantContent(context, query);
+    
+    return `**Facebook/Instagram 광고 안내**
+
+${relevantContent}
+
+**주요 플랫폼 특징:**
+- Facebook: 광범위한 타겟팅 옵션과 다양한 광고 형식
+- Instagram: 시각적 콘텐츠 중심의 광고와 스토리 광고
+- 두 플랫폼 모두 Meta 광고 관리자에서 통합 관리 가능
+
+**검색된 관련 정보:**
+${searchResults.map((result, index) => `${index + 1}. ${result.documentTitle}: ${result.content.substring(0, 150)}...`).join('\n')}
+
+**더 자세한 정보:**
+- Meta 비즈니스 도움말 센터에서 최신 정보를 확인하시거나, 관리자에게 문의해주세요.`;
+  }
+
+  /**
+   * 일반적인 질문 답변 생성
+   */
+  private generateGeneralAnswer(query: string, searchResults: SearchResult[], context: string): string {
+    const relevantContent = this.extractRelevantContent(context, query);
+    
+    return `**Meta 광고 FAQ 안내**
+
+검색된 정보에 따르면:
+
+${relevantContent}
+
+**검색된 관련 정보:**
+${searchResults.map((result, index) => `${index + 1}. ${result.documentTitle}: ${result.content.substring(0, 150)}...`).join('\n')}
+
+**추가 정보:**
+- Meta 비즈니스 도움말: https://www.facebook.com/business/help
+- 광고 정책: https://www.facebook.com/policies/ads
+- 광고 관리자: https://business.facebook.com
+
+이 정보가 도움이 되었나요? 더 자세한 내용이 필요하시면 다른 질문을 해주세요.`;
   }
 
   /**
