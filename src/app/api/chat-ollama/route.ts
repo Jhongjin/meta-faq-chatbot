@@ -91,18 +91,22 @@ function getFallbackSearchResults(query: string, limit: number): SearchResult[] 
 
 
 
-/**
- * Vultr Ollama 직접 연결을 통한 답변 생성
- */
-async function generateAnswerWithOllamaDirect(
-  message: string, 
-  searchResults: SearchResult[]
-): Promise<string> {
-  try {
-    console.log('🤖 Vultr Ollama 직접 연결 답변 생성 시작');
-    
-    const vultrUrl = process.env.VULTR_OLLAMA_URL || 'http://141.164.52.52';
-    console.log('🔗 Vultr URL:', vultrUrl);
+       /**
+        * Vultr Ollama 직접 연결을 통한 답변 생성 (재시도 로직 포함)
+        */
+       async function generateAnswerWithOllamaDirect(
+         message: string, 
+         searchResults: SearchResult[]
+       ): Promise<string> {
+         const maxRetries = 3;
+         let lastError: Error | null = null;
+         
+         for (let attempt = 1; attempt <= maxRetries; attempt++) {
+           try {
+             console.log(`🤖 Vultr Ollama 직접 연결 답변 생성 시작 (시도 ${attempt}/${maxRetries})`);
+             
+             const vultrUrl = process.env.VULTR_OLLAMA_URL || 'http://141.164.52.52';
+             console.log('🔗 Vultr URL:', vultrUrl);
     
     // 검색 결과를 컨텍스트로 변환
     const context = searchResults.map(result => 
@@ -127,23 +131,26 @@ ${context}
 
     console.log('📤 Vultr Ollama 직접 요청 시작');
     
-    // Vultr Ollama 서버로 직접 요청
-    const response = await fetch(`${vultrUrl}/api/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'mistral:7b',
-        prompt: prompt,
-        stream: false,
-        options: {
-          temperature: 0.7,
-          top_p: 0.9
-        }
-      }),
-      signal: AbortSignal.timeout(30000)
-    });
+           // Vultr Ollama 서버로 직접 요청 (타임아웃 60초로 증가)
+           const response = await fetch(`${vultrUrl}/api/generate`, {
+             method: 'POST',
+             headers: {
+               'Content-Type': 'application/json',
+               'User-Agent': 'Meta-FAQ-Chatbot/1.0',
+               'Connection': 'keep-alive'
+             },
+             body: JSON.stringify({
+               model: 'mistral:7b',
+               prompt: prompt,
+               stream: false,
+               options: {
+                 temperature: 0.7,
+                 top_p: 0.9,
+                 num_predict: 1000
+               }
+             }),
+             signal: AbortSignal.timeout(60000) // 60초로 증가
+           });
 
     console.log('📡 Vultr Ollama 응답 상태:', response.status);
     
@@ -153,16 +160,27 @@ ${context}
       throw new Error(`Vultr Ollama error: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
-    console.log('✅ Vultr Ollama 직접 답변 생성 완료:', data);
-    
-    return data.response?.trim() || '답변을 생성할 수 없습니다.';
-
-  } catch (error) {
-    console.error('❌ Vultr Ollama 직접 답변 생성 실패:', error);
-    throw error; // 상위로 에러 전달
-  }
-}
+             const data = await response.json();
+             console.log('✅ Vultr Ollama 직접 답변 생성 완료:', data);
+             
+             return data.response?.trim() || '답변을 생성할 수 없습니다.';
+             
+           } catch (error) {
+             lastError = error as Error;
+             console.error(`❌ Vultr Ollama 직접 답변 생성 실패 (시도 ${attempt}/${maxRetries}):`, error);
+             
+             if (attempt < maxRetries) {
+               const delay = attempt * 2000; // 2초, 4초, 6초 대기
+               console.log(`⏳ ${delay/1000}초 후 재시도...`);
+               await new Promise(resolve => setTimeout(resolve, delay));
+             }
+           }
+         }
+         
+         // 모든 재시도 실패
+         console.error('❌ 모든 재시도 실패:', lastError);
+         throw lastError || new Error('Ollama 서버 연결 실패');
+       }
 
 /**
  * Vultr Ollama 프록시를 통한 답변 생성
