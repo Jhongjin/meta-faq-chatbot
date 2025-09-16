@@ -101,7 +101,7 @@ async function generateAnswerWithOllamaDirect(
   try {
     console.log('🤖 Vultr Ollama 직접 연결 답변 생성 시작');
     
-    const vultrUrl = process.env.VULTR_OLLAMA_URL || 'http://141.164.52.52:11434';
+    const vultrUrl = process.env.VULTR_OLLAMA_URL || 'http://141.164.52.52';
     console.log('🔗 Vultr URL:', vultrUrl);
     
     // 검색 결과를 컨텍스트로 변환
@@ -134,7 +134,7 @@ ${context}
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama3.2:3b',
+        model: 'phi:3b',
         prompt: prompt,
         stream: false,
         options: {
@@ -207,7 +207,7 @@ ${context}
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama3.2:3b',
+        model: 'phi:3b',
         prompt: prompt,
         stream: false,
         options: {
