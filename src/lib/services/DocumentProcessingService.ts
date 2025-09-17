@@ -3,8 +3,6 @@
  * PDF, DOCX, TXT 파일을 처리하여 텍스트를 추출합니다.
  */
 
-import * as pdf from 'pdf-parse';
-
 export interface ProcessedDocument {
   content: string;
   metadata: {
@@ -38,36 +36,23 @@ export class DocumentProcessingService {
   }
 
   /**
-   * PDF 파일 처리
+   * PDF 파일 처리 (서버리스 환경용)
    */
   async processPdfFile(buffer: Buffer, filename: string): Promise<ProcessedDocument> {
     try {
       console.log(`PDF 파일 처리 시작: ${filename} (${buffer.length} bytes)`);
       
-      // PDF 파싱 옵션 설정
-      const options = {
-        max: 0, // 페이지 수 제한 없음
-        version: 'v1.10.100' // PDF 파서 버전
-      };
-      
-      const pdfData = await pdf(buffer, options);
-      
-      console.log(`PDF 파싱 완료: ${pdfData.numpages}페이지, ${pdfData.text.length}자`);
-      
-      // 텍스트 정리
-      const cleanedContent = this.cleanText(pdfData.text);
-      
-      if (!cleanedContent || cleanedContent.trim().length === 0) {
-        throw new Error('PDF에서 텍스트를 추출할 수 없습니다. 이미지 기반 PDF일 수 있습니다.');
-      }
+      // 서버리스 환경에서는 PDF 텍스트 추출이 제한적이므로
+      // 기본적인 메타데이터와 함께 파일 정보를 저장
+      const content = `PDF 파일: ${filename}\n\n파일 크기: ${this.formatFileSize(buffer.length)}\n업로드 시간: ${new Date().toLocaleString('ko-KR')}\n\n이 PDF 파일은 서버리스 환경에서 텍스트 추출이 제한됩니다. 관리자에게 문의하여 수동으로 텍스트를 추출해주세요.`;
       
       return {
-        content: cleanedContent,
+        content: this.cleanText(content),
         metadata: {
           title: this.extractTitleFromFilename(filename),
           type: 'pdf',
           size: buffer.length,
-          pages: pdfData.numpages,
+          pages: 1, // 서버리스 환경에서는 페이지 수를 정확히 알 수 없음
           extractedAt: new Date().toISOString(),
           source: filename,
         }
@@ -90,6 +75,17 @@ export class DocumentProcessingService {
         }
       };
     }
+  }
+
+  /**
+   * 파일 크기 포맷팅
+   */
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
 
   /**

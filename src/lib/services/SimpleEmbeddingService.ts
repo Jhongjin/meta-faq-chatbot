@@ -79,12 +79,14 @@ export class SimpleEmbeddingService {
    * 해시 기반 임베딩 생성
    */
   private generateHashEmbedding(text: string): number[] {
-    const embedding = new Array(768).fill(0);
+    // 환경 변수에서 차원 수 가져오기 (기본값: 1024)
+    const dimension = parseInt(process.env.EMBEDDING_DIM || '1024');
+    const embedding = new Array(dimension).fill(0);
     
-    // 텍스트를 768개 청크로 나누어 해시 생성
-    const chunkSize = Math.max(1, Math.floor(text.length / 768));
+    // 텍스트를 dimension개 청크로 나누어 해시 생성
+    const chunkSize = Math.max(1, Math.floor(text.length / dimension));
     
-    for (let i = 0; i < 768; i++) {
+    for (let i = 0; i < dimension; i++) {
       const start = i * chunkSize;
       const end = Math.min(start + chunkSize, text.length);
       const chunk = text.substring(start, end);
@@ -127,10 +129,11 @@ export class SimpleEmbeddingService {
         } catch (error) {
           console.error(`배치 임베딩 실패 (${text.substring(0, 30)}...):`, error);
           // 실패한 경우 0으로 채워진 임베딩 생성
+          const dimension = parseInt(process.env.EMBEDDING_DIM || '1024');
           results.push({
-            embedding: new Array(768).fill(0),
+            embedding: new Array(dimension).fill(0),
             model: this.model,
-            dimension: 768,
+            dimension: dimension,
             processingTime: 0
           });
         }

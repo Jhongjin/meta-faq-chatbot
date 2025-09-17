@@ -77,12 +77,19 @@ async function handleFileUpload(request: NextRequest) {
     }
 
     // 파일 유효성 검사
-    const validTypes = ['.pdf', '.docx', '.txt'];
+    const validTypes = ['.pdf', '.docx', '.txt', '.md'];
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    
+    console.log('파일 검증:', {
+      fileName: file.name,
+      fileType: file.type,
+      fileExtension,
+      isValid: validTypes.includes(fileExtension)
+    });
     
     if (!validTypes.includes(fileExtension)) {
       return NextResponse.json(
-        { error: '지원하지 않는 파일 형식입니다.' },
+        { error: `지원하지 않는 파일 형식입니다. 지원 형식: ${validTypes.join(', ')}` },
         { status: 400 }
       );
     }
