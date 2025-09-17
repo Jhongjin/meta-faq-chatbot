@@ -131,7 +131,22 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         body: formData,
       });
 
-      const result = await response.json();
+      let result;
+      try {
+        const responseText = await response.text();
+        console.log('서버 응답 텍스트:', responseText);
+        
+        if (!responseText) {
+          throw new Error('서버에서 빈 응답을 받았습니다.');
+        }
+        
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON 파싱 오류:', parseError);
+        console.error('응답 상태:', response.status, response.statusText);
+        
+        throw new Error(`서버 응답 처리 오류: ${parseError instanceof Error ? parseError.message : '알 수 없는 오류'}`);
+      }
 
       if (!response.ok) {
         // 중복 파일인 경우

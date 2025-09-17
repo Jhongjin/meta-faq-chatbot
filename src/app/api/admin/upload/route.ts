@@ -159,8 +159,21 @@ async function handleFileUpload(request: NextRequest) {
       ? error.message 
       : '파일 업로드 처리 중 알 수 없는 오류가 발생했습니다.';
     
+    // JSON 파싱 오류인 경우 특별 처리
+    if (errorMessage.includes('JSON') || errorMessage.includes('Unexpected end')) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: '서버 응답 처리 중 오류가 발생했습니다. 파일 형식을 확인해주세요.',
+          details: 'JSON parsing error'
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { 
+        success: false,
         error: errorMessage,
         details: error instanceof Error ? error.stack : undefined
       },
