@@ -17,7 +17,7 @@
     }
   ],
   "functions": {
-    "src/app/api/admin/upload/route.ts": {
+    "api/admin/upload/route.ts": {
       "maxDuration": 60
     }
   },
