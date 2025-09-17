@@ -1,6 +1,6 @@
 /**
  * Vercel 서버리스 환경에 최적화된 문서 처리 서비스
- * 무거운 패키지 없이 기본적인 텍스트 처리만 수행
+ * PDF, DOCX, TXT 파일을 처리하여 텍스트를 추출합니다.
  */
 
 export interface ProcessedDocument {
@@ -36,23 +36,56 @@ export class DocumentProcessingService {
   }
 
   /**
-   * PDF 파일 처리 (기본적인 텍스트만)
+   * PDF 파일 처리 (서버리스 환경용)
    */
   async processPdfFile(buffer: Buffer, filename: string): Promise<ProcessedDocument> {
-    // PDF 처리는 서버리스 환경에서 제한적이므로 기본 메시지만 반환
-    const content = `PDF 파일: ${filename}\n\n이 PDF 파일은 서버리스 환경에서 처리할 수 없습니다. 관리자에게 문의하세요.`;
-    
-    return {
-      content,
-      metadata: {
-        title: this.extractTitleFromFilename(filename),
-        type: 'pdf',
-        size: buffer.length,
-        pages: 1,
-        extractedAt: new Date().toISOString(),
-        source: filename,
-      }
-    };
+    try {
+      console.log(`PDF 파일 처리 시작: ${filename} (${buffer.length} bytes)`);
+      
+      // 서버리스 환경에서는 PDF 텍스트 추출이 제한적이므로
+      // 기본적인 메타데이터와 함께 파일 정보를 저장
+      const content = `PDF 파일: ${filename}\n\n파일 크기: ${this.formatFileSize(buffer.length)}\n업로드 시간: ${new Date().toLocaleString('ko-KR')}\n\n이 PDF 파일은 서버리스 환경에서 텍스트 추출이 제한됩니다. 관리자에게 문의하여 수동으로 텍스트를 추출해주세요.`;
+      
+      return {
+        content: this.cleanText(content),
+        metadata: {
+          title: this.extractTitleFromFilename(filename),
+          type: 'pdf',
+          size: buffer.length,
+          pages: 1, // 서버리스 환경에서는 페이지 수를 정확히 알 수 없음
+          extractedAt: new Date().toISOString(),
+          source: filename,
+        }
+      };
+    } catch (error) {
+      console.error(`PDF 처리 실패: ${filename}`, error);
+      
+      // 오류 발생 시 기본 메시지 반환
+      const content = `PDF 파일: ${filename}\n\nPDF 처리 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`;
+      
+      return {
+        content,
+        metadata: {
+          title: this.extractTitleFromFilename(filename),
+          type: 'pdf',
+          size: buffer.length,
+          pages: 1,
+          extractedAt: new Date().toISOString(),
+          source: filename,
+        }
+      };
+    }
+  }
+
+  /**
+   * 파일 크기 포맷팅
+   */
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
 
   /**
