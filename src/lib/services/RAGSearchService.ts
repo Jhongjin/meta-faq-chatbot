@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { SimpleEmbeddingService } from './SimpleEmbeddingService';
+import { GeminiService } from './GeminiService';
 
 export interface SearchResult {
   id: string;
@@ -276,28 +277,28 @@ export class RAGSearchService {
         return this.generateFallbackAnswer(query, searchResults);
       }
 
-      // Ollama 서비스 상태 확인
-      console.log('🔍 Ollama 서비스 상태 확인 중...');
-      const isOllamaAvailable = await llmService.checkOllamaStatus();
+      // Gemini 서비스 초기화
+      console.log('🔍 Gemini 서비스 초기화 중...');
+      const geminiService = new GeminiService();
       
-      if (!isOllamaAvailable) {
-        console.log('⚠️ Ollama 서비스가 사용 불가능합니다. 기본 답변 생성 모드로 전환합니다.');
+      // API 키 확인
+      if (!process.env.GOOGLE_API_KEY) {
+        console.log('⚠️ Google API 키가 설정되지 않았습니다. 기본 답변 생성 모드로 전환합니다.');
         return this.generateFallbackAnswer(query, searchResults);
       }
 
-      console.log('✅ Ollama 서비스 사용 가능, 답변 생성 시작');
+      console.log('✅ Gemini 서비스 사용 가능, 답변 생성 시작');
       
       // 검색 결과를 컨텍스트로 구성
       const context = this.buildContextFromSearchResults(searchResults);
       console.log(`📝 컨텍스트 길이: ${context.length}자`);
       
-      // Ollama를 통한 답변 생성
-      const llmResponse = await llmService.generateFastAnswer(
-        `질문: ${query}\n\n관련 문서 내용:\n${context}`,
-        context
+      // Gemini를 통한 답변 생성
+      const llmResponse = await geminiService.generateAnswer(
+        `질문: ${query}\n\n관련 문서 내용:\n${context}`
       );
 
-      console.log(`✅ Ollama 답변 생성 완료: ${llmResponse.processingTime}ms, 신뢰도: ${llmResponse.confidence}`);
+      console.log(`✅ Gemini 답변 생성 완료: ${llmResponse.processingTime}ms, 신뢰도: ${llmResponse.confidence}`);
       console.log(`📝 생성된 답변 길이: ${llmResponse.answer.length}자`);
       
       return llmResponse.answer;
