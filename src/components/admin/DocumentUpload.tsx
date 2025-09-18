@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, FileText, Link, X, CheckCircle, AlertCircle, AlertTriangle, Plus, File, Globe, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
