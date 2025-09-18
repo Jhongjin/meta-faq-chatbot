@@ -50,7 +50,7 @@ export default function HomePage() {
   
   // 임시 데이터
   const dashboardStats = { totalDocuments: 0, completedDocuments: 0, pendingDocuments: 0, processingDocuments: 0, totalChunks: 0, totalEmbeddings: 0, systemStatus: { overall: 'healthy', database: 'connected', llm: 'operational', vectorStore: 'indexed', lastUpdate: '방금 전' }, recentActivity: [], performanceMetrics: [], weeklyStats: { questions: 0, users: 0, satisfaction: 0, documents: 0 } };
-  const chatStats = { totalQuestions: 0, todayQuestions: 0, averageResponseTime: 0, satisfactionRate: 0, recentQuestions: [] };
+  const chatStats = { totalQuestions: 0, todayQuestions: 0, averageResponseTime: 0, satisfactionRate: 0, userSatisfaction: 0, recentQuestions: [] };
   const systemStatus = { success: true, stats: { total: 0, completed: 0, pending: 0, processing: 0, totalChunks: 0 } };
   const latestUpdate = { lastUpdateDate: new Date().toISOString(), recentUpdates: [], newDocuments: [], hasNewFeatures: false, updateCount: 0, newDocumentCount: 0, message: '', displayDate: '', isRecent: false, hasUpdates: false };
   
