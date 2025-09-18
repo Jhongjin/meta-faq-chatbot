@@ -73,24 +73,18 @@ async function handleFileUpload(request: NextRequest) {
     const contentType = request.headers.get('content-type');
     console.log('Content-Type:', contentType);
     
-    // FormData 방식으로 파일 처리 (에러 처리 강화)
-    let formData;
-    try {
-      formData = await request.formData();
-      console.log('FormData 파싱 성공');
-    } catch (error) {
-      console.error('FormData 파싱 실패:', error);
-      return NextResponse.json(
-        { 
-          error: 'FormData 파싱에 실패했습니다.',
-          details: error instanceof Error ? error.message : String(error)
-        },
-        { status: 400 }
-      );
-    }
+    // JSON 방식으로 파일 처리 (Vercel 서버리스 호환)
+    const body = await request.json();
+    console.log('JSON 파싱 성공');
     
-    const file = formData.get('file') as File;
-    const type = formData.get('type') as string;
+    const fileName = body.fileName;
+    const fileType = body.fileType;
+    const fileSize = body.fileSize;
+    const fileContent = body.fileContent;
+    const type = body.type;
+    
+    // 가상의 File 객체 생성
+    const file = new File([fileContent], fileName, { type: fileType });
     
     console.log('FormData 내용:', {
       file: file ? { name: file.name, size: file.size, type: file.type } : 'null',
