@@ -73,37 +73,12 @@ async function handleFileUpload(request: NextRequest) {
     const contentType = request.headers.get('content-type');
     console.log('Content-Type:', contentType);
     
-    let file: File;
-    let type: string;
+    // FormData 방식으로 파일 처리
+    const formData = await request.formData();
+    console.log('FormData 파싱 성공');
     
-    if (contentType?.includes('multipart/form-data')) {
-      // FormData 방식
-      const formData = await request.formData();
-      console.log('FormData 파싱 성공');
-      
-      file = formData.get('file') as File;
-      type = formData.get('type') as string;
-    } else if (contentType?.includes('application/json')) {
-      // Base64 JSON 방식
-      const body = await request.json();
-      console.log('JSON 파싱 성공');
-      
-      // Base64를 File 객체로 변환
-      const binaryString = atob(body.fileData);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      
-      file = new File([bytes], body.fileName, { type: body.fileType });
-      type = body.type;
-    } else {
-      console.error('지원하지 않는 Content-Type:', contentType);
-      return NextResponse.json(
-        { error: 'multipart/form-data 또는 application/json이 필요합니다.' },
-        { status: 400 }
-      );
-    }
+    const file = formData.get('file') as File;
+    const type = formData.get('type') as string;
     
     console.log('FormData 내용:', {
       file: file ? { name: file.name, size: file.size, type: file.type } : 'null',

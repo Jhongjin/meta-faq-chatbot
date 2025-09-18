@@ -6,7 +6,8 @@
   "devCommand": "npm run dev",
   "functions": {
     "src/app/api/admin/upload/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "memory": 1024
     }
   }
 }
