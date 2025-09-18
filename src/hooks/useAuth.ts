@@ -10,6 +10,7 @@ export function useAuth() {
 
   useEffect(() => {
     const supabase = createClient();
+    let timeoutId: NodeJS.Timeout;
     
     // 현재 세션 확인
     const getSession = async () => {
@@ -32,6 +33,12 @@ export function useAuth() {
     // 초기 세션 확인
     getSession();
 
+    // 타임아웃 설정 (5초 후 강제로 로딩 해제)
+    timeoutId = setTimeout(() => {
+      console.log('로딩 타임아웃 - 강제로 로딩 해제');
+      setLoading(false);
+    }, 5000);
+
     // 인증 상태 변경 감지 (한 번만 처리)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -41,7 +48,10 @@ export function useAuth() {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []); // 의존성 배열을 빈 배열로 변경
 
   const checkEmailExists = async (email: string): Promise<boolean> => {

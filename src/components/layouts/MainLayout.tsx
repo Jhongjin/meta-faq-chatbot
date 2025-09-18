@@ -52,10 +52,15 @@ export default function MainLayout({ children, chatHeader }: MainLayoutProps) {
     }
   };
 
+  // 로딩 상태 처리 (타임아웃 추가)
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">로딩 중...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="text-white text-xl">로딩 중...</div>
+          <div className="text-gray-400 text-sm mt-2">잠시만 기다려주세요</div>
+        </div>
       </div>
     );
   }
