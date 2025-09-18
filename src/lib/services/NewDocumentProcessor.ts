@@ -130,6 +130,7 @@ export class NewDocumentProcessor {
         .insert({
           id: document.id,
           title: document.title,
+          content: document.content, // content 컬럼 추가
           type: document.type, // 'file' 또는 'url'
           status: 'processing',
           chunk_count: document.chunks.length,
