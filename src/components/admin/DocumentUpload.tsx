@@ -58,7 +58,7 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       setIsLoadingDocuments(true);
       console.log('📋 업로드된 문서 목록 가져오기 시작');
       
-      const response = await fetch('/api/admin/upload', {
+      const response = await fetch('/api/admin/upload-new', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
 
       console.log('Base64 인코딩 완료, JSON 요청 전송');
 
-      const response = await fetch('/api/admin/upload', {
+      const response = await fetch('/api/admin/upload-new', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -344,7 +344,7 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
 
       console.log('덮어쓰기 Base64 인코딩 완료, JSON 요청 전송');
 
-      const response = await fetch('/api/admin/upload?action=overwrite-file', {
+      const response = await fetch('/api/admin/upload-new?action=overwrite-file', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

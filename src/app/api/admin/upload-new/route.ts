@@ -394,6 +394,134 @@ export async function GET(request: NextRequest) {
 }
 
 /**
+ * 파일 덮어쓰기 처리
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    console.log('🔄 파일 덮어쓰기 요청');
+    
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+    
+    if (action === 'overwrite-file') {
+      return await handleFileOverwrite(request);
+    } else {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: '지원하지 않는 액션입니다.' 
+        },
+        { status: 400 }
+      );
+    }
+  } catch (error) {
+    console.error('❌ 파일 덮어쓰기 오류:', error);
+    return NextResponse.json(
+      { 
+        success: false,
+        error: '파일 덮어쓰기 중 오류가 발생했습니다.',
+        details: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * 파일 덮어쓰기 처리 함수
+ */
+async function handleFileOverwrite(request: NextRequest) {
+  try {
+    console.log('🔄 파일 덮어쓰기 처리 시작');
+    
+    const body = await request.json();
+    const { fileName, fileSize, fileType, fileContent, existingDocumentId } = body;
+
+    if (!fileContent || !fileName || !existingDocumentId) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: '파일 내용, 파일명, 기존 문서 ID가 필요합니다.' 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Base64 디코딩
+    const decodedContent = atob(fileContent);
+    const buffer = Buffer.from(decodedContent, 'binary');
+    const file = new File([buffer], fileName, { type: fileType });
+
+    console.log('🔄 덮어쓰기 파일 정보:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      existingDocumentId
+    });
+
+    // 기존 문서 삭제
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    // 기존 문서와 관련된 모든 청크 삭제
+    const { error: chunksError } = await supabase
+      .from('document_chunks')
+      .delete()
+      .eq('document_id', existingDocumentId);
+
+    if (chunksError) {
+      console.warn('기존 청크 삭제 실패:', chunksError);
+    }
+
+    // 기존 문서 삭제
+    const { error: documentError } = await supabase
+      .from('documents')
+      .delete()
+      .eq('id', existingDocumentId);
+
+    if (documentError) {
+      throw new Error(`기존 문서 삭제 실패: ${documentError.message}`);
+    }
+
+    console.log(`🗑️ 기존 문서 삭제 완료: ${existingDocumentId}`);
+
+    // 새 파일 처리
+    const processedDocument = await newDocumentProcessor.processFile(file);
+    const documentId = await newDocumentProcessor.saveDocument(processedDocument);
+
+    console.log(`✅ 파일 덮어쓰기 완료: ${fileName} -> ${documentId}`);
+
+    return NextResponse.json({
+      success: true,
+      message: '파일이 성공적으로 덮어쓰기되었습니다.',
+      data: {
+        documentId,
+        fileName: fileName,
+        fileSize: fileSize,
+        fileType: fileType,
+        chunksProcessed: processedDocument.chunks.length,
+        status: 'completed',
+        processingTime: Date.now()
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ 파일 덮어쓰기 처리 오류:', error);
+    return NextResponse.json(
+      { 
+        success: false,
+        error: '파일 덮어쓰기 처리 중 오류가 발생했습니다.',
+        details: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * 문서 삭제
  */
 export async function DELETE(request: NextRequest) {
