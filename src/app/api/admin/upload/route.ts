@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 // Vercel에서 API 라우트가 올바르게 인식되도록 런타임 설정
 export const runtime = 'nodejs';
 export const maxDuration = 30;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // 파일 업로드 및 인덱싱 API 엔드포인트
 export async function POST(request: NextRequest) {

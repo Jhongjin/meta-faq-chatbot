@@ -140,8 +140,7 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         fileType: file.type
       });
 
-      // 임시로 테스트 API 사용
-      const response = await fetch('/api/upload-test', {
+      const response = await fetch('/api/admin/upload', {
         method: 'POST',
         body: formData,
         // Content-Type을 명시적으로 설정하지 않음 (FormData 사용 시 브라우저가 자동 설정)
@@ -217,6 +216,11 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       if (onUpload) {
         onUpload([file]);
       }
+      
+      // 파일 리스트 새로고침을 위해 페이지 새로고침
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000); // 2초 후 새로고침
 
     } catch (error) {
       console.error(`파일 처리 오류 (${file.name}):`, error);
