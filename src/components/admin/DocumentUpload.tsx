@@ -325,18 +325,34 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
     if (!duplicateFile) return;
 
     try {
-      const formData = new FormData();
-      formData.append('file', duplicateFile.file);
-      formData.append('existingDocumentId', duplicateFile.existingDocumentId);
-
       console.log('덮어쓰기 요청 시작:', {
         fileName: duplicateFile.file.name,
         existingDocumentId: duplicateFile.existingDocumentId
       });
 
+      // Base64 인코딩을 사용하여 파일 전송
+      const fileContent = await duplicateFile.file.text();
+      const base64Content = btoa(unescape(encodeURIComponent(fileContent)));
+      
+      const requestBody = {
+        fileName: duplicateFile.file.name,
+        fileSize: duplicateFile.file.size,
+        fileType: duplicateFile.file.type,
+        fileContent: base64Content,
+        existingDocumentId: duplicateFile.existingDocumentId
+      };
+
+      console.log('덮어쓰기 Base64 인코딩 완료, JSON 요청 전송');
+
       const response = await fetch('/api/admin/upload?action=overwrite-file', {
         method: 'PUT',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        cache: 'no-cache',
+        mode: 'cors',
+        credentials: 'same-origin'
       });
 
       console.log('덮어쓰기 응답 상태:', response.status);
@@ -362,6 +378,11 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
 
       setShowDuplicateDialog(false);
       setDuplicateFile(null);
+
+      // 문서 목록 새로고침
+      setTimeout(() => {
+        fetchUploadedDocuments();
+      }, 1000);
 
     } catch (error) {
       toast({
@@ -625,72 +646,6 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
             </motion.div>
           </div>
 
-          {/* 업로드된 문서 목록 */}
-          <div className="mt-8">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <FileText className="w-5 h-5 text-green-400" />
-                <Label className="text-white font-medium">업로드된 문서</Label>
-                <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">
-                  {uploadedDocuments.length}개
-                </Badge>
-              </div>
-              <Button
-                onClick={fetchUploadedDocuments}
-                disabled={isLoadingDocuments}
-                variant="outline"
-                size="sm"
-                className="bg-gray-700 hover:bg-gray-600 text-white border-gray-500"
-              >
-                {isLoadingDocuments ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "새로고침"
-                )}
-              </Button>
-            </div>
-            
-            {isLoadingDocuments ? (
-              <div className="text-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400" />
-                <p className="text-gray-400">문서 목록을 불러오는 중...</p>
-              </div>
-            ) : uploadedDocuments.length > 0 ? (
-              <div className="space-y-2">
-                {uploadedDocuments.map((doc, index) => (
-                  <div key={doc.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <FileText className="w-5 h-5 text-blue-400" />
-                        <div>
-                          <p className="text-white font-medium">{doc.title}</p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-400">
-                            <span>유형: {doc.type?.toUpperCase() || 'UNKNOWN'}</span>
-                            <span>상태: {doc.status === 'completed' ? '완료' : doc.status === 'processing' ? '처리중' : '대기'}</span>
-                            <span>청크: {doc.chunk_count || 0}개</span>
-                            <span>크기: {doc.size ? `${Math.round(doc.size / 1024)}KB` : 'N/A'}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge 
-                          variant={doc.status === 'completed' ? 'default' : 'secondary'}
-                          className={doc.status === 'completed' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'}
-                        >
-                          {doc.status === 'completed' ? '완료' : doc.status === 'processing' ? '처리중' : '대기'}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-400">
-                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>업로드된 문서가 없습니다.</p>
-              </div>
-            )}
-          </div>
 
           {/* File List */}
           <AnimatePresence>

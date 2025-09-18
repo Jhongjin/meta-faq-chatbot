@@ -189,16 +189,62 @@ async function handleFileUpload(request: NextRequest) {
 async function handleFileOverwrite(request: NextRequest) {
   try {
     console.log('파일 덮어쓰기 요청 시작');
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const existingDocumentId = formData.get('existingDocumentId') as string;
     
-    if (!file || !existingDocumentId) {
+    const contentType = request.headers.get('content-type');
+    console.log('덮어쓰기 Content-Type:', contentType);
+    
+    let file: File;
+    let existingDocumentId: string;
+    
+    if (contentType?.includes('application/json')) {
+      // JSON 요청 처리 (Base64 파일)
+      const body = await request.json();
+      console.log('덮어쓰기 JSON 요청 본문:', { 
+        fileName: body.fileName, 
+        fileSize: body.fileSize, 
+        fileType: body.fileType,
+        hasFileContent: !!body.fileContent,
+        existingDocumentId: body.existingDocumentId
+      });
+      
+      if (!body.fileContent || !body.fileName || !body.existingDocumentId) {
+        return NextResponse.json(
+          { error: '파일 내용, 파일명, 기존 문서 ID가 필요합니다.' },
+          { status: 400 }
+        );
+      }
+      
+      // Base64 디코딩
+      const decodedContent = atob(body.fileContent);
+      const buffer = Buffer.from(decodedContent, 'binary');
+      file = new File([buffer], body.fileName, { type: body.fileType });
+      existingDocumentId = body.existingDocumentId;
+      
+    } else if (contentType?.includes('multipart/form-data')) {
+      // FormData 요청 처리
+      const formData = await request.formData();
+      file = formData.get('file') as File;
+      existingDocumentId = formData.get('existingDocumentId') as string;
+      
+      if (!file || !existingDocumentId) {
+        return NextResponse.json(
+          { error: '파일과 기존 문서 ID가 필요합니다.' },
+          { status: 400 }
+        );
+      }
+    } else {
       return NextResponse.json(
-        { error: '파일과 기존 문서 ID가 필요합니다.' },
+        { error: '지원하지 않는 Content-Type입니다.' },
         { status: 400 }
       );
     }
+
+    console.log('덮어쓰기 파일 정보:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      existingDocumentId
+    });
 
     // 기존 문서 삭제
     const { vectorStorageService } = await import('@/lib/services/VectorStorageService');
@@ -210,11 +256,14 @@ async function handleFileOverwrite(request: NextRequest) {
     const result = await documentIndexingService.indexFile(file);
 
     if (result.status === 'failed') {
+      console.error('덮어쓰기 파일 인덱싱 실패:', result.error);
       return NextResponse.json(
         { error: result.error || '파일 처리에 실패했습니다.' },
         { status: 500 }
       );
     }
+
+    console.log(`덮어쓰기 파일 인덱싱 완료: ${file.name} - ${result.chunksProcessed}개 청크, ${result.embeddingsGenerated}개 임베딩`);
 
     return NextResponse.json({
       success: true,
