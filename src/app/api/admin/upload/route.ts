@@ -195,7 +195,7 @@ async function handleFileUpload(request: NextRequest) {
       // 3단계: 임베딩 생성 (SimpleEmbeddingService 사용)
       const { SimpleEmbeddingService } = await import('@/lib/services/SimpleEmbeddingService');
       const embeddingService = new SimpleEmbeddingService();
-      const embeddings = [];
+      const embeddings: number[][] = [];
       
       for (let i = 0; i < chunks.length; i++) {
         try {
