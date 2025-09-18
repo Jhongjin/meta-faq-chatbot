@@ -365,7 +365,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         documents: documents || [],
-        stats: stats?.data || {
+        stats: stats || {
           totalDocuments: 0,
           completedDocuments: 0,
           totalChunks: 0,
@@ -375,7 +375,7 @@ export async function GET(request: NextRequest) {
         pagination: {
           limit,
           offset,
-          total: stats?.data?.totalDocuments || 0
+          total: stats?.totalDocuments || 0
         }
       }
     });
