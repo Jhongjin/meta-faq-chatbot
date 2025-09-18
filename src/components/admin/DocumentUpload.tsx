@@ -390,8 +390,8 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
     }
     
     // 현재 상태에서 파일 찾기 (드래그 앤 드롭으로 추가된 파일)
-    const existingFile = files.find(f => f.name === fileName);
-    return existingFile?.file || null;
+    // File 객체는 더 이상 저장되지 않으므로 null 반환
+    return null;
   };
 
   const formatFileSize = (bytes: number) => {
