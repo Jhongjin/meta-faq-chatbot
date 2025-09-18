@@ -7,7 +7,7 @@ import { SearchResult } from '@/lib/services/VectorStorageService';
  */
 function convertRAGSearchResults(ragResults: RAGSearchResult[]): SearchResult[] {
   return ragResults.map((result, index) => ({
-    chunk_id: index, // 인덱스 번호를 정수로 사용
+    chunk_id: result.id, // 문자열 ID 사용
     content: result.content,
     similarity: result.similarity,
     metadata: {
@@ -24,7 +24,7 @@ function convertRAGSearchResults(ragResults: RAGSearchResult[]): SearchResult[] 
 function getFallbackSearchResults(query: string, limit: number): SearchResult[] {
   return [
     {
-      chunk_id: 0, // 정수로 변경
+      chunk_id: 'fallback_instagram_ad_specs_0', // 문자열로 되돌림
       content: `인스타그램 광고 사양 가이드
 
 **스토리 광고**
@@ -56,7 +56,7 @@ function getFallbackSearchResults(query: string, limit: number): SearchResult[] 
       }
     },
     {
-      chunk_id: 1, // 정수로 변경
+      chunk_id: 'fallback_facebook_ad_policy_0', // 문자열로 되돌림
       content: `페이스북 광고 정책
 
 **이미지 광고**
