@@ -10,6 +10,7 @@ export function useAuth() {
 
   useEffect(() => {
     const supabase = createClient();
+    let isInitialized = false;
     
     // 현재 세션 확인
     const getSession = async () => {
@@ -22,21 +23,26 @@ export function useAuth() {
         console.log('세션 확인 완료:', session?.user?.email || '로그인되지 않음');
         setUser(session?.user ?? null);
         setLoading(false);
+        isInitialized = true;
       } catch (error) {
         console.error('세션 확인 중 예외 발생:', error);
         setUser(null);
         setLoading(false);
+        isInitialized = true;
       }
     };
 
     getSession();
 
-    // 인증 상태 변경 감지
+    // 인증 상태 변경 감지 (초기화 후에만 처리)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('인증 상태 변경:', event, session?.user?.email);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        // 초기화가 완료된 후에만 상태 변경 처리
+        if (isInitialized && event !== 'INITIAL_SESSION') {
+          console.log('인증 상태 변경:', event, session?.user?.email);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
       }
     );
 
