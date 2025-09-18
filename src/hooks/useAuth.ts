@@ -14,10 +14,12 @@ export function useAuth() {
     // 현재 세션 확인
     const getSession = async () => {
       try {
+        console.log('세션 확인 시작...');
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('세션 확인 오류:', error);
         }
+        console.log('세션 확인 완료:', session?.user?.email || '로그인되지 않음');
         setUser(session?.user ?? null);
         setLoading(false);
       } catch (error) {
