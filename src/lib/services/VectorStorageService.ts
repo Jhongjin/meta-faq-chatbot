@@ -196,7 +196,7 @@ export class VectorStorageService {
       // 청크 데이터 준비
       const chunkRecords: Omit<ChunkRecord, 'id' | 'created_at'>[] = chunks.map((chunk, index) => ({
         document_id: documentId,
-        chunk_id: `${documentId}_chunk_${chunk.metadata.chunkIndex}`,
+        chunk_id: chunk.metadata.chunkIndex, // 인덱스 번호를 정수로 사용
         content: chunk.content,
         embedding: embeddings[index].embedding, // 이미 검증된 배열
         metadata: {
