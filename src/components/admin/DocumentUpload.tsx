@@ -134,10 +134,26 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       formData.append('file', file);
       formData.append('type', 'file');
 
+      console.log('파일 업로드 요청 시작:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+
       const response = await fetch('/api/admin/upload', {
         method: 'POST',
         body: formData,
+        // Content-Type을 명시적으로 설정하지 않음 (FormData 사용 시 브라우저가 자동 설정)
       });
+
+      console.log('응답 상태:', response.status);
+      console.log('응답 헤더:', Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('서버 오류 응답:', errorText);
+        throw new Error(`서버 오류 (${response.status}): ${errorText}`);
+      }
 
       let result;
       try {
