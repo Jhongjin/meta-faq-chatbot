@@ -73,9 +73,21 @@ async function handleFileUpload(request: NextRequest) {
     const contentType = request.headers.get('content-type');
     console.log('Content-Type:', contentType);
     
-    // FormData 방식으로 파일 처리
-    const formData = await request.formData();
-    console.log('FormData 파싱 성공');
+    // FormData 방식으로 파일 처리 (에러 처리 강화)
+    let formData;
+    try {
+      formData = await request.formData();
+      console.log('FormData 파싱 성공');
+    } catch (error) {
+      console.error('FormData 파싱 실패:', error);
+      return NextResponse.json(
+        { 
+          error: 'FormData 파싱에 실패했습니다.',
+          details: error instanceof Error ? error.message : String(error)
+        },
+        { status: 400 }
+      );
+    }
     
     const file = formData.get('file') as File;
     const type = formData.get('type') as string;
