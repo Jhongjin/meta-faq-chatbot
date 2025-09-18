@@ -3,22 +3,32 @@ import { NextRequest, NextResponse } from 'next/server';
 // 파일 업로드 및 인덱싱 API 엔드포인트
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔍 POST 요청 수신:', {
+      url: request.url,
+      method: request.method,
+      headers: Object.fromEntries(request.headers.entries())
+    });
+
     const contentType = request.headers.get('content-type');
+    console.log('📋 Content-Type:', contentType);
     
     if (contentType?.includes('multipart/form-data')) {
+      console.log('📁 파일 업로드 처리 시작');
       // 파일 업로드 처리
       return await handleFileUpload(request);
     } else if (contentType?.includes('application/json')) {
+      console.log('🌐 URL 처리 시작');
       // URL 처리
       return await handleUrlProcessing(request);
     } else {
+      console.log('❌ 지원하지 않는 Content-Type:', contentType);
       return NextResponse.json(
-        { error: '지원하지 않는 Content-Type입니다.' },
+        { error: '지원하지 않는 Content-Type입니다.', receivedType: contentType },
         { status: 400 }
       );
     }
   } catch (error) {
-    console.error('Upload API 오류:', error);
+    console.error('❌ Upload API 오류:', error);
     return NextResponse.json(
       { 
         error: '서버 내부 오류가 발생했습니다.',
