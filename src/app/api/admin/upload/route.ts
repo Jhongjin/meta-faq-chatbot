@@ -124,70 +124,89 @@ async function handleFileUpload(request: NextRequest) {
       console.warn('중복 체크 중 오류 발생, 계속 진행:', duplicateCheckError);
     }
 
-    // 간단한 파일 처리 및 인덱싱 (Vercel 호환성)
+    // 통합된 RAG 파이프라인 처리
     console.log(`파일 인덱싱 시작: ${file.name} (${file.size} bytes)`);
     
     try {
-      // 파일 내용 읽기 (안전한 텍스트 처리)
-      let fileContent: string;
-      try {
-        fileContent = await file.text();
-        console.log(`파일 내용 읽기 완료: ${fileContent.length} 문자`);
-      } catch (textError) {
-        console.warn('텍스트 읽기 실패, 대체 처리:', textError);
-        // PDF나 바이너리 파일의 경우 간단한 시뮬레이션
-        fileContent = `Document content from ${file.name}. This is a placeholder content for file processing.`;
+      // 1단계: 문서 처리 서비스 사용
+      const { documentProcessingService } = await import('@/lib/services/DocumentProcessingService');
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      
+      let processedDoc;
+      if (fileExtension === '.pdf') {
+        processedDoc = await documentProcessingService.processPdfFile(fileBuffer, file.name);
+      } else if (fileExtension === '.txt') {
+        processedDoc = await documentProcessingService.processTextFile(fileBuffer, file.name);
+      } else {
+        // DOCX나 기타 파일은 텍스트로 처리
+        processedDoc = await documentProcessingService.processTextFile(fileBuffer, file.name);
       }
       
-      // 유니코드 이스케이프 시퀀스 정리
-      fileContent = fileContent
-        .replace(/\\u[0-9a-fA-F]{4}/g, '') // 유니코드 이스케이프 제거
-        .replace(/\\x[0-9a-fA-F]{2}/g, '') // 16진수 이스케이프 제거
-        .replace(/\\[0-7]{1,3}/g, '') // 8진수 이스케이프 제거
-        .replace(/\\[\\"\'\/bfnrt]/g, '') // 일반 이스케이프 제거
-        .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // 제어 문자 제거
-        .trim();
+      console.log(`문서 처리 완료: ${processedDoc.content.length} 문자`);
       
-      if (!fileContent || fileContent.length === 0) {
-        fileContent = `Document content from ${file.name}. This is a placeholder content for file processing.`;
-      }
-      
-      console.log(`정리된 파일 내용: ${fileContent.length} 문자`);
-      
-      // 간단한 청킹 (1000자 단위)
+      // 2단계: 텍스트 청킹 (LangChain 없이 직접 구현)
       const chunkSize = 1000;
+      const chunkOverlap = 200;
       const chunks = [];
-      for (let i = 0; i < fileContent.length; i += chunkSize) {
-        chunks.push(fileContent.slice(i, i + chunkSize));
+      
+      let start = 0;
+      let chunkIndex = 0;
+      
+      while (start < processedDoc.content.length) {
+        const end = Math.min(start + chunkSize, processedDoc.content.length);
+        let chunk = processedDoc.content.slice(start, end);
+        
+        // 문장 경계에서 청크 분할 (한국어 고려)
+        if (end < processedDoc.content.length) {
+          const lastSentenceEnd = Math.max(
+            chunk.lastIndexOf('. '),
+            chunk.lastIndexOf('! '),
+            chunk.lastIndexOf('? '),
+            chunk.lastIndexOf('。'),
+            chunk.lastIndexOf('！'),
+            chunk.lastIndexOf('？'),
+            chunk.lastIndexOf('\n\n')
+          );
+          
+          if (lastSentenceEnd > chunkSize * 0.7) {
+            chunk = chunk.slice(0, lastSentenceEnd + 1);
+          }
+        }
+        
+        chunks.push({
+          content: chunk.trim(),
+          metadata: {
+            chunkIndex,
+            startChar: start,
+            endChar: start + chunk.length,
+            chunkType: 'text',
+            documentType: processedDoc.metadata.type,
+            title: processedDoc.metadata.title
+          }
+        });
+        
+        start += chunk.length - chunkOverlap;
+        chunkIndex++;
       }
       
       console.log(`청킹 완료: ${chunks.length}개 청크`);
       
-      // 간단한 해시 기반 임베딩 생성 (안전한 처리)
-      const embeddings = chunks.map((chunk, index) => {
+      // 3단계: 임베딩 생성 (SimpleEmbeddingService 사용)
+      const { simpleEmbeddingService } = await import('@/lib/services/SimpleEmbeddingService');
+      const embeddings = [];
+      
+      for (let i = 0; i < chunks.length; i++) {
         try {
-          // 안전한 해시 기반 임베딩 생성
-          const hash = chunk.split('').reduce((a, b) => {
-            const charCode = b.charCodeAt(0);
-            // 유효한 문자 코드만 처리
-            if (charCode >= 0 && charCode <= 0x10FFFF) {
-              a = ((a << 5) - a) + charCode;
-              return a & a;
-            }
-            return a;
-          }, 0);
-          
-          // 1024차원 임베딩 생성
-          return Array.from({length: 1024}, (_, i) => {
-            const value = Math.sin(hash + i) * 0.1;
-            return isNaN(value) ? 0 : value;
-          });
+          const embeddingResult = await simpleEmbeddingService.generateEmbedding(chunks[i].content);
+          embeddings.push(embeddingResult.embedding);
         } catch (embeddingError) {
-          console.warn(`임베딩 생성 오류 (청크 ${index}):`, embeddingError);
-          // 기본 임베딩 반환
-          return Array.from({length: 1024}, (_, i) => Math.sin(index + i) * 0.1);
+          console.warn(`임베딩 생성 오류 (청크 ${i}):`, embeddingError);
+          // 기본 임베딩 생성
+          const defaultEmbedding = Array.from({length: 1024}, (_, j) => Math.sin(i + j) * 0.1);
+          embeddings.push(defaultEmbedding);
         }
-      });
+      }
       
       console.log(`임베딩 생성 완료: ${embeddings.length}개 임베딩`);
       
@@ -200,15 +219,16 @@ async function handleFileUpload(request: NextRequest) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
       
-      // 문서 저장 (metadata 컬럼 제거)
+      // 문서 저장
       const { error: docError } = await supabase
         .from('documents')
         .insert({
           id: documentId,
-          title: file.name,
-          type: 'file',
+          title: processedDoc.metadata.title,
+          type: processedDoc.metadata.type,
           status: 'completed',
-          url: null
+          url: null,
+          chunk_count: chunks.length
         });
       
       if (docError) {
@@ -216,12 +236,18 @@ async function handleFileUpload(request: NextRequest) {
         throw new Error(`문서 저장 실패: ${docError.message}`);
       }
       
-      // 청크 저장 (올바른 컬럼명 사용)
+      // 청크 저장 (메타데이터 포함)
       const chunkInserts = chunks.map((chunk, index) => ({
         document_id: documentId,
         chunk_id: `${documentId}_chunk_${index}`,
-        content: chunk,
-        embedding: embeddings[index]
+        content: chunk.content,
+        embedding: embeddings[index],
+        metadata: {
+          ...chunk.metadata,
+          processingTime: Date.now(),
+          model: 'simple-hash',
+          dimension: 1024
+        }
       }));
       
       const { error: chunkError } = await supabase
