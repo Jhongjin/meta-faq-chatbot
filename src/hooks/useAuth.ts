@@ -13,9 +13,18 @@ export function useAuth() {
     
     // 현재 세션 확인
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('세션 확인 오류:', error);
+        }
+        setUser(session?.user ?? null);
+        setLoading(false);
+      } catch (error) {
+        console.error('세션 확인 중 예외 발생:', error);
+        setUser(null);
+        setLoading(false);
+      }
     };
 
     getSession();
@@ -23,6 +32,7 @@ export function useAuth() {
     // 인증 상태 변경 감지
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('인증 상태 변경:', event, session?.user?.email);
         setUser(session?.user ?? null);
         setLoading(false);
       }
