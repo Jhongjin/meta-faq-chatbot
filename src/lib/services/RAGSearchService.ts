@@ -450,8 +450,8 @@ ${content}
       // 4. 처리 시간 계산
       const processingTime = Date.now() - startTime;
       
-      // 5. LLM 사용 여부 확인
-      const isLLMGenerated = await llmService.checkOllamaStatus();
+      // 5. LLM 사용 여부 확인 (Gemini 서비스 사용)
+      const isLLMGenerated = !!process.env.GOOGLE_API_KEY;
 
       console.log(`✅ RAG 응답 생성 완료: ${processingTime}ms, 신뢰도: ${confidence}`);
 
