@@ -126,9 +126,16 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       formData.append('file', file);
       formData.append('type', 'file');
 
+      console.log('FormData 생성 완료:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+
       const response = await fetch('/api/admin/upload', {
         method: 'POST',
         body: formData,
+        // Content-Type을 명시적으로 설정하지 않음 (브라우저가 자동으로 multipart/form-data 설정)
       });
 
       let result;

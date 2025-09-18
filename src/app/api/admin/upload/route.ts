@@ -69,7 +69,31 @@ export async function PUT(request: NextRequest) {
 async function handleFileUpload(request: NextRequest) {
   try {
     console.log('파일 업로드 요청 시작');
-    const formData = await request.formData();
+    
+    // FormData 파싱 전에 요청 본문 확인
+    const contentType = request.headers.get('content-type');
+    console.log('FormData Content-Type:', contentType);
+    
+    if (!contentType?.includes('multipart/form-data')) {
+      console.error('잘못된 Content-Type:', contentType);
+      return NextResponse.json(
+        { error: 'multipart/form-data가 필요합니다.' },
+        { status: 400 }
+      );
+    }
+    
+    let formData;
+    try {
+      formData = await request.formData();
+      console.log('FormData 파싱 성공');
+    } catch (error) {
+      console.error('FormData 파싱 실패:', error);
+      return NextResponse.json(
+        { error: 'FormData 파싱에 실패했습니다.' },
+        { status: 400 }
+      );
+    }
+    
     const file = formData.get('file') as File;
     const type = formData.get('type') as string;
     
