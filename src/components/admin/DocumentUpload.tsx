@@ -29,7 +29,6 @@ interface DocumentFile {
   status: "pending" | "uploading" | "indexing" | "success" | "error";
   progress: number;
   error?: string;
-  file?: File; // 실제 File 객체 저장
 }
 
 interface DocumentUploadProps {
@@ -102,10 +101,9 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       type: file.type,
       status: "pending" as const,
       progress: 0,
-      file: file, // 실제 File 객체 저장
     }));
 
-    console.log('생성된 DocumentFile 객체들:', newFiles.map(f => ({ id: f.id, name: f.name, hasFile: !!f.file })));
+    console.log('생성된 DocumentFile 객체들:', newFiles.map(f => ({ id: f.id, name: f.name })));
 
     setFiles(prev => [...prev, ...newFiles]);
   };
@@ -131,7 +129,22 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         body: formData,
       });
 
-      const result = await response.json();
+      let result;
+      try {
+        const responseText = await response.text();
+        console.log('서버 응답 텍스트:', responseText);
+        
+        if (!responseText) {
+          throw new Error('서버에서 빈 응답을 받았습니다.');
+        }
+        
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON 파싱 오류:', parseError);
+        console.error('응답 상태:', response.status, response.statusText);
+        
+        throw new Error(`서버 응답 처리 오류: ${parseError instanceof Error ? parseError.message : '알 수 없는 오류'}`);
+      }
 
       if (!response.ok) {
         // 중복 파일인 경우
@@ -296,23 +309,16 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         .filter(file => file.status === "pending")
         .map(async (file) => {
           try {
-            console.log(`파일 처리 시작: ${file.name}`, { hasFile: !!file.file, fileId: file.id });
+            console.log(`파일 처리 시작: ${file.name}`, { fileId: file.id });
             
-            // 저장된 File 객체 사용
-            if (file.file) {
-              console.log(`저장된 File 객체 사용: ${file.name}`);
-              return await uploadAndIndexDocument(file.file, file.id);
+            // 파일 입력 요소에서 실제 File 객체 찾기
+            const actualFile = await findActualFile(file.name);
+            if (actualFile) {
+              console.log(`파일 찾음: ${file.name}`);
+              return await uploadAndIndexDocument(actualFile, file.id);
             } else {
-              console.log(`백업 방법으로 파일 찾기: ${file.name}`);
-              // 백업: 파일 입력 요소에서 찾기
-              const actualFile = await findActualFile(file.name);
-              if (actualFile) {
-                console.log(`백업 방법으로 파일 찾음: ${file.name}`);
-                return await uploadAndIndexDocument(actualFile, file.id);
-              } else {
-                console.error(`파일을 찾을 수 없음: ${file.name}`);
-                throw new Error(`파일을 찾을 수 없습니다: ${file.name}`);
-              }
+              console.error(`파일을 찾을 수 없음: ${file.name}`);
+              throw new Error(`파일을 찾을 수 없습니다: ${file.name}`);
             }
           } catch (error) {
             console.error(`파일 처리 오류 (${file.name}):`, error);
