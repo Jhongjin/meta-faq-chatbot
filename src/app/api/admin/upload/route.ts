@@ -193,12 +193,13 @@ async function handleFileUpload(request: NextRequest) {
       console.log(`청킹 완료: ${chunks.length}개 청크`);
       
       // 3단계: 임베딩 생성 (SimpleEmbeddingService 사용)
-      const { simpleEmbeddingService } = await import('@/lib/services/SimpleEmbeddingService');
+      const { SimpleEmbeddingService } = await import('@/lib/services/SimpleEmbeddingService');
+      const embeddingService = new SimpleEmbeddingService();
       const embeddings = [];
       
       for (let i = 0; i < chunks.length; i++) {
         try {
-          const embeddingResult = await simpleEmbeddingService.generateEmbedding(chunks[i].content);
+          const embeddingResult = await embeddingService.generateEmbedding(chunks[i].content);
           embeddings.push(embeddingResult.embedding);
         } catch (embeddingError) {
           console.warn(`임베딩 생성 오류 (청크 ${i}):`, embeddingError);
