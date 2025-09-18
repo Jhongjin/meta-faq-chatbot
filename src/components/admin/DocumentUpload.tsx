@@ -149,9 +149,11 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         }
         
         result = JSON.parse(responseText);
+        console.log('JSON 파싱 성공:', result);
       } catch (parseError) {
         console.error('JSON 파싱 오류:', parseError);
         console.error('응답 상태:', response.status, response.statusText);
+        console.error('응답 헤더:', Object.fromEntries(response.headers.entries()));
         
         throw new Error(`서버 응답 처리 오류: ${parseError instanceof Error ? parseError.message : '알 수 없는 오류'}`);
       }
