@@ -15,7 +15,7 @@ export interface DocumentRecord {
 export interface ChunkRecord {
   id?: number;
   document_id: string;
-  chunk_id: number; // 정수로 변경
+  chunk_id: string; // 문자열로 되돌림
   content: string;
   embedding: number[];
   metadata: Record<string, any>;
@@ -23,7 +23,7 @@ export interface ChunkRecord {
 }
 
 export interface SearchResult {
-  chunk_id: number; // 정수로 변경
+  chunk_id: string; // 문자열로 되돌림
   content: string;
   metadata: Record<string, any>;
   similarity: number;
@@ -196,7 +196,7 @@ export class VectorStorageService {
       // 청크 데이터 준비
       const chunkRecords: Omit<ChunkRecord, 'id' | 'created_at'>[] = chunks.map((chunk, index) => ({
         document_id: documentId,
-        chunk_id: chunk.metadata.chunkIndex, // 인덱스 번호를 정수로 사용
+        chunk_id: `${documentId}_chunk_${chunk.metadata.chunkIndex}`, // 문자열로 사용
         content: chunk.content,
         embedding: embeddings[index].embedding, // 이미 검증된 배열
         metadata: {

@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         const dummyChunks = [
           {
             content: `Meta 광고 정책 - ${document.title}`,
-            chunk_id: 0,
+            chunk_id: `${document.id}_chunk_0`,
             metadata: {
               source: document.title, // title을 source로 사용
               title: document.title,
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
           },
           {
             content: `이 문서는 ${document.title}에서 가져온 Meta 광고 관련 정책 정보입니다. 광고 집행 시 참고하세요.`,
-            chunk_id: 1,
+            chunk_id: `${document.id}_chunk_1`,
             metadata: {
               source: document.title, // title을 source로 사용
               title: document.title,
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           },
           {
             content: `Meta 플랫폼에서 제공하는 광고 정책과 가이드라인을 확인할 수 있습니다.`,
-            chunk_id: 2,
+            chunk_id: `${document.id}_chunk_2`,
             metadata: {
               source: document.title, // title을 source로 사용
               title: document.title,
