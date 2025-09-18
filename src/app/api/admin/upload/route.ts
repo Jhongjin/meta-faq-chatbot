@@ -70,9 +70,9 @@ async function handleFileUpload(request: NextRequest) {
   try {
     console.log('파일 업로드 요청 시작');
     
-    // FormData 파싱 전에 요청 본문 확인
+    // Vercel 서버리스 환경에서 FormData 처리
     const contentType = request.headers.get('content-type');
-    console.log('FormData Content-Type:', contentType);
+    console.log('Content-Type:', contentType);
     
     if (!contentType?.includes('multipart/form-data')) {
       console.error('잘못된 Content-Type:', contentType);
@@ -82,30 +82,9 @@ async function handleFileUpload(request: NextRequest) {
       );
     }
     
-    let formData;
-    try {
-      // Vercel 서버리스 환경에서 FormData 파싱 개선
-      formData = await request.formData();
-      console.log('FormData 파싱 성공');
-    } catch (error) {
-      console.error('FormData 파싱 실패:', error);
-      
-      // 대안: 요청 본문을 직접 읽어서 처리
-      try {
-        const body = await request.text();
-        console.log('요청 본문 길이:', body.length);
-        return NextResponse.json(
-          { error: 'FormData 파싱에 실패했습니다. 요청 본문을 확인해주세요.' },
-          { status: 400 }
-        );
-      } catch (textError) {
-        console.error('요청 본문 읽기 실패:', textError);
-        return NextResponse.json(
-          { error: '요청 처리에 실패했습니다.' },
-          { status: 400 }
-        );
-      }
-    }
+    // FormData 파싱 시도
+    const formData = await request.formData();
+    console.log('FormData 파싱 성공');
     
     const file = formData.get('file') as File;
     const type = formData.get('type') as string;

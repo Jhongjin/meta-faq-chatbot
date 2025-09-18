@@ -136,6 +136,9 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         method: 'POST',
         body: formData,
         // Content-Type을 명시적으로 설정하지 않음 (브라우저가 자동으로 multipart/form-data 설정)
+        headers: {
+          // Content-Type을 명시적으로 설정하지 않음
+        }
       });
 
       let result;
