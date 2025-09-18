@@ -84,14 +84,27 @@ async function handleFileUpload(request: NextRequest) {
     
     let formData;
     try {
+      // Vercel 서버리스 환경에서 FormData 파싱 개선
       formData = await request.formData();
       console.log('FormData 파싱 성공');
     } catch (error) {
       console.error('FormData 파싱 실패:', error);
-      return NextResponse.json(
-        { error: 'FormData 파싱에 실패했습니다.' },
-        { status: 400 }
-      );
+      
+      // 대안: 요청 본문을 직접 읽어서 처리
+      try {
+        const body = await request.text();
+        console.log('요청 본문 길이:', body.length);
+        return NextResponse.json(
+          { error: 'FormData 파싱에 실패했습니다. 요청 본문을 확인해주세요.' },
+          { status: 400 }
+        );
+      } catch (textError) {
+        console.error('요청 본문 읽기 실패:', textError);
+        return NextResponse.json(
+          { error: '요청 처리에 실패했습니다.' },
+          { status: 400 }
+        );
+      }
     }
     
     const file = formData.get('file') as File;
