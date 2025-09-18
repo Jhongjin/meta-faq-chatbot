@@ -42,26 +42,17 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 실제 데이터 가져오기 (임시로 비활성화)
-  // const { data: dashboardStats, isLoading: dashboardLoading, error: dashboardError } = useDashboardStats();
-  // const { data: chatStats, isLoading: chatLoading, error: chatError } = useChatStats();
-  // const { data: systemStatus, isLoading: statusLoading, error: statusError } = useSystemStatus();
-  // const { data: latestUpdate, isLoading: updateLoading, error: updateError } = useLatestUpdate();
+  // 실제 데이터 가져오기
+  const { data: dashboardStats, isLoading: dashboardLoading, error: dashboardError } = useDashboardStats();
+  const { data: chatStats, isLoading: chatLoading, error: chatError } = useChatStats();
+  const { data: systemStatus, isLoading: statusLoading, error: statusError } = useSystemStatus();
+  const { data: latestUpdate, isLoading: updateLoading, error: updateError } = useLatestUpdate();
+
+  // 로딩 상태 확인 (개별적으로 처리)
+  const isAnyLoading = dashboardLoading || chatLoading || statusLoading || updateLoading;
   
-  // 임시 데이터
-  const dashboardStats = { totalDocuments: 0, completedDocuments: 0, pendingDocuments: 0, processingDocuments: 0, totalChunks: 0, totalEmbeddings: 0, systemStatus: { overall: 'healthy', database: 'connected', llm: 'operational', vectorStore: 'indexed', lastUpdate: '방금 전' }, recentActivity: [], performanceMetrics: [], weeklyStats: { questions: 0, users: 0, satisfaction: 0, documents: 0 } };
-  const chatStats = { totalQuestions: 0, todayQuestions: 0, averageResponseTime: 0, satisfactionRate: 0, userSatisfaction: 0, recentQuestions: [] };
-  const systemStatus = { success: true, stats: { total: 0, completed: 0, pending: 0, processing: 0, totalChunks: 0 } };
-  const latestUpdate = { lastUpdateDate: new Date().toISOString(), recentUpdates: [], newDocuments: [], hasNewFeatures: false, updateCount: 0, newDocumentCount: 0, message: '', displayDate: '', isRecent: false, hasUpdates: false };
-  
-  const dashboardLoading = false;
-  const chatLoading = false;
-  const statusLoading = false;
-  const updateLoading = false;
-  const dashboardError = null;
-  const chatError = null;
-  const statusError = null;
-  const updateError = null;
+  // 에러 상태 확인
+  const hasError = dashboardError || chatError || statusError || updateError;
 
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,6 +199,40 @@ export default function HomePage() {
       gradient: "from-green-500 to-emerald-500"
     }
   ];
+
+  // 로딩 상태 처리
+  if (isAnyLoading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <div className="text-lg text-gray-600">데이터를 불러오는 중...</div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // 에러 상태 처리
+  if (hasError) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <div className="text-lg text-gray-600 mb-4">데이터를 불러오는 중 오류가 발생했습니다.</div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              다시 시도
+            </button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
