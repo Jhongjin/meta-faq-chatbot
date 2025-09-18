@@ -264,19 +264,25 @@ export class NewDocumentProcessor {
   }
 
   /**
-   * 텍스트 청킹
+   * 텍스트 청킹 (최적화된 버전)
    */
   private async chunkText(text: string, source: string): Promise<DocumentChunk[]> {
     const chunks: DocumentChunk[] = [];
-    const chunkSize = 1000; // 청크 크기
-    const overlap = 200; // 겹침 크기
+    const chunkSize = 2000; // 청크 크기 증가 (처리 시간 단축)
+    const overlap = 100; // 겹침 크기 감소
 
     let startIndex = 0;
     let chunkIndex = 0;
 
-    while (startIndex < text.length) {
-      const endIndex = Math.min(startIndex + chunkSize, text.length);
-      const chunkText = text.slice(startIndex, endIndex).trim();
+    // 텍스트가 너무 길면 잘라내기 (메모리 절약)
+    const maxTextLength = 50000; // 50KB 제한
+    const processedText = text.length > maxTextLength 
+      ? text.substring(0, maxTextLength) + '\n\n[문서가 잘렸습니다. 전체 내용을 보려면 원본 파일을 확인하세요.]'
+      : text;
+
+    while (startIndex < processedText.length) {
+      const endIndex = Math.min(startIndex + chunkSize, processedText.length);
+      const chunkText = processedText.slice(startIndex, endIndex).trim();
 
       if (chunkText.length > 0) {
         const chunk: DocumentChunk = {
@@ -293,6 +299,12 @@ export class NewDocumentProcessor {
 
         chunks.push(chunk);
         chunkIndex++;
+
+        // 최대 청크 수 제한 (처리 시간 단축)
+        if (chunkIndex >= 50) {
+          console.warn(`문서가 너무 길어서 ${chunkIndex}개 청크로 제한했습니다.`);
+          break;
+        }
       }
 
       startIndex = endIndex - overlap;
@@ -318,13 +330,28 @@ export class NewDocumentProcessor {
   }
 
   /**
-   * 임베딩 생성 (해시 기반 간단한 임베딩)
+   * 임베딩 생성 (해시 기반 간단한 임베딩) - 최적화된 버전
    */
   private async generateEmbeddings(chunks: DocumentChunk[]): Promise<DocumentChunk[]> {
-    return chunks.map(chunk => ({
-      ...chunk,
-      embedding: this.generateHashEmbedding(chunk.content),
-    }));
+    // 청크 수가 많으면 배치 처리로 메모리 절약
+    const batchSize = 10;
+    const result: DocumentChunk[] = [];
+
+    for (let i = 0; i < chunks.length; i += batchSize) {
+      const batch = chunks.slice(i, i + batchSize);
+      const processedBatch = batch.map(chunk => ({
+        ...chunk,
+        embedding: this.generateHashEmbedding(chunk.content),
+      }));
+      result.push(...processedBatch);
+      
+      // 배치 간 짧은 대기 (메모리 정리)
+      if (i + batchSize < chunks.length) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+    }
+
+    return result;
   }
 
   /**

@@ -8,7 +8,7 @@ import { newDocumentProcessor } from '@/lib/services/NewDocumentProcessor';
 
 // Vercel 설정
 export const runtime = 'nodejs';
-export const maxDuration = 30;
+export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -39,6 +39,19 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ 업로드 API 오류:', error);
+    
+    // 타임아웃 오류 감지
+    if (error instanceof Error && error.message.includes('timeout')) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: '파일 처리 시간이 초과되었습니다. 파일 크기를 줄이거나 나중에 다시 시도해주세요.',
+          details: 'TIMEOUT_ERROR'
+        },
+        { status: 408 } // Request Timeout
+      );
+    }
+    
     return NextResponse.json(
       { 
         success: false,
