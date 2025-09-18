@@ -2,61 +2,59 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('테스트 업로드 요청 수신');
+    console.log('Test Upload API 호출됨');
     
     const contentType = request.headers.get('content-type');
     console.log('Content-Type:', contentType);
     
-    if (contentType?.includes('multipart/form-data')) {
-      try {
-        const formData = await request.formData();
-        const file = formData.get('file') as File;
-        
-        console.log('FormData 파싱 성공:', {
-          fileName: file?.name,
-          fileSize: file?.size,
-          fileType: file?.type
-        });
-        
-        return NextResponse.json({
-          success: true,
-          message: 'FormData 파싱 성공',
-          file: {
-            name: file?.name,
-            size: file?.size,
-            type: file?.type
-          }
-        });
-      } catch (error) {
-        console.error('FormData 파싱 실패:', error);
-        return NextResponse.json(
-          { 
-            success: false,
-            error: 'FormData 파싱 실패',
-            details: error instanceof Error ? error.message : String(error)
-          },
-          { status: 400 }
-        );
-      }
-    } else {
+    if (!contentType?.includes('multipart/form-data')) {
       return NextResponse.json(
-        { 
-          success: false,
-          error: 'multipart/form-data가 필요합니다.',
-          contentType: contentType
-        },
+        { error: 'multipart/form-data가 필요합니다.' },
         { status: 400 }
       );
     }
+    
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    const type = formData.get('type') as string;
+    
+    console.log('FormData 파싱 성공:', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      type: type
+    });
+    
+    if (!file) {
+      return NextResponse.json(
+        { error: '파일이 제공되지 않았습니다.' },
+        { status: 400 }
+      );
+    }
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Test upload successful!',
+      data: {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        type: type
+      }
+    });
+    
   } catch (error) {
-    console.error('테스트 업로드 오류:', error);
+    console.error('Test Upload API 오류:', error);
     return NextResponse.json(
       { 
-        success: false,
-        error: '서버 내부 오류',
+        error: 'Test upload failed',
         details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ message: 'Test upload API is working' });
 }
