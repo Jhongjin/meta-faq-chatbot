@@ -211,9 +211,9 @@ export class NewDocumentProcessor {
    * 파일 내용 추출
    */
   private async extractFileContent(file: File): Promise<string> {
-    const fileType = this.getFileType(file.name);
+    const fileExtension = file.name.toLowerCase().split('.').pop();
     
-    switch (fileType) {
+    switch (fileExtension) {
       case 'txt':
         return await file.text();
       
@@ -227,7 +227,12 @@ export class NewDocumentProcessor {
         return `DOCX 파일: ${file.name}\n\n서버리스 환경에서는 DOCX 텍스트 추출이 제한됩니다. 로컬 환경에서 테스트해주세요.`;
       
       default:
-        throw new Error(`지원하지 않는 파일 형식: ${fileType}`);
+        // 기본적으로 텍스트로 처리
+        try {
+          return await file.text();
+        } catch {
+          return `파일: ${file.name}\n\n파일 내용을 읽을 수 없습니다.`;
+        }
     }
   }
 
