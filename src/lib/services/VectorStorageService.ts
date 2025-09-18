@@ -15,7 +15,7 @@ export interface DocumentRecord {
 export interface ChunkRecord {
   id?: number;
   document_id: string;
-  chunk_id: string;
+  chunk_id: number; // 정수로 변경
   content: string;
   embedding: number[];
   metadata: Record<string, any>;
@@ -23,7 +23,7 @@ export interface ChunkRecord {
 }
 
 export interface SearchResult {
-  chunk_id: string;
+  chunk_id: number; // 정수로 변경
   content: string;
   metadata: Record<string, any>;
   similarity: number;
