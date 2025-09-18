@@ -141,7 +141,7 @@ export class RAGSearchService {
             documentId: result.document_id,
             documentTitle: result.metadata?.title || 'Unknown',
             documentUrl: result.metadata?.url,
-            chunkIndex: result.chunk_id, // 이미 정수이므로 직접 사용
+            chunkIndex: result.chunk_id, // 문자열 ID 사용
             metadata: result.metadata
           };
         })
