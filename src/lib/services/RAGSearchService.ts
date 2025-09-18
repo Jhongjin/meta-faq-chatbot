@@ -138,10 +138,10 @@ export class RAGSearchService {
             id: result.chunk_id,
             content: result.content,
             similarity: similarity,
-            documentId: result.chunk_id.split('_chunk_')[0],
+            documentId: result.document_id,
             documentTitle: result.metadata?.title || 'Unknown',
             documentUrl: result.metadata?.url,
-            chunkIndex: parseInt(result.chunk_id.split('_chunk_')[1]) || 0,
+            chunkIndex: result.chunk_id, // 이미 정수이므로 직접 사용
             metadata: result.metadata
           };
         })

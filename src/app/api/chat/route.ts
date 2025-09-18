@@ -221,7 +221,7 @@ async function searchSimilarChunks(
       console.log(`📄 문서 상세: type=${document?.type}, document_url=${document?.document_url}`);
 
       return {
-        id: item.chunk_id || `supabase-${index}`,
+        id: `supabase-${index}`, // chunk_id는 정수이므로 문자열 ID 생성
         content: item.content || '',
         similarity: item.score ? item.score / 10 : 0.8, // 점수를 유사도로 변환
         documentId: document?.id || 'unknown',

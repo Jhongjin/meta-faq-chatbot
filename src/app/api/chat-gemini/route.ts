@@ -6,8 +6,8 @@ import { SearchResult } from '@/lib/services/VectorStorageService';
  * RAGSearchResult를 VectorStorageService SearchResult로 변환
  */
 function convertRAGSearchResults(ragResults: RAGSearchResult[]): SearchResult[] {
-  return ragResults.map(result => ({
-    chunk_id: result.id,
+  return ragResults.map((result, index) => ({
+    chunk_id: index, // 인덱스 번호를 정수로 사용
     content: result.content,
     similarity: result.similarity,
     metadata: {
