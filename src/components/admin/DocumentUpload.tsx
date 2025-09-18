@@ -96,7 +96,7 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
 
     const newFiles: DocumentFile[] = validFiles.map((file, index) => ({
       id: `file-${Date.now()}-${index}`,
-      name: file.name,
+      name: file.name, // 원본 파일명 유지 (서버에서 디코딩 처리)
       size: file.size,
       type: file.type,
       status: "pending" as const,
