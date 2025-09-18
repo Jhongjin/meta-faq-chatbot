@@ -83,8 +83,22 @@ async function handleFileUpload(request: NextRequest) {
     const fileContent = body.fileContent;
     const type = body.type;
     
+    // 메타데이터 기반 파일 처리
+    let processedContent: string;
+    
+    if (fileContent.startsWith('PDF_METADATA:')) {
+      // PDF 파일 - 메타데이터만 처리
+      processedContent = `PDF 파일이 업로드되었습니다.\n파일명: ${fileName}\n크기: ${fileSize} bytes\n타입: ${fileType}`;
+    } else if (fileContent.startsWith('FILE_METADATA:')) {
+      // 기타 파일 - 메타데이터만 처리
+      processedContent = `파일이 업로드되었습니다.\n파일명: ${fileName}\n크기: ${fileSize} bytes\n타입: ${fileType}`;
+    } else {
+      // 텍스트 파일 - 실제 내용 사용
+      processedContent = fileContent;
+    }
+    
     // 가상의 File 객체 생성
-    const file = new File([fileContent], fileName, { type: fileType });
+    const file = new File([processedContent], fileName, { type: fileType });
     
     console.log('FormData 내용:', {
       file: file ? { name: file.name, size: file.size, type: file.type } : 'null',

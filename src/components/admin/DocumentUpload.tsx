@@ -122,18 +122,28 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         f.id === fileId ? { ...f, status: "uploading", progress: 10 } : f
       ));
 
+      // 파일 크기 제한 확인 (10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        throw new Error(`파일 크기가 너무 큽니다. 최대 ${maxSize / (1024 * 1024)}MB까지 업로드 가능합니다.`);
+      }
+
       // 파일을 텍스트로 변환하여 전송 (Vercel 서버리스 호환)
       let fileContent: string;
       
       if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-        // 텍스트 파일인 경우
-        fileContent = await file.text();
+        // 텍스트 파일인 경우 - 크기 제한
+        if (file.size > 1024 * 1024) { // 1MB 제한
+          fileContent = `[텍스트 파일이 너무 큽니다. 서버에서 처리됩니다]\n파일명: ${file.name}\n크기: ${file.size} bytes`;
+        } else {
+          fileContent = await file.text();
+        }
       } else if (file.type === 'application/pdf') {
-        // PDF 파일인 경우 - 간단한 텍스트 추출 시뮬레이션
-        fileContent = `PDF 파일: ${file.name}\n크기: ${file.size} bytes\n타입: ${file.type}\n\n[PDF 내용은 서버에서 처리됩니다]`;
+        // PDF 파일인 경우 - 메타데이터만 전송
+        fileContent = `PDF_METADATA:${file.name}:${file.size}:${file.type}`;
       } else {
-        // 기타 파일 타입
-        fileContent = `파일: ${file.name}\n크기: ${file.size} bytes\n타입: ${file.type}\n\n[파일 내용은 서버에서 처리됩니다]`;
+        // 기타 파일 타입 - 메타데이터만 전송
+        fileContent = `FILE_METADATA:${file.name}:${file.size}:${file.type}`;
       }
 
       console.log('파일 내용 변환 완료:', {
@@ -143,18 +153,29 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         contentLength: fileContent.length
       });
 
+      // 스택 오버플로우 방지를 위한 안전한 JSON 생성
+      const requestData = {
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        fileContent: fileContent,
+        type: 'file'
+      };
+
+      let requestBody: string;
+      try {
+        requestBody = JSON.stringify(requestData);
+      } catch (error) {
+        console.error('JSON.stringify 오류:', error);
+        throw new Error('파일 데이터를 JSON으로 변환하는 중 오류가 발생했습니다.');
+      }
+
       const response = await fetch('/api/admin/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size,
-          fileContent: fileContent,
-          type: 'file'
-        })
+        body: requestBody
       });
 
       let result;
