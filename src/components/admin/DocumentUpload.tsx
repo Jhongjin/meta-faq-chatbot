@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, FileText, Link, X, CheckCircle, AlertCircle, AlertTriangle, Plus, File, Globe, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,8 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
   const [urls, setUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  // File 객체를 별도로 관리하는 Map
+  const fileMapRef = useRef<Map<string, File>>(new Map());
   const [duplicateFile, setDuplicateFile] = useState<{
     file: File;
     existingDocument: any;
@@ -94,14 +96,20 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       });
     }
 
-    const newFiles: DocumentFile[] = validFiles.map((file, index) => ({
-      id: `file-${Date.now()}-${index}`,
-      name: file.name, // 원본 파일명 유지 (서버에서 디코딩 처리)
-      size: file.size,
-      type: file.type,
-      status: "pending" as const,
-      progress: 0,
-    }));
+    const newFiles: DocumentFile[] = validFiles.map((file, index) => {
+      const fileId = `file-${Date.now()}-${index}`;
+      // File 객체를 Map에 저장
+      fileMapRef.current.set(fileId, file);
+      
+      return {
+        id: fileId,
+        name: file.name, // 원본 파일명 유지 (서버에서 디코딩 처리)
+        size: file.size,
+        type: file.type,
+        status: "pending" as const,
+        progress: 0,
+      };
+    });
 
     console.log('생성된 DocumentFile 객체들:', newFiles.map(f => ({ id: f.id, name: f.name })));
 
@@ -110,6 +118,8 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
 
 
   const handleFileRemove = (fileId: string) => {
+    // Map에서도 File 객체 제거
+    fileMapRef.current.delete(fileId);
     setFiles(prev => prev.filter(file => file.id !== fileId));
   };
 
@@ -311,8 +321,8 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
           try {
             console.log(`파일 처리 시작: ${file.name}`, { fileId: file.id });
             
-            // 파일 입력 요소에서 실제 File 객체 찾기
-            const actualFile = await findActualFile(file.name);
+            // Map에서 실제 File 객체 찾기
+            const actualFile = await findActualFile(file.id);
             if (actualFile) {
               console.log(`파일 찾음: ${file.name}`);
               return await uploadAndIndexDocument(actualFile, file.id);
@@ -355,8 +365,17 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
 
       // 성공 시 상태 초기화
       if (successCount > 0) {
-        // 성공한 파일들을 제거
-        setFiles(prev => prev.filter(f => f.status !== "success"));
+        // 성공한 파일들을 제거하고 Map에서도 제거
+        setFiles(prev => {
+          const remainingFiles = prev.filter(f => f.status !== "success");
+          // Map에서도 성공한 파일들 제거
+          prev.forEach(f => {
+            if (f.status === "success") {
+              fileMapRef.current.delete(f.id);
+            }
+          });
+          return remainingFiles;
+        });
         
         // 부모 컴포넌트에 업로드 완료 알림   
         if (onUpload) {
@@ -380,17 +399,27 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
     }
   };
 
-  // 실제 파일 객체를 찾는 함수 (백업용)
-  const findActualFile = async (fileName: string): Promise<File | null> => {
-    // 파일 입력 요소에서 실제 파일 찾기
+  // 실제 파일 객체를 찾는 함수
+  const findActualFile = async (fileId: string): Promise<File | null> => {
+    // Map에서 File 객체 찾기
+    const file = fileMapRef.current.get(fileId);
+    if (file) {
+      console.log(`Map에서 파일 찾음: ${file.name}`);
+      return file;
+    }
+    
+    // 백업: 파일 입력 요소에서 찾기
     const fileInput = document.getElementById('file-upload') as HTMLInputElement;
     if (fileInput && fileInput.files) {
       const fileArray = Array.from(fileInput.files);
-      return fileArray.find(file => file.name === fileName) || null;
+      const foundFile = fileArray.find(f => f.name === fileId);
+      if (foundFile) {
+        console.log(`파일 입력에서 파일 찾음: ${foundFile.name}`);
+        return foundFile;
+      }
     }
     
-    // 현재 상태에서 파일 찾기 (드래그 앤 드롭으로 추가된 파일)
-    // File 객체는 더 이상 저장되지 않으므로 null 반환
+    console.error(`파일을 찾을 수 없음: ${fileId}`);
     return null;
   };
 
