@@ -7,9 +7,10 @@ import { User } from "@supabase/supabase-js";
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
+    const supabase = createClient();
+    
     // 현재 세션 확인
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -28,10 +29,11 @@ export function useAuth() {
     );
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, []); // 의존성 배열을 빈 배열로 변경
 
   const checkEmailExists = async (email: string): Promise<boolean> => {
     try {
+      const supabase = createClient();
       // 데이터베이스 함수를 사용하여 이메일 중복 확인
       const { data, error } = await supabase
         .rpc('check_email_exists', { input_email: email });
@@ -64,6 +66,7 @@ export function useAuth() {
       }
 
       // 2단계: Supabase Auth로 회원가입 시도
+      const supabase = createClient();
       const startTime = Date.now();
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -128,6 +131,7 @@ export function useAuth() {
 
   const signIn = async (email: string, password: string) => {
     try {
+      const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -159,6 +163,7 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
+      const supabase = createClient();
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('로그아웃 오류:', error);
