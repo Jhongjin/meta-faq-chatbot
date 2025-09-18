@@ -96,7 +96,7 @@ async function handleFileUpload(request: NextRequest) {
       
       const { data: existingDocs, error: checkError } = await supabase
         .from('documents')
-        .select('id, title, metadata')
+        .select('id, title')
         .eq('title', file.name)
         .limit(1);
       
@@ -104,24 +104,21 @@ async function handleFileUpload(request: NextRequest) {
         console.warn('중복 체크 오류:', checkError);
       } else if (existingDocs && existingDocs.length > 0) {
         const existingDoc = existingDocs[0];
-        const existingFileSize = existingDoc.metadata?.fileSize;
         
-        if (existingFileSize === file.size) {
-          console.log(`⚠️ 중복 파일 발견: ${file.name} (기존 문서 ID: ${existingDoc.id})`);
-          
-          return NextResponse.json({
-            success: false,
-            isDuplicate: true,
-            message: `동일한 파일명과 크기의 파일이 이미 존재합니다: ${file.name}`,
-            data: {
-              existingDocumentId: existingDoc.id,
-              existingDocument: existingDoc,
-              fileName: file.name,
-              fileSize: file.size,
-              status: 'completed'
-            }
-          }, { status: 409 }); // 409 Conflict
-        }
+        console.log(`⚠️ 중복 파일 발견: ${file.name} (기존 문서 ID: ${existingDoc.id})`);
+        
+        return NextResponse.json({
+          success: false,
+          isDuplicate: true,
+          message: `동일한 파일명의 파일이 이미 존재합니다: ${file.name}`,
+          data: {
+            existingDocumentId: existingDoc.id,
+            existingDocument: existingDoc,
+            fileName: file.name,
+            fileSize: file.size,
+            status: 'completed'
+          }
+        }, { status: 409 }); // 409 Conflict
       }
     } catch (duplicateCheckError) {
       console.warn('중복 체크 중 오류 발생, 계속 진행:', duplicateCheckError);
@@ -165,7 +162,7 @@ async function handleFileUpload(request: NextRequest) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
       
-      // 문서 저장
+      // 문서 저장 (metadata 컬럼 제거)
       const { error: docError } = await supabase
         .from('documents')
         .insert({
@@ -173,14 +170,7 @@ async function handleFileUpload(request: NextRequest) {
           title: file.name,
           type: 'file',
           status: 'completed',
-          url: null,
-          metadata: {
-            fileName: file.name,
-            fileSize: file.size,
-            fileType: file.type,
-            chunksCount: chunks.length,
-            embeddingsCount: embeddings.length
-          }
+          url: null
         });
       
       if (docError) {
