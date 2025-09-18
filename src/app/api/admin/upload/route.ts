@@ -86,22 +86,59 @@ async function handleFileUpload(request: NextRequest) {
 
     console.log('파일 유효성 검사 통과');
 
-    // 간단한 파일 처리 시뮬레이션 (실제 인덱싱 로직은 나중에 추가)
-    const mockResult = {
-      documentId: `doc_${Date.now()}`,
-      fileName: file.name,
-      chunksProcessed: Math.ceil(file.size / 1000),
-      embeddingsGenerated: Math.ceil(file.size / 1000),
-      processingTime: Date.now(),
-      status: 'completed'
-    };
+    // 파일 중복 체크
+    const { vectorStorageService } = await import('@/lib/services/VectorStorageService');
+    const duplicateCheck = await vectorStorageService.checkFileExists(file.name, file.size);
+    
+    if (duplicateCheck.exists) {
+      console.log(`⚠️ 중복 파일 발견: ${file.name} (기존 문서 ID: ${duplicateCheck.documentId})`);
+      
+      // 중복 파일 알럿 응답
+      return NextResponse.json({
+        success: false,
+        isDuplicate: true,
+        message: `동일한 파일명과 크기의 파일이 이미 존재합니다: ${file.name}`,
+        data: {
+          existingDocumentId: duplicateCheck.documentId,
+          existingDocument: duplicateCheck.document,
+          fileName: file.name,
+          fileSize: file.size,
+          status: duplicateCheck.document?.status
+        }
+      }, { status: 409 }); // 409 Conflict
+    }
 
-    console.log('파일 처리 완료:', mockResult);
+    // 실제 DocumentIndexingService를 통한 파일 처리 및 인덱싱
+    const { documentIndexingService } = await import('@/lib/services/DocumentIndexingService');
+    
+    console.log(`파일 인덱싱 시작: ${file.name} (${file.size} bytes)`);
+    
+    const result = await documentIndexingService.indexFile(file);
+
+    if (result.status === 'failed') {
+      console.error(`파일 인덱싱 실패: ${file.name}`, result.error);
+      return NextResponse.json(
+        { 
+          error: result.error || '파일 처리에 실패했습니다.',
+          details: `파일명: ${file.name}, 크기: ${file.size} bytes, 타입: ${file.type}`
+        },
+        { status: 500 }
+      );
+    }
+    
+    console.log(`파일 인덱싱 완료: ${file.name} - ${result.chunksProcessed}개 청크, ${result.embeddingsGenerated}개 임베딩`);
 
     return NextResponse.json({
       success: true,
       message: '파일이 성공적으로 업로드되고 인덱싱되었습니다.',
-      data: mockResult
+      data: {
+        documentId: result.documentId,
+        fileName: file.name,
+        chunksProcessed: result.chunksProcessed,
+        embeddingsGenerated: result.embeddingsGenerated,
+        processingTime: result.processingTime,
+        status: 'completed'
+      }
     });
 
   } catch (error) {
@@ -146,17 +183,35 @@ async function handleUrlProcessing(request: NextRequest) {
       );
     }
 
-    console.log('URL 처리 완료:', url);
+    // 실제 DocumentIndexingService를 통한 URL 처리 및 인덱싱
+    const { documentIndexingService } = await import('@/lib/services/DocumentIndexingService');
+    
+    console.log(`URL 인덱싱 시작: ${url}`);
+    
+    const result = await documentIndexingService.indexURL(url);
+
+    if (result.status === 'failed') {
+      console.error(`URL 인덱싱 실패: ${url}`, result.error);
+      return NextResponse.json(
+        { 
+          error: result.error || 'URL 처리에 실패했습니다.',
+          details: `URL: ${url}`
+        },
+        { status: 500 }
+      );
+    }
+    
+    console.log(`URL 인덱싱 완료: ${url} - ${result.chunksProcessed}개 청크, ${result.embeddingsGenerated}개 임베딩`);
 
     return NextResponse.json({
       success: true,
       message: 'URL이 성공적으로 처리되고 인덱싱되었습니다.',
       data: {
-        documentId: `url_${Date.now()}`,
+        documentId: result.documentId,
         url: url,
-        chunksProcessed: 1,
-        embeddingsGenerated: 1,
-        processingTime: Date.now(),
+        chunksProcessed: result.chunksProcessed,
+        embeddingsGenerated: result.embeddingsGenerated,
+        processingTime: result.processingTime,
         status: 'completed'
       }
     });
@@ -172,6 +227,88 @@ async function handleUrlProcessing(request: NextRequest) {
       { 
         error: errorMessage,
         details: error instanceof Error ? error.stack : undefined
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// 중복 파일 덮어쓰기 처리
+export async function PUT(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+    
+    if (action === 'overwrite-file') {
+      return await handleFileOverwrite(request);
+    } else {
+      return NextResponse.json(
+        { error: '지원하지 않는 액션입니다.' },
+        { status: 400 }
+      );
+    }
+  } catch (error) {
+    console.error('파일 덮어쓰기 오류:', error);
+    return NextResponse.json(
+      { 
+        error: '파일 덮어쓰기 중 오류가 발생했습니다.',
+        details: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// 파일 덮어쓰기 처리 함수
+async function handleFileOverwrite(request: NextRequest) {
+  try {
+    console.log('파일 덮어쓰기 요청 시작');
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    const existingDocumentId = formData.get('existingDocumentId') as string;
+    
+    if (!file || !existingDocumentId) {
+      return NextResponse.json(
+        { error: '파일과 기존 문서 ID가 필요합니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 기존 문서 삭제
+    const { vectorStorageService } = await import('@/lib/services/VectorStorageService');
+    await vectorStorageService.deleteDocument(existingDocumentId);
+    console.log(`기존 문서 삭제 완료: ${existingDocumentId}`);
+
+    // 새 파일 인덱싱
+    const { documentIndexingService } = await import('@/lib/services/DocumentIndexingService');
+    const result = await documentIndexingService.indexFile(file);
+
+    if (result.status === 'failed') {
+      return NextResponse.json(
+        { error: result.error || '파일 처리에 실패했습니다.' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: '파일이 성공적으로 덮어쓰기되었습니다.',
+      data: {
+        documentId: result.documentId,
+        fileName: file.name,
+        chunksProcessed: result.chunksProcessed,
+        embeddingsGenerated: result.embeddingsGenerated,
+        processingTime: result.processingTime,
+        status: 'completed'
+      }
+    });
+
+  } catch (error) {
+    console.error('파일 덮어쓰기 처리 오류:', error);
+    return NextResponse.json(
+      { 
+        error: '파일 덮어쓰기 처리 중 오류가 발생했습니다.',
+        details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );
@@ -194,13 +331,66 @@ export async function DELETE(request: NextRequest) {
 
     console.log('문서 삭제 요청:', { documentId, url });
 
+    // 실제 VectorStorageService를 통한 문서 삭제
+    const { vectorStorageService } = await import('@/lib/services/VectorStorageService');
+    
+    let targetDocumentId = documentId;
+    
+    // URL이 제공된 경우, URL로 문서 ID를 찾기
+    if (url && !documentId) {
+      console.log(`🔍 URL로 문서 찾기: ${url}`);
+      
+      const { data: documents, error: findError } = await vectorStorageService.supabase
+        .from('documents')
+        .select('id, title, url')
+        .eq('url', url)
+        .limit(1);
+      
+      console.log('문서 검색 결과:', { documents, findError });
+      
+      if (findError) {
+        console.error('문서 검색 오류:', findError);
+        return NextResponse.json(
+          { error: `문서 검색 중 오류가 발생했습니다: ${findError.message}` },
+          { status: 500 }
+        );
+      }
+      
+      if (!documents || documents.length === 0) {
+        console.log('해당 URL과 일치하는 문서를 찾을 수 없음');
+        return NextResponse.json(
+          { error: '해당 URL과 일치하는 문서를 찾을 수 없습니다.' },
+          { status: 404 }
+        );
+      }
+      
+      targetDocumentId = documents[0].id;
+      console.log(`✅ 문서 ID 찾음: ${targetDocumentId}`);
+    }
+    
+    if (!targetDocumentId) {
+      return NextResponse.json(
+        { error: '문서 ID를 찾을 수 없습니다.' },
+        { status: 400 }
+      );
+    }
+    
+    const result = await vectorStorageService.deleteDocument(targetDocumentId);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error || '문서 삭제에 실패했습니다.' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      message: '문서가 성공적으로 삭제되었습니다.',
+      message: '문서와 관련된 모든 데이터가 성공적으로 삭제되었습니다.',
       data: {
-        documentId,
-        deletedChunks: 0,
-        deletedEmbeddings: 0
+        documentId: targetDocumentId,
+        deletedChunks: result.deletedChunks,
+        deletedEmbeddings: result.deletedEmbeddings
       }
     });
 
@@ -227,33 +417,27 @@ export async function GET(request: NextRequest) {
 
     console.log('문서 목록 조회:', { limit, offset, status, type });
 
-    // 모의 데이터 반환
-    const mockDocuments = [
-      {
-        id: 'doc_1',
-        title: 'Test Document 1',
-        type: 'file',
-        status: 'completed',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ];
+    // 실제 VectorStorageService를 통한 문서 목록 조회
+    const { vectorStorageService } = await import('@/lib/services/VectorStorageService');
+    
+    const documents = await vectorStorageService.getDocuments({
+      limit,
+      offset,
+      status: status || undefined,
+      type: type || undefined
+    });
 
-    const mockStats = {
-      totalDocuments: 1,
-      totalChunks: 10,
-      totalEmbeddings: 10
-    };
+    const stats = await vectorStorageService.getDocumentStats();
 
     return NextResponse.json({
       success: true,
       data: {
-        documents: mockDocuments,
-        stats: mockStats,
+        documents,
+        stats,
         pagination: {
           limit,
           offset,
-          total: mockStats.totalDocuments
+          total: stats.totalDocuments
         }
       }
     });
