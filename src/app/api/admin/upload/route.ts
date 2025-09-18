@@ -19,13 +19,13 @@ export async function POST(request: NextRequest) {
     console.log('📋 Content-Type:', contentType);
     
     if (contentType?.includes('multipart/form-data')) {
-      console.log('📁 파일 업로드 처리 시작');
+      console.log('📁 FormData 파일 업로드 처리 시작');
       // 파일 업로드 처리
       return await handleFileUpload(request);
     } else if (contentType?.includes('application/json')) {
-      console.log('🌐 URL 처리 시작');
-      // URL 처리
-      return await handleUrlProcessing(request);
+      console.log('🌐 JSON 요청 처리 시작');
+      // JSON 요청 처리 (Base64 파일 또는 URL)
+      return await handleJsonRequest(request);
     } else {
       console.log('❌ 지원하지 않는 Content-Type:', contentType);
       return NextResponse.json(
@@ -234,6 +234,135 @@ async function handleFileOverwrite(request: NextRequest) {
     return NextResponse.json(
       { 
         error: '파일 덮어쓰기 처리 중 오류가 발생했습니다.',
+        details: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// JSON 요청 처리 함수 (Base64 파일 또는 URL)
+async function handleJsonRequest(request: NextRequest) {
+  try {
+    const body = await request.json();
+    console.log('JSON 요청 본문:', { 
+      fileName: body.fileName, 
+      fileSize: body.fileSize, 
+      fileType: body.fileType,
+      hasFileContent: !!body.fileContent,
+      hasUrl: !!body.url,
+      type: body.type
+    });
+
+    if (body.fileContent && body.fileName) {
+      // Base64 파일 처리
+      console.log('📁 Base64 파일 처리 시작');
+      return await handleBase64FileUpload(body);
+    } else if (body.url) {
+      // URL 처리
+      console.log('🌐 URL 처리 시작');
+      return await handleUrlProcessing(request);
+    } else {
+      return NextResponse.json(
+        { error: '파일 내용 또는 URL이 제공되지 않았습니다.' },
+        { status: 400 }
+      );
+    }
+  } catch (error) {
+    console.error('JSON 요청 처리 오류:', error);
+    return NextResponse.json(
+      { 
+        error: 'JSON 요청 처리 중 오류가 발생했습니다.',
+        details: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// Base64 파일 업로드 처리 함수
+async function handleBase64FileUpload(body: any) {
+  try {
+    const { fileName, fileSize, fileType, fileContent, type } = body;
+
+    if (!fileContent) {
+      return NextResponse.json(
+        { error: '파일 내용이 제공되지 않았습니다.' },
+        { status: 400 }
+      );
+    }
+
+    // Base64 디코딩
+    const decodedContent = atob(fileContent);
+    const buffer = Buffer.from(decodedContent, 'binary');
+    
+    // 가상 File 객체 생성
+    const file = new File([buffer], fileName, { type: fileType });
+
+    console.log('Base64 파일 디코딩 완료:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    });
+
+    // 파일 중복 체크
+    const { vectorStorageService } = await import('@/lib/services/VectorStorageService');
+    const duplicateCheck = await vectorStorageService.checkFileExists(fileName, fileSize);
+    
+    if (duplicateCheck.exists) {
+      console.log(`⚠️ 중복 파일 발견: ${fileName}`);
+      return NextResponse.json({
+        success: false,
+        isDuplicate: true,
+        message: `동일한 파일명과 크기의 파일이 이미 존재합니다: ${fileName}`,
+        data: {
+          existingDocumentId: duplicateCheck.documentId,
+          existingDocument: duplicateCheck.document,
+          fileName: fileName,
+          fileSize: fileSize,
+          status: duplicateCheck.document?.status
+        }
+      }, { status: 409 });
+    }
+
+    // DocumentIndexingService를 통한 파일 처리 및 인덱싱
+    const { documentIndexingService } = await import('@/lib/services/DocumentIndexingService');
+    
+    console.log(`파일 인덱싱 시작: ${fileName} (${fileSize} bytes)`);
+    
+    const result = await documentIndexingService.indexFile(file);
+
+    if (result.status === 'failed') {
+      console.error(`파일 인덱싱 실패: ${fileName}`, result.error);
+      return NextResponse.json(
+        { 
+          error: result.error || '파일 처리에 실패했습니다.',
+          details: `파일명: ${fileName}, 크기: ${fileSize} bytes, 타입: ${fileType}`
+        },
+        { status: 500 }
+      );
+    }
+    
+    console.log(`파일 인덱싱 완료: ${fileName} - ${result.chunksProcessed}개 청크, ${result.embeddingsGenerated}개 임베딩`);
+
+    return NextResponse.json({
+      success: true,
+      message: '파일이 성공적으로 업로드되고 인덱싱되었습니다.',
+      data: {
+        documentId: result.documentId,
+        fileName: fileName,
+        chunksProcessed: result.chunksProcessed,
+        embeddingsGenerated: result.embeddingsGenerated,
+        processingTime: result.processingTime,
+        status: 'completed'
+      }
+    });
+
+  } catch (error) {
+    console.error('Base64 파일 업로드 처리 오류:', error);
+    return NextResponse.json(
+      { 
+        error: 'Base64 파일 업로드 처리 중 오류가 발생했습니다.',
         details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
