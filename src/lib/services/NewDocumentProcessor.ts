@@ -146,11 +146,11 @@ export class NewDocumentProcessor {
 
       console.log(`📄 문서 레코드 저장 완료: ${document.id}`);
 
-      // 2. 청크 데이터 저장
+      // 2. 청크 데이터 저장 (chunk_id를 인덱스 번호로 사용)
       const chunkRecords = document.chunks.map((chunk, index) => ({
         id: chunk.id,
         document_id: document.id,
-        chunk_id: chunk.id,
+        chunk_id: index, // 인덱스 번호를 chunk_id로 사용
         content: chunk.content,
         embedding: chunk.embedding,
         metadata: {
