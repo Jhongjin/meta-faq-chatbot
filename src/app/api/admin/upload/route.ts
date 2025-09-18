@@ -33,12 +33,16 @@ export async function POST(request: NextRequest) {
 // 중복 파일 덮어쓰기 처리
 export async function PUT(request: NextRequest) {
   try {
+    console.log('PUT 요청 수신:', request.url);
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
+    
+    console.log('액션 확인:', action);
     
     if (action === 'overwrite-file') {
       return await handleFileOverwrite(request);
     } else {
+      console.log('지원하지 않는 액션:', action);
       return NextResponse.json(
         { error: '지원하지 않는 액션입니다.' },
         { status: 400 }
@@ -197,7 +201,14 @@ async function handleFileOverwrite(request: NextRequest) {
     const file = formData.get('file') as File;
     const existingDocumentId = formData.get('existingDocumentId') as string;
     
+    console.log('덮어쓰기 요청 데이터:', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      existingDocumentId
+    });
+    
     if (!file || !existingDocumentId) {
+      console.log('필수 데이터 누락:', { file: !!file, existingDocumentId: !!existingDocumentId });
       return NextResponse.json(
         { error: '파일과 기존 문서 ID가 필요합니다.' },
         { status: 400 }
@@ -206,19 +217,33 @@ async function handleFileOverwrite(request: NextRequest) {
 
     // 기존 문서 삭제
     const { vectorStorageService } = await import('@/lib/services/VectorStorageService');
-    await vectorStorageService.deleteDocument(existingDocumentId);
+    console.log(`기존 문서 삭제 시작: ${existingDocumentId}`);
+    const deleteResult = await vectorStorageService.deleteDocument(existingDocumentId);
+    
+    if (!deleteResult.success) {
+      console.error('기존 문서 삭제 실패:', deleteResult.error);
+      return NextResponse.json(
+        { error: `기존 문서 삭제 실패: ${deleteResult.error}` },
+        { status: 500 }
+      );
+    }
+    
     console.log(`기존 문서 삭제 완료: ${existingDocumentId}`);
 
     // 새 파일 인덱싱
     const { documentIndexingService } = await import('@/lib/services/DocumentIndexingService');
+    console.log(`새 파일 인덱싱 시작: ${file.name}`);
     const result = await documentIndexingService.indexFile(file);
 
     if (result.status === 'failed') {
+      console.error('새 파일 인덱싱 실패:', result.error);
       return NextResponse.json(
         { error: result.error || '파일 처리에 실패했습니다.' },
         { status: 500 }
       );
     }
+
+    console.log(`파일 덮어쓰기 완료: ${file.name} - ${result.chunksProcessed}개 청크, ${result.embeddingsGenerated}개 임베딩`);
 
     return NextResponse.json({
       success: true,

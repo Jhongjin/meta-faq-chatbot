@@ -241,14 +241,26 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
       formData.append('file', duplicateFile.file);
       formData.append('existingDocumentId', duplicateFile.existingDocumentId);
 
+      console.log('덮어쓰기 요청 시작:', {
+        fileName: duplicateFile.file.name,
+        existingDocumentId: duplicateFile.existingDocumentId
+      });
+
       const response = await fetch('/api/admin/upload?action=overwrite-file', {
         method: 'PUT',
         body: formData,
       });
 
+      console.log('덮어쓰기 응답 상태:', response.status);
+
       if (!response.ok) {
-        throw new Error('파일 덮어쓰기 실패');
+        const errorText = await response.text();
+        console.error('덮어쓰기 실패 응답:', errorText);
+        throw new Error(`파일 덮어쓰기 실패 (${response.status}): ${errorText}`);
       }
+
+      const result = await response.json();
+      console.log('덮어쓰기 성공:', result);
 
       // 파일 상태를 성공으로 변경
       setFiles(prev => prev.map(f => 
