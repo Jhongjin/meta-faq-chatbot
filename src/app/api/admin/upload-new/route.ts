@@ -335,7 +335,7 @@ export async function GET(request: NextRequest) {
     // 통계 조회
     const { data: stats, error: statsError } = await supabase
       .from('documents')
-      .select('status, type')
+      .select('status, type, chunk_count')
       .then(({ data }) => {
         if (!data) return { data: null, error: null };
         
