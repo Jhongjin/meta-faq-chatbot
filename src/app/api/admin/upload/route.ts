@@ -178,10 +178,10 @@ async function handleFileUpload(request: NextRequest) {
         throw new Error(`문서 저장 실패: ${docError.message}`);
       }
       
-      // 청크 저장
+      // 청크 저장 (올바른 컬럼명 사용)
       const chunkInserts = chunks.map((chunk, index) => ({
         document_id: documentId,
-        chunk_index: index,
+        chunk_id: `${documentId}_chunk_${index}`,
         content: chunk,
         embedding: embeddings[index]
       }));
