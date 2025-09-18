@@ -122,23 +122,29 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         f.id === fileId ? { ...f, status: "uploading", progress: 10 } : f
       ));
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', 'file');
-
-      console.log('FormData 생성 완료:', {
+      // Base64 인코딩 방식으로 파일 전송
+      const arrayBuffer = await file.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      
+      console.log('Base64 인코딩 완료:', {
         fileName: file.name,
         fileSize: file.size,
-        fileType: file.type
+        fileType: file.type,
+        base64Length: base64.length
       });
 
       const response = await fetch('/api/admin/upload', {
         method: 'POST',
-        body: formData,
-        // Content-Type을 명시적으로 설정하지 않음 (브라우저가 자동으로 multipart/form-data 설정)
         headers: {
-          // Content-Type을 명시적으로 설정하지 않음
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          fileData: base64,
+          type: 'file'
+        })
       });
 
       let result;

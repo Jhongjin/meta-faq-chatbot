@@ -70,24 +70,40 @@ async function handleFileUpload(request: NextRequest) {
   try {
     console.log('파일 업로드 요청 시작');
     
-    // Vercel 서버리스 환경에서 FormData 처리
     const contentType = request.headers.get('content-type');
     console.log('Content-Type:', contentType);
     
-    if (!contentType?.includes('multipart/form-data')) {
-      console.error('잘못된 Content-Type:', contentType);
+    let file: File;
+    let type: string;
+    
+    if (contentType?.includes('multipart/form-data')) {
+      // FormData 방식
+      const formData = await request.formData();
+      console.log('FormData 파싱 성공');
+      
+      file = formData.get('file') as File;
+      type = formData.get('type') as string;
+    } else if (contentType?.includes('application/json')) {
+      // Base64 JSON 방식
+      const body = await request.json();
+      console.log('JSON 파싱 성공');
+      
+      // Base64를 File 객체로 변환
+      const binaryString = atob(body.fileData);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      
+      file = new File([bytes], body.fileName, { type: body.fileType });
+      type = body.type;
+    } else {
+      console.error('지원하지 않는 Content-Type:', contentType);
       return NextResponse.json(
-        { error: 'multipart/form-data가 필요합니다.' },
+        { error: 'multipart/form-data 또는 application/json이 필요합니다.' },
         { status: 400 }
       );
     }
-    
-    // FormData 파싱 시도
-    const formData = await request.formData();
-    console.log('FormData 파싱 성공');
-    
-    const file = formData.get('file') as File;
-    const type = formData.get('type') as string;
     
     console.log('FormData 내용:', {
       file: file ? { name: file.name, size: file.size, type: file.type } : 'null',
