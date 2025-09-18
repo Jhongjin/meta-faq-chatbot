@@ -8,7 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 export interface ProcessedDocument {
   id: string;
   title: string;
-  type: 'pdf' | 'docx' | 'txt' | 'url';
+  type: 'file' | 'url';
   content: string;
   chunks: DocumentChunk[];
   metadata: {
@@ -130,7 +130,7 @@ export class NewDocumentProcessor {
         .insert({
           id: document.id,
           title: document.title,
-          type: document.type,
+          type: document.type, // 'file' 또는 'url'
           status: 'processing',
           chunk_count: document.chunks.length,
           created_at: document.metadata.uploadedAt,
@@ -385,16 +385,11 @@ export class NewDocumentProcessor {
   }
 
   /**
-   * 파일 타입 추출
+   * 파일 타입 추출 (데이터베이스 제약 조건에 맞게 수정)
    */
-  private getFileType(filename: string): 'pdf' | 'docx' | 'txt' | 'url' {
-    const ext = filename.toLowerCase().split('.').pop();
-    switch (ext) {
-      case 'pdf': return 'pdf';
-      case 'docx': return 'docx';
-      case 'txt': return 'txt';
-      default: return 'txt';
-    }
+  private getFileType(filename: string): 'file' | 'url' {
+    // 데이터베이스 제약 조건에 맞게 'file' 또는 'url'만 반환
+    return 'file';
   }
 
   /**
