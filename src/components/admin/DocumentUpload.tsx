@@ -358,11 +358,12 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         // 성공한 파일들을 제거
         setFiles(prev => prev.filter(f => f.status !== "success"));
         
-        // 부모 컴포넌트에 업로드 완료 알림
+        // 부모 컴포넌트에 업로드 완료 알림   
         if (onUpload) {
-          const successfulFiles = files.filter(f => f.status === "success" && f.file);
-          if (successfulFiles.length > 0) {
-            onUpload(successfulFiles.map(f => f.file!));
+          const successfulFiles = files.filter(f => f.status === "success");
+          if (successfulFiles.length > 0) {   
+            // File 객체는 더 이상 저장되지 않으므로 빈 배열 전달
+            onUpload([]);
           }
         }
       }
