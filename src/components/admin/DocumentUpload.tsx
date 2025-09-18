@@ -140,7 +140,8 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
         fileType: file.type
       });
 
-      const response = await fetch('/api/admin/upload', {
+      // 임시로 테스트 API 사용
+      const response = await fetch('/api/upload-test', {
         method: 'POST',
         body: formData,
         // Content-Type을 명시적으로 설정하지 않음 (FormData 사용 시 브라우저가 자동 설정)

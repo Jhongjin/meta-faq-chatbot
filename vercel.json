@@ -5,14 +5,14 @@
   "installCommand": "npm install",
   "devCommand": "npm run dev",
   "functions": {
-    "src/app/api/admin/upload/route.ts": {
+    "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/admin/upload",
-      "dest": "/api/admin/upload"
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
     }
   ]
 }
