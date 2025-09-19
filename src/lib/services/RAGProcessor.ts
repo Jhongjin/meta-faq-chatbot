@@ -95,8 +95,9 @@ export class RAGProcessor {
       console.log('📄 원본 문서 내용 길이:', document.content.length, '자');
       console.log('📄 원본 문서 내용 미리보기:', document.content.substring(0, 200) + '...');
 
-      // 텍스트 분할
-      const chunks = await this.textSplitter.splitText(document.content);
+      // 텍스트 분할 - createDocuments 사용
+      const documents = await this.textSplitter.createDocuments([document.content]);
+      const chunks = documents.map(doc => doc.pageContent);
       
       console.log(`✅ 청킹 완료: ${chunks.length}개 청크 생성`);
       console.log('📄 청크 타입:', typeof chunks);
