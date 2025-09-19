@@ -154,17 +154,57 @@ function ChatPageContent() {
     }
   }, [searchParams, isInitialized, user, hasProcessedInitialQuestion]); // hasProcessedInitialQuestion 추가
 
-  // 자동 메일 발송 이벤트 리스너
+  // 자동 메일 발송 이벤트 리스너 - 안전한 이벤트 처리
   useEffect(() => {
-    const handleSendContactEmail = (event: CustomEvent) => {
-      const { question } = event.detail;
-      handleContactRequest(question);
+    const handleSendContactEmail = (event: Event) => {
+      try {
+        // 이벤트 객체를 안전하게 직렬화하여 처리
+        let eventData: any = null;
+        
+        if (event && typeof event === 'object') {
+          // CustomEvent인지 확인
+          if ('detail' in event) {
+            const customEvent = event as CustomEvent;
+            eventData = customEvent.detail;
+          } else {
+            // 일반 이벤트인 경우 타겟에서 데이터 추출
+            const target = event.target as any;
+            if (target && target.dataset) {
+              eventData = target.dataset;
+            }
+          }
+        }
+
+        // 이벤트 데이터 검증 및 처리
+        if (eventData && 
+            typeof eventData === 'object' && 
+            eventData !== null &&
+            'question' in eventData &&
+            typeof eventData.question === 'string' &&
+            eventData.question.trim()) {
+          
+          console.log('연락처 이메일 이벤트 처리:', eventData.question);
+          handleContactRequest(eventData.question);
+        } else {
+          console.warn('유효하지 않은 이벤트 데이터:', {
+            hasEventData: !!eventData,
+            dataType: typeof eventData,
+            hasQuestion: eventData && 'question' in eventData,
+            questionType: eventData && typeof eventData.question,
+            questionValue: eventData && eventData.question
+          });
+        }
+      } catch (error) {
+        console.error('연락처 이메일 이벤트 처리 중 오류:', error);
+        // 오류 발생 시에도 앱이 중단되지 않도록 처리
+      }
     };
 
-    window.addEventListener('sendContactEmail', handleSendContactEmail as EventListener);
+    // 이벤트 리스너 등록
+    window.addEventListener('sendContactEmail', handleSendContactEmail);
     
     return () => {
-      window.removeEventListener('sendContactEmail', handleSendContactEmail as EventListener);
+      window.removeEventListener('sendContactEmail', handleSendContactEmail);
     };
   }, [messages]);
 

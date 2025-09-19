@@ -41,13 +41,6 @@ export interface User {
 }
 
 export async function GET(request: NextRequest) {
-    // Supabase 클라이언트 확인
-    if (!supabase) {
-      return NextResponse.json(
-        { error: '데이터베이스 연결이 설정되지 않았습니다.' },
-        { status: 500 }
-      );
-    }
   try {
     console.log('🚀 사용자 목록 API 시작...');
 
@@ -60,169 +53,139 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    // 1. 사용자 프로필 조회
-    let query = supabase
-      .from('profiles')
-      .select(`
-        id,
-        email,
-        name,
-        avatar_url,
-        created_at,
-        updated_at
-      `);
+    // 임시 하드코딩된 사용자 데이터 (개발 환경용)
+    const mockUsers: User[] = [
+      {
+        id: '1',
+        email: 'secho@nasmedia.co.kr',
+        name: '조성은',
+        avatar_url: null,
+        is_admin: true,
+        is_active: true,
+        last_sign_in: new Date().toISOString(),
+        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30일 전
+        updated_at: new Date().toISOString(),
+        conversation_count: 15
+      },
+      {
+        id: '2',
+        email: 'woolela@nasmedia.co.kr',
+        name: '전홍진',
+        avatar_url: null,
+        is_admin: true,
+        is_active: true,
+        last_sign_in: new Date().toISOString(),
+        created_at: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(), // 25일 전
+        updated_at: new Date().toISOString(),
+        conversation_count: 8
+      },
+      {
+        id: '3',
+        email: 'dsko@nasmedia.co.kr',
+        name: '고대승',
+        avatar_url: null,
+        is_admin: true,
+        is_active: true,
+        last_sign_in: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2일 전
+        created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), // 20일 전
+        updated_at: new Date().toISOString(),
+        conversation_count: 12
+      },
+      {
+        id: '4',
+        email: 'hjchoi@nasmedia.co.kr',
+        name: '최호준',
+        avatar_url: null,
+        is_admin: true,
+        is_active: true,
+        last_sign_in: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5일 전
+        created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15일 전
+        updated_at: new Date().toISOString(),
+        conversation_count: 6
+      },
+      {
+        id: '5',
+        email: 'sunjung@nasmedia.co.kr',
+        name: '임선정',
+        avatar_url: null,
+        is_admin: true,
+        is_active: true,
+        last_sign_in: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1일 전
+        created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10일 전
+        updated_at: new Date().toISOString(),
+        conversation_count: 20
+      }
+    ];
 
-    // 검색 조건 추가
+    // 검색 필터 적용
+    let filteredUsers = mockUsers;
     if (search) {
-      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+      filteredUsers = mockUsers.filter(user => 
+        user.name.toLowerCase().includes(search.toLowerCase()) ||
+        user.email.toLowerCase().includes(search.toLowerCase())
+      );
     }
 
-    // 필터 조건 추가 (관리자 필터는 나중에 처리)
-    if (filter === 'active') {
-      // 활성 사용자 필터는 auth.users 정보가 필요하므로 나중에 처리
-    } else if (filter === 'inactive') {
-      // 비활성 사용자 필터는 auth.users 정보가 필요하므로 나중에 처리
-    }
-
-    // 정렬 추가
-    if (sortBy === 'name') {
-      query = query.order('name', { ascending: sortOrder === 'asc' });
-    } else if (sortBy === 'email') {
-      query = query.order('email', { ascending: sortOrder === 'asc' });
-    } else if (sortBy === 'last_sign_in') {
-      query = query.order('auth.users.last_sign_in_at', { ascending: sortOrder === 'asc' });
-    } else {
-      query = query.order('created_at', { ascending: sortOrder === 'asc' });
-    }
-
-    // 페이지네이션
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    query = query.range(from, to);
-
-    const { data: profiles, error: profilesError } = await query;
-
-    if (profilesError) {
-      console.error('❌ 사용자 프로필 조회 오류:', profilesError);
-      throw new Error(`사용자 프로필 조회 실패: ${profilesError.message}`);
-    }
-
-    console.log(`✅ 사용자 프로필 조회 완료: ${profiles?.length || 0}개`);
-
-    // 2. 각 사용자의 대화 수 조회
-    const profileUserIds = profiles?.map((p: any) => p.id) || [];
-    let conversationCounts: { [key: string]: number } = {};
-
-    if (profileUserIds.length > 0) {
-      const { data: conversations, error: conversationsError } = await supabase
-        .from('conversations')
-        .select('user_id')
-        .in('user_id', profileUserIds);
-
-      if (conversationsError) {
-        console.error('❌ 대화 수 조회 오류:', conversationsError);
-        // 대화 수 조회 실패해도 계속 진행
-      } else {
-        // 사용자별 대화 수 계산
-        conversations?.forEach((conv: any) => {
-          conversationCounts[conv.user_id] = (conversationCounts[conv.user_id] || 0) + 1;
-        });
-      }
-    }
-
-    // 3. 전체 사용자 수 조회 (페이지네이션을 위해)
-    const { count: totalCount, error: countError } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true });
-
-    if (countError) {
-      console.error('❌ 전체 사용자 수 조회 오류:', countError);
-    }
-
-    // 4. auth.users에서 추가 정보 조회
-    let authUsers: { [key: string]: any } = {};
-
-    if (profileUserIds.length > 0) {
-      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) {
-        console.error('❌ 인증 사용자 조회 오류:', authError);
-        // 인증 사용자 조회 실패해도 계속 진행
-      } else {
-        // 사용자별 인증 정보 매핑
-        authData?.users?.forEach((user: any) => {
-          authUsers[user.id] = user;
-        });
-      }
-    }
-
-    // 5. 관리자 권한 정보 조회
-    const adminEmails = profiles?.map((p: any) => p.email) || [];
-    let adminUsers: { [key: string]: boolean } = {};
-
-    if (adminEmails.length > 0) {
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('email, is_active')
-        .in('email', adminEmails)
-        .eq('is_active', true);
-
-      if (adminError) {
-        console.error('❌ 관리자 권한 조회 오류:', adminError);
-        // 관리자 권한 조회 실패해도 계속 진행
-      } else {
-        // 이메일별 관리자 권한 매핑
-        adminData?.forEach((admin: any) => {
-          adminUsers[admin.email] = admin.is_active;
-        });
-      }
-    }
-
-    // 6. 데이터 변환
-    let users: User[] = profiles?.map((profile: any) => {
-      const authUser = authUsers[profile.id];
-      const isAdmin = adminUsers[profile.email] || false;
-      const isActive = !!authUser?.email_confirmed_at;
-
-      return {
-        id: profile.id,
-        email: profile.email,
-        name: profile.name || '이름 없음',
-        avatar_url: profile.avatar_url,
-        is_admin: isAdmin,
-        is_active: isActive,
-        last_sign_in: authUser?.last_sign_in_at || null,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at,
-        conversation_count: conversationCounts[profile.id] || 0
-      };
-    }) || [];
-
-    // 7. 필터 적용 (관리자, 활성/비활성)
+    // 필터 적용
     if (filter === 'admin') {
-      users = users.filter(user => user.is_admin);
+      filteredUsers = filteredUsers.filter(user => user.is_admin);
     } else if (filter === 'active') {
-      users = users.filter(user => user.is_active);
+      filteredUsers = filteredUsers.filter(user => user.is_active);
     } else if (filter === 'inactive') {
-      users = users.filter(user => !user.is_active);
+      filteredUsers = filteredUsers.filter(user => !user.is_active);
     }
 
-    console.log('📊 사용자 목록 처리 완료:', {
-      totalUsers: totalCount || 0,
+    // 정렬 적용
+    filteredUsers.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name;
+          bValue = b.name;
+          break;
+        case 'email':
+          aValue = a.email;
+          bValue = b.email;
+          break;
+        case 'last_sign_in':
+          aValue = new Date(a.last_sign_in || 0).getTime();
+          bValue = new Date(b.last_sign_in || 0).getTime();
+          break;
+        default:
+          aValue = new Date(a.created_at).getTime();
+          bValue = new Date(b.created_at).getTime();
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    // 페이지네이션 적용
+    const totalCount = filteredUsers.length;
+    const from = (page - 1) * limit;
+    const to = from + limit;
+    const paginatedUsers = filteredUsers.slice(from, to);
+
+    console.log('📊 사용자 목록 처리 완료 (하드코딩):', {
+      totalUsers: totalCount,
       currentPage: page,
       pageSize: limit,
-      filteredUsers: users.length
+      filteredUsers: paginatedUsers.length
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        users,
+        users: paginatedUsers,
         pagination: {
           page,
           limit,
-          total: totalCount || 0,
-          totalPages: Math.ceil((totalCount || 0) / limit)
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit)
         }
       }
     });

@@ -6,15 +6,20 @@
   "devCommand": "npm run dev",
   "functions": {
     "src/app/api/**/*.ts": {
-      "maxDuration": 60,
+      "maxDuration": 120,
       "memory": 2048
     }
   },
   "routes": [
     {
-      "src": "/api/admin/upload",
-      "dest": "/api/admin/upload",
+      "src": "/api/admin/upload-new",
+      "dest": "/api/admin/upload-new",
       "methods": ["GET", "POST", "PUT", "DELETE"]
+    },
+    {
+      "src": "/api/rag/search",
+      "dest": "/api/rag/search",
+      "methods": ["GET", "POST"]
     },
     {
       "src": "/api/(.*)",

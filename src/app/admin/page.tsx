@@ -179,7 +179,7 @@ export default function AdminDashboardPage() {
   };
 
   const systemStatus = stats.systemStatus;
-  const recentAlerts = stats.recentActivity.map(activity => ({
+  const recentAlerts = (stats.recentActivity || []).map(activity => ({
     id: activity.id,
     type: activity.type === 'question' ? 'info' : 
           activity.type === 'document_upload' ? 'success' : 'warning',
@@ -221,7 +221,7 @@ export default function AdminDashboardPage() {
     },
   ];
 
-  const performanceMetrics = stats.performanceMetrics;
+  const performanceMetrics = stats.performanceMetrics || [];
 
   const getStatusIcon = (status: string) => {
     switch (status) {

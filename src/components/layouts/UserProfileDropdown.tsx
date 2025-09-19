@@ -27,10 +27,13 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user?.email) {
+        console.log('❌ 사용자 이메일이 없음');
         setIsAdmin(false);
         setAdminLoading(false);
         return;
       }
+
+      console.log('🔍 관리자 권한 확인 시작:', user.email);
 
       try {
         const response = await fetch('/api/admin/users/check-admin', {
@@ -42,9 +45,14 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
         });
 
         const data = await response.json();
-        setIsAdmin(data.success && data.isAdmin);
+        console.log('📊 관리자 권한 확인 응답:', data);
+        
+        const isAdminResult = data.success && data.isAdmin;
+        console.log('✅ 관리자 권한 결과:', isAdminResult);
+        
+        setIsAdmin(isAdminResult);
       } catch (error) {
-        console.error('관리자 권한 확인 오류:', error);
+        console.error('❌ 관리자 권한 확인 오류:', error);
         setIsAdmin(false);
       } finally {
         setAdminLoading(false);
@@ -145,7 +153,12 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
               {/* Menu Items */}
               <div className="py-2">
                 {/* 관리자 메뉴 */}
-                {isAdmin && (
+                {adminLoading ? (
+                  <div className="w-full flex items-center space-x-3 px-4 py-3 text-gray-400">
+                    <Shield className="w-4 h-4" />
+                    <span>권한 확인 중...</span>
+                  </div>
+                ) : isAdmin ? (
                   <>
                     <a
                       href="/admin"
@@ -158,6 +171,11 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
                     {/* 구분선 */}
                     <div className="border-t border-gray-700 my-2"></div>
                   </>
+                ) : (
+                  <div className="w-full flex items-center space-x-3 px-4 py-3 text-gray-500 text-sm">
+                    <Shield className="w-4 h-4" />
+                    <span>관리자 권한 없음</span>
+                  </div>
                 )}
 
                 <button

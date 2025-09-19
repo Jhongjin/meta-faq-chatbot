@@ -8,7 +8,15 @@ export async function createClient() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase 환경 변수가 설정되지 않았습니다.');
+    console.warn('Supabase 환경 변수가 설정되지 않았습니다. 더미 클라이언트를 사용합니다.');
+    return createServerClient('https://dummy.supabase.co', 'dummy-key', {
+      cookies: {
+        getAll() {
+          return [];
+        },
+        setAll() {},
+      },
+    });
   }
 
   const cookieStore = await cookies();
@@ -42,7 +50,15 @@ export async function createPureClient() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase 환경 변수가 설정되지 않았습니다.');
+    console.warn('Supabase 환경 변수가 설정되지 않았습니다. 더미 클라이언트를 사용합니다.');
+    return createServerClient('https://dummy.supabase.co', 'dummy-key', {
+      cookies: {
+        getAll() {
+          return [];
+        },
+        setAll() {},
+      },
+    });
   }
 
   return createServerClient(

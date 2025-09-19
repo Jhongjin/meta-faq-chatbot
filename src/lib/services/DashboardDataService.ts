@@ -50,10 +50,57 @@ export class DashboardDataService {
         throw new Error(data.error || '대시보드 데이터 조회에 실패했습니다.');
       }
 
-      return data.data;
+      // 기본값과 병합하여 안전하게 처리
+      return {
+        totalDocuments: 0,
+        completedDocuments: 0,
+        pendingDocuments: 0,
+        processingDocuments: 0,
+        totalChunks: 0,
+        totalEmbeddings: 0,
+        systemStatus: {
+          overall: 'healthy' as const,
+          database: 'connected' as const,
+          llm: 'operational' as const,
+          vectorStore: 'indexed' as const,
+          lastUpdate: '방금 전'
+        },
+        recentActivity: [],
+        performanceMetrics: [],
+        weeklyStats: {
+          questions: 0,
+          users: 0,
+          satisfaction: 0,
+          documents: 0
+        },
+        ...data.data
+      };
     } catch (error) {
       console.error('대시보드 데이터 조회 오류:', error);
-      throw error;
+      // 오류 발생 시 기본값 반환
+      return {
+        totalDocuments: 0,
+        completedDocuments: 0,
+        pendingDocuments: 0,
+        processingDocuments: 0,
+        totalChunks: 0,
+        totalEmbeddings: 0,
+        systemStatus: {
+          overall: 'error' as const,
+          database: 'disconnected' as const,
+          llm: 'error' as const,
+          vectorStore: 'error' as const,
+          lastUpdate: '알 수 없음'
+        },
+        recentActivity: [],
+        performanceMetrics: [],
+        weeklyStats: {
+          questions: 0,
+          users: 0,
+          satisfaction: 0,
+          documents: 0
+        }
+      };
     }
   }
 

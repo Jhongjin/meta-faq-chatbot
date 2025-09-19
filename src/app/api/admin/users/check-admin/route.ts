@@ -12,16 +12,11 @@ if (supabaseUrl && supabaseKey) {
 }
 
 export async function POST(request: NextRequest) {
-    // Supabase 클라이언트 확인
-    if (!supabase) {
-      return NextResponse.json(
-        { error: '데이터베이스 연결이 설정되지 않았습니다.' },
-        { status: 500 }
-      );
-    }
   try {
     const body = await request.json();
     const { email } = body;
+
+    console.log('🔍 관리자 권한 확인 요청:', { email });
 
     if (!email) {
       return NextResponse.json(
@@ -30,25 +25,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 관리자 권한 확인
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('is_active')
-      .eq('email', email)
-      .eq('is_active', true)
-      .single();
+    // 임시 하드코딩된 관리자 이메일 목록 (개발 환경용)
+    const adminEmails = [
+      'secho@nasmedia.co.kr',
+      'woolela@nasmedia.co.kr',
+      'dsko@nasmedia.co.kr',
+      'hjchoi@nasmedia.co.kr',
+      'sunjung@nasmedia.co.kr',
+      'sy230@nasmedia.co.kr',
+      'jeng351@nasmedia.co.kr'
+    ];
 
-    if (error) {
-      // 관리자가 아닌 경우
-      return NextResponse.json({
-        success: true,
-        isAdmin: false
-      });
-    }
+    const isAdmin = adminEmails.includes(email);
+    console.log('✅ 관리자 권한 확인 완료 (하드코딩):', { isAdmin, email });
 
     return NextResponse.json({
       success: true,
-      isAdmin: !!data?.is_active
+      isAdmin,
+      debug: {
+        email: email,
+        method: 'hardcoded',
+        adminEmails: adminEmails
+      }
     });
 
   } catch (error) {

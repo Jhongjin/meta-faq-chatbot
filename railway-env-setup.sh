@@ -45,3 +45,7 @@ echo "1. Railway 대시보드에서 SUPABASE_SERVICE_ROLE_KEY를 실제 값으�
 echo "2. Railway Ollama URL을 실제 생성된 URL로 업데이트"
 echo "3. Railway 서비스 재배포"
 
+
+
+
+

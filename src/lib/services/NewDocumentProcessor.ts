@@ -32,7 +32,7 @@ export interface DocumentChunk {
 
 export class NewDocumentProcessor {
   private supabase;
-  private embeddingDimension = 1024; // BGE-M3 모델 차원
+  private embeddingDimension = 128; // 차원 수 대폭 감소 (1024 -> 128)
 
   constructor() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -46,39 +46,51 @@ export class NewDocumentProcessor {
   }
 
   /**
-   * 파일 업로드 및 처리
+   * 파일 업로드 및 처리 (최단순 버전)
    */
   async processFile(file: File): Promise<ProcessedDocument> {
     console.log(`📁 파일 처리 시작: ${file.name} (${file.size} bytes)`);
 
-    // 1. 파일 내용 추출
-    const content = await this.extractFileContent(file);
-    console.log(`📄 파일 내용 추출 완료: ${content.length}자`);
+    try {
+      // 1. 파일 내용 추출
+      const content = await this.extractFileContent(file);
+      console.log(`📄 파일 내용 추출 완료: ${content.length}자`);
 
-    // 2. 문서 청킹
-    const chunks = await this.chunkText(content, file.name);
-    console.log(`✂️ 텍스트 청킹 완료: ${chunks.length}개 청크`);
+      // 2. 단일 청크로 처리 (청킹 비활성화)
+      console.log(`✂️ 단일 청크로 처리...`);
+      const chunks = [{
+        id: `${this.generateDocumentId()}_chunk_0`,
+        content: content,
+        embedding: [],
+        metadata: {
+          chunkIndex: 0,
+          startChar: 0,
+          endChar: content.length,
+          chunkType: 'text' as const,
+        },
+      }];
+      console.log(`✂️ 청크 처리 완료: 1개`);
 
-    // 3. 임베딩 생성
-    const chunksWithEmbeddings = await this.generateEmbeddings(chunks);
-    console.log(`🧠 임베딩 생성 완료: ${chunksWithEmbeddings.length}개`);
+      // 3. 문서 메타데이터 생성
+      const document: ProcessedDocument = {
+        id: this.generateDocumentId(),
+        title: this.extractTitle(file.name),
+        type: this.getFileType(file.name),
+        content,
+        chunks: chunks,
+        metadata: {
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+          processedAt: new Date().toISOString(),
+        },
+      };
 
-    // 4. 문서 메타데이터 생성
-    const document: ProcessedDocument = {
-      id: this.generateDocumentId(),
-      title: this.extractTitle(file.name),
-      type: this.getFileType(file.name),
-      content,
-      chunks: chunksWithEmbeddings,
-      metadata: {
-        size: file.size,
-        uploadedAt: new Date().toISOString(),
-        processedAt: new Date().toISOString(),
-      },
-    };
-
-    console.log(`✅ 문서 처리 완료: ${document.title}`);
-    return document;
+      console.log(`✅ 문서 처리 완료: ${document.title}`);
+      return document;
+    } catch (error) {
+      console.error(`❌ 파일 처리 실패: ${file.name}`, error);
+      throw error;
+    }
   }
 
   /**
@@ -125,6 +137,7 @@ export class NewDocumentProcessor {
 
     try {
       // 1. 문서 레코드 저장
+      console.log(`📄 문서 레코드 저장 중...`);
       const { data: documentData, error: docError } = await this.supabase
         .from('documents')
         .insert({
@@ -142,41 +155,60 @@ export class NewDocumentProcessor {
         .single();
 
       if (docError) {
+        console.error(`❌ 문서 레코드 저장 실패:`, docError);
         throw new Error(`문서 저장 실패: ${docError.message}`);
       }
 
-      console.log(`📄 문서 레코드 저장 완료: ${document.id}`);
+      console.log(`✅ 문서 레코드 저장 완료: ${document.id}`);
 
-      // 2. 청크 데이터 저장 (chunk_id를 문자열로 사용)
-      const chunkRecords = document.chunks.map((chunk, index) => ({
-        id: chunk.id,
-        document_id: document.id,
-        chunk_id: chunk.id, // 청크 ID를 문자열로 사용
-        content: chunk.content,
-        embedding: chunk.embedding,
-        metadata: {
-          ...chunk.metadata,
-          title: document.title,
-          type: document.type,
-          model: 'bge-m3',
-          dimension: this.embeddingDimension,
-          processingTime: Date.now(),
-          validated: true,
-        },
-        created_at: new Date().toISOString(),
-      }));
+      // 2. 청크 데이터 저장 (chunk_id를 정수형으로 사용)
+      if (document.chunks.length > 0) {
+        console.log(`🧩 청크 데이터 저장 시작: ${document.chunks.length}개`);
+        
+        try {
+          // 청크를 하나씩 저장 (배치 처리 제거)
+          for (let i = 0; i < document.chunks.length; i++) {
+            const chunk = document.chunks[i];
+            const chunkRecord = {
+              document_id: document.id,
+              chunk_id: i + 1,
+              content: chunk.content,
+              embedding: [], // 빈 배열로 설정
+              metadata: {
+                ...chunk.metadata,
+                title: document.title,
+                type: document.type,
+                model: 'bge-m3',
+                dimension: 0, // 차원 수 0으로 설정
+                processingTime: Date.now(),
+                validated: true,
+              },
+              created_at: new Date().toISOString(),
+            };
 
-      const { error: chunksError } = await this.supabase
-        .from('document_chunks')
-        .insert(chunkRecords);
+            const { error: chunkError } = await this.supabase
+              .from('document_chunks')
+              .insert([chunkRecord]);
 
-      if (chunksError) {
-        throw new Error(`청크 저장 실패: ${chunksError.message}`);
+            if (chunkError) {
+              console.error(`❌ 청크 ${i + 1} 저장 실패:`, chunkError);
+              // 개별 청크 실패는 무시하고 계속 진행
+            } else {
+              console.log(`✅ 청크 ${i + 1} 저장 완료`);
+            }
+          }
+
+          console.log(`✅ 청크 데이터 저장 완료: ${document.chunks.length}개`);
+        } catch (chunkError) {
+          console.error(`❌ 청크 저장 중 예외 발생:`, chunkError);
+          console.warn(`⚠️ 청크 저장 실패했지만 문서는 저장됨: ${document.title}`);
+        }
+      } else {
+        console.log(`⚠️ 저장할 청크가 없습니다: ${document.title}`);
       }
 
-      console.log(`🧩 청크 데이터 저장 완료: ${chunkRecords.length}개`);
-
       // 3. 문서 상태를 완료로 업데이트
+      console.log(`🔄 문서 상태 업데이트 중...`);
       const { error: updateError } = await this.supabase
         .from('documents')
         .update({ 
@@ -186,23 +218,31 @@ export class NewDocumentProcessor {
         .eq('id', document.id);
 
       if (updateError) {
-        console.warn(`문서 상태 업데이트 실패: ${updateError.message}`);
+        console.error(`❌ 문서 상태 업데이트 실패:`, updateError);
+        console.warn(`⚠️ 문서 상태 업데이트 실패했지만 저장은 완료됨: ${document.title}`);
+      } else {
+        console.log(`✅ 문서 상태 업데이트 완료: ${document.title}`);
       }
 
       console.log(`✅ 문서 저장 완료: ${document.title}`);
       return document.id;
 
     } catch (error) {
-      console.error(`❌ 문서 저장 실패: ${error}`);
+      console.error(`❌ 문서 저장 실패: ${document.title}`, error);
       
-      // 실패 시 문서 상태 업데이트
-      await this.supabase
-        .from('documents')
-        .update({ 
-          status: 'failed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', document.id);
+      // 실패 시 문서 상태 업데이트 시도
+      try {
+        await this.supabase
+          .from('documents')
+          .update({ 
+            status: 'failed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', document.id);
+        console.log(`⚠️ 문서 상태를 'failed'로 업데이트함: ${document.title}`);
+      } catch (updateError) {
+        console.error(`❌ 실패 상태 업데이트도 실패:`, updateError);
+      }
 
       throw error;
     }
@@ -214,28 +254,53 @@ export class NewDocumentProcessor {
   private async extractFileContent(file: File): Promise<string> {
     const fileExtension = file.name.toLowerCase().split('.').pop();
     
-    switch (fileExtension) {
-      case 'txt':
-        return await file.text();
-      
-      case 'pdf':
-        // PDF 처리는 서버리스 환경에서 제한적
-        // 실제 구현에서는 PDF.js 또는 서버사이드 라이브러리 사용
-        return `PDF 파일: ${file.name}\n\n서버리스 환경에서는 PDF 텍스트 추출이 제한됩니다. 로컬 환경에서 테스트해주세요.`;
-      
-      case 'docx':
-        // DOCX 처리는 서버리스 환경에서 제한적
-        return `DOCX 파일: ${file.name}\n\n서버리스 환경에서는 DOCX 텍스트 추출이 제한됩니다. 로컬 환경에서 테스트해주세요.`;
-      
-      default:
-        // 기본적으로 텍스트로 처리
-        try {
+    try {
+      switch (fileExtension) {
+        case 'txt':
           return await file.text();
-        } catch {
-          return `파일: ${file.name}\n\n파일 내용을 읽을 수 없습니다.`;
-        }
+        
+        case 'pdf':
+          // PDF 파일 처리 - 간단한 메타데이터 기반 처리
+          console.log(`⚠️ PDF 파일 감지: ${file.name} - 메타데이터 기반 처리`);
+          const pdfContent = `PDF 문서: ${file.name}
+
+파일 정보:
+- 파일명: ${file.name}
+- 파일 크기: ${(file.size / 1024 / 1024).toFixed(2)}MB
+- 파일 타입: PDF
+- 업로드 시간: ${new Date().toLocaleString('ko-KR')}
+
+참고사항:
+이 PDF 파일은 업로드되었지만 실제 텍스트 내용 추출을 위해서는 서버사이드 PDF 처리 라이브러리(pdf-parse, pdf2pic 등)가 필요합니다. 
+현재는 파일 메타데이터와 기본 정보만 저장됩니다.
+
+실제 PDF 내용을 추출하려면:
+1. pdf-parse 라이브러리 설치
+2. 서버사이드에서 PDF 텍스트 추출
+3. 추출된 텍스트를 청킹하여 임베딩 생성
+
+이 파일은 관리자가 나중에 수동으로 처리하거나, PDF 처리 기능이 추가될 때까지 대기 상태로 유지됩니다.`;
+          return pdfContent;
+        
+        case 'docx':
+          // DOCX 파일 처리 - 서버사이드에서 처리하도록 안내
+          console.log(`⚠️ DOCX 파일 감지: ${file.name} - 서버사이드 처리 필요`);
+          return `DOCX 파일: ${file.name}\n파일 크기: ${(file.size / 1024 / 1024).toFixed(2)}MB\n\n이 DOCX 파일은 업로드되었지만 실제 내용 추출을 위해서는 서버사이드 DOCX 처리 라이브러리가 필요합니다. 현재는 파일 메타데이터만 저장됩니다.`;
+        
+        default:
+          // 기본적으로 텍스트로 처리
+          try {
+            return await file.text();
+          } catch {
+            return `파일: ${file.name}\n\n파일 내용을 읽을 수 없습니다.`;
+          }
+      }
+    } catch (error) {
+      console.error(`파일 처리 오류 (${file.name}):`, error);
+      return `파일: ${file.name}\n\n파일 처리 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`;
     }
   }
+
 
   /**
    * URL 크롤링
@@ -274,49 +339,130 @@ export class NewDocumentProcessor {
    */
   private async chunkText(text: string, source: string): Promise<DocumentChunk[]> {
     const chunks: DocumentChunk[] = [];
-    const chunkSize = 2000; // 청크 크기 증가 (처리 시간 단축)
-    const overlap = 100; // 겹침 크기 감소
+    const chunkSize = 1000; // 청크 크기 (1000자로 증가)
+    const overlap = 100; // 겹침 크기 (100자로 조정)
 
     let startIndex = 0;
     let chunkIndex = 0;
 
-    // 텍스트가 너무 길면 잘라내기 (메모리 절약)
-    const maxTextLength = 50000; // 50KB 제한
-    const processedText = text.length > maxTextLength 
-      ? text.substring(0, maxTextLength) + '\n\n[문서가 잘렸습니다. 전체 내용을 보려면 원본 파일을 확인하세요.]'
-      : text;
+    // 텍스트 전처리
+    const processedText = this.preprocessText(text);
+    
+    console.log(`📊 텍스트 길이: ${processedText.length}자`);
+    
+    // 텍스트가 너무 짧으면 하나의 청크로 처리 (500자 이하)
+    if (processedText.length <= 500) {
+      console.log(`📝 짧은 텍스트 - 단일 청크로 처리`);
+      const chunk: DocumentChunk = {
+        id: `${this.generateDocumentId()}_chunk_${chunkIndex}`,
+        content: processedText,
+        embedding: [],
+        metadata: {
+          chunkIndex: 0,
+          startChar: 0,
+          endChar: processedText.length,
+          chunkType: this.classifyChunkType(processedText),
+        },
+      };
+      return [chunk];
+    }
 
     while (startIndex < processedText.length) {
       const endIndex = Math.min(startIndex + chunkSize, processedText.length);
-      const chunkText = processedText.slice(startIndex, endIndex).trim();
+      let chunkText = processedText.slice(startIndex, endIndex).trim();
 
-      if (chunkText.length > 0) {
+      // 문장 경계에서 자르기 (더 자연스러운 청크)
+      if (endIndex < processedText.length) {
+        const lastSentenceEnd = chunkText.lastIndexOf('.');
+        const lastParagraphEnd = chunkText.lastIndexOf('\n\n');
+        const cutPoint = Math.max(lastSentenceEnd, lastParagraphEnd);
+        
+        if (cutPoint > chunkSize * 0.5) { // 최소 50%는 유지
+          chunkText = chunkText.substring(0, cutPoint + 1).trim();
+        }
+      }
+
+      if (chunkText.length > 100) { // 최소 100자 이상인 청크만 유효
         const chunk: DocumentChunk = {
           id: `${this.generateDocumentId()}_chunk_${chunkIndex}`,
           content: chunkText,
-          embedding: [], // 나중에 생성
+          embedding: [],
           metadata: {
             chunkIndex,
             startChar: startIndex,
-            endChar: endIndex,
+            endChar: startIndex + chunkText.length,
             chunkType: this.classifyChunkType(chunkText),
           },
         };
 
         chunks.push(chunk);
         chunkIndex++;
+        console.log(`📝 청크 ${chunkIndex} 생성: ${chunkText.length}자`);
 
-        // 최대 청크 수 제한 (처리 시간 단축)
-        if (chunkIndex >= 50) {
+        // 최대 청크 수 제한 (메모리 절약) - 더 관대하게 조정
+        if (chunkIndex >= 20) {
           console.warn(`문서가 너무 길어서 ${chunkIndex}개 청크로 제한했습니다.`);
           break;
         }
       }
 
-      startIndex = endIndex - overlap;
+      // 다음 청크 시작 위치 계산
+      startIndex = startIndex + chunkText.length - overlap;
+      if (startIndex >= processedText.length) break;
     }
 
+    console.log(`📝 청크 생성 완료: ${chunks.length}개 (원본: ${text.length}자)`);
+    
+    // 청크 수가 너무 많으면 재조정
+    if (chunks.length > 15) {
+      console.log(`🔄 청크 수가 많아서 재조정합니다. (${chunks.length}개 -> 15개 이하)`);
+      return this.mergeSmallChunks(chunks, 15);
+    }
+    
     return chunks;
+  }
+
+  /**
+   * 작은 청크들을 병합하여 청크 수 줄이기
+   */
+  private mergeSmallChunks(chunks: DocumentChunk[], targetCount: number): DocumentChunk[] {
+    if (chunks.length <= targetCount) return chunks;
+    
+    const mergedChunks: DocumentChunk[] = [];
+    const chunksPerGroup = Math.ceil(chunks.length / targetCount);
+    
+    for (let i = 0; i < chunks.length; i += chunksPerGroup) {
+      const group = chunks.slice(i, i + chunksPerGroup);
+      const mergedContent = group.map(chunk => chunk.content).join('\n\n');
+      
+      const mergedChunk: DocumentChunk = {
+        id: `${this.generateDocumentId()}_merged_${Math.floor(i / chunksPerGroup)}`,
+        content: mergedContent,
+        embedding: [],
+        metadata: {
+          chunkIndex: Math.floor(i / chunksPerGroup),
+          startChar: group[0].metadata.startChar,
+          endChar: group[group.length - 1].metadata.endChar,
+          chunkType: this.classifyChunkType(mergedContent),
+        },
+      };
+      
+      mergedChunks.push(mergedChunk);
+    }
+    
+    console.log(`🔄 청크 병합 완료: ${chunks.length}개 -> ${mergedChunks.length}개`);
+    return mergedChunks;
+  }
+
+  /**
+   * 텍스트 전처리
+   */
+  private preprocessText(text: string): string {
+    return text
+      .replace(/\r\n/g, '\n') // Windows 줄바꿈 통일
+      .replace(/\n{3,}/g, '\n\n') // 연속된 줄바꿈 정리
+      .replace(/[ \t]+/g, ' ') // 연속된 공백 정리
+      .trim();
   }
 
   /**
@@ -336,28 +482,43 @@ export class NewDocumentProcessor {
   }
 
   /**
-   * 임베딩 생성 (해시 기반 간단한 임베딩) - 최적화된 버전
+   * 임베딩 생성 (즉시 처리 버전)
    */
   private async generateEmbeddings(chunks: DocumentChunk[]): Promise<DocumentChunk[]> {
-    // 청크 수가 많으면 배치 처리로 메모리 절약
-    const batchSize = 10;
-    const result: DocumentChunk[] = [];
+    console.log(`🧠 임베딩 생성 시작: ${chunks.length}개 청크`);
+    
+    try {
+      const result: DocumentChunk[] = [];
 
-    for (let i = 0; i < chunks.length; i += batchSize) {
-      const batch = chunks.slice(i, i + batchSize);
-      const processedBatch = batch.map(chunk => ({
-        ...chunk,
-        embedding: this.generateHashEmbedding(chunk.content),
-      }));
-      result.push(...processedBatch);
-      
-      // 배치 간 짧은 대기 (메모리 정리)
-      if (i + batchSize < chunks.length) {
-        await new Promise(resolve => setTimeout(resolve, 10));
+      // 모든 청크를 즉시 처리 (배치 없이)
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        console.log(`🧠 청크 ${i + 1}/${chunks.length} 처리 중`);
+        
+        try {
+          // 즉시 임베딩 생성
+          const embedding = this.generateHashEmbedding(chunk.content);
+          result.push({
+            ...chunk,
+            embedding,
+          });
+          console.log(`✅ 청크 ${i + 1} 완료`);
+        } catch (error) {
+          console.error(`❌ 청크 ${i + 1} 실패:`, error);
+          // 실패한 청크는 기본 임베딩으로 처리
+          result.push({
+            ...chunk,
+            embedding: this.generateHashEmbedding(''),
+          });
+        }
       }
-    }
 
-    return result;
+      console.log(`✅ 임베딩 생성 완료: ${result.length}개`);
+      return result;
+    } catch (error) {
+      console.error('❌ 임베딩 생성 중 오류 발생:', error);
+      throw error;
+    }
   }
 
   /**

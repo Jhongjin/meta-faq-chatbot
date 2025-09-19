@@ -207,6 +207,10 @@ export default function NewDocumentUpload({ onUpload }: NewDocumentUploadProps) 
 
       console.log('Base64 인코딩 완료, JSON 요청 전송');
 
+      // 타임아웃 설정 (35초)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000);
+
       const response = await fetch('/api/admin/upload-new', {
         method: 'POST',
         headers: {
@@ -215,9 +219,11 @@ export default function NewDocumentUpload({ onUpload }: NewDocumentUploadProps) 
         body: JSON.stringify(requestBody),
         cache: 'no-cache',
         mode: 'cors',
-        credentials: 'same-origin'
+        credentials: 'same-origin',
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
       console.log('응답 상태:', response.status);
 
       let result;
@@ -269,18 +275,29 @@ export default function NewDocumentUpload({ onUpload }: NewDocumentUploadProps) 
     } catch (error) {
       console.error('파일 처리 오류:', error);
       
+      // 타임아웃 오류 감지
+      const isTimeoutError = error instanceof Error && (
+        error.name === 'AbortError' || 
+        error.message.includes('timeout') ||
+        error.message.includes('Request timeout')
+      );
+      
+      const errorMessage = isTimeoutError 
+        ? '파일 처리 시간이 초과되었습니다. 파일 크기를 줄이거나 나중에 다시 시도해주세요.'
+        : error instanceof Error ? error.message : '알 수 없는 오류';
+      
       setFiles(prev => prev.map(f => 
         f.id === fileId ? { 
           ...f, 
           status: "error", 
           progress: 0,
-          error: error instanceof Error ? error.message : '알 수 없는 오류'
+          error: errorMessage
         } : f
       ));
 
       toast({
-        title: "업로드 실패",
-        description: `${file.name} 파일 처리 중 오류가 발생했습니다.`,
+        title: isTimeoutError ? "업로드 타임아웃" : "업로드 실패",
+        description: `${file.name} 파일 처리 중 오류가 발생했습니다: ${errorMessage}`,
         variant: "destructive"
       });
     }

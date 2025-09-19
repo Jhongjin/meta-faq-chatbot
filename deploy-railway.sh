@@ -49,3 +49,7 @@ echo "2. Ollama 전용 서비스 생성"
 echo "3. 모델 설치: ollama pull mistral:7b"
 echo "4. Vercel에서 Railway URL 사용"
 
+
+
+
+

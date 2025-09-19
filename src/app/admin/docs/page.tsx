@@ -240,10 +240,8 @@ export default function DocumentManagementPage() {
     let filtered = documents;
     
     if (activeTab === 'upload') {
-      // 문서 업로드 탭: 파일 타입만 (pdf, docx, txt)
-      filtered = documents.filter(doc => 
-        doc.type === 'pdf' || doc.type === 'docx' || doc.type === 'txt'
-      );
+      // 문서 업로드 탭: type이 'file'인 문서만 표시
+      filtered = documents.filter(doc => doc.type === 'file');
     } else if (activeTab === 'crawling') {
       // URL 크롤링 탭: URL 타입만
       filtered = documents.filter(doc => doc.type === 'url');
@@ -289,10 +287,8 @@ export default function DocumentManagementPage() {
   // 탭별 통계 계산
   const getTabStats = () => {
     if (activeTab === 'upload') {
-      // 파일 업로드 탭: PDF, DOCX, TXT 파일만 카운트
-      const fileDocuments = documents.filter(doc => 
-        doc.type === 'pdf' || doc.type === 'docx' || doc.type === 'txt'
-      );
+      // 파일 업로드 탭: type이 'file'인 문서만 카운트
+      const fileDocuments = documents.filter(doc => doc.type === 'file');
       return {
         total: fileDocuments.length,
         completed: fileDocuments.filter(doc => doc.status === 'completed' || doc.status === 'indexed').length,
@@ -333,17 +329,17 @@ export default function DocumentManagementPage() {
   const loadDocuments = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/status');
+      const response = await fetch('/api/admin/upload-new');
       const data = await response.json();
       
       if (data.success) {
-        const docs = data.documents || [];
+        const docs = data.data?.documents || [];
         setDocuments(docs);
         setStats({
-          totalDocuments: data.stats?.total || 0,
-          indexedDocuments: data.stats?.completed || 0,
-          totalChunks: data.stats?.totalChunks || 0,
-          totalEmbeddings: data.stats?.totalChunks || 0
+          totalDocuments: data.data?.stats?.totalDocuments || 0,
+          indexedDocuments: data.data?.stats?.completedDocuments || 0,
+          totalChunks: data.data?.stats?.totalChunks || 0,
+          totalEmbeddings: data.data?.stats?.totalChunks || 0
         });
         
         // URL 문서들을 그룹화
@@ -397,11 +393,8 @@ export default function DocumentManagementPage() {
     let filtered = documents;
     
     if (tab === 'upload') {
-      // 파일 업로드 탭: PDF, DOCX, TXT 파일만 표시
-      filtered = documents.filter(doc => 
-        doc.type === 'file' && 
-        (doc.title.includes('.pdf') || doc.title.includes('.docx') || doc.title.includes('.txt'))
-      );
+      // 파일 업로드 탭: type이 'file'인 문서만 표시
+      filtered = documents.filter(doc => doc.type === 'file');
     } else if (tab === 'crawling') {
       // URL 크롤링 탭: URL로 크롤링된 문서만 표시
       filtered = documents.filter(doc => doc.type === 'url');
@@ -444,7 +437,9 @@ export default function DocumentManagementPage() {
   const handleUpload = async (files: File[]) => {
     console.log("Upload files:", files);
     // 업로드 후 데이터 새로고침
-    await loadDocuments();
+    setTimeout(async () => {
+      await loadDocuments();
+    }, 2000); // 2초 후 문서 목록 새로고침
     
     // 성공 토스트 표시
     toast({

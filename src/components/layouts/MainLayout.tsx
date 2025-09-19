@@ -31,15 +31,25 @@ export default function MainLayout({ children, chatHeader }: MainLayoutProps) {
 
   // 인증 모달 이벤트 리스너
   useEffect(() => {
-    const handleOpenAuthModal = (event: CustomEvent) => {
-      setAuthModalMode(event.detail.mode);
-      setAuthModalOpen(true);
+    const handleOpenAuthModal = (event: Event) => {
+      try {
+        // 이벤트 객체가 CustomEvent인지 확인
+        if (event && typeof event === 'object' && 'detail' in event) {
+          const customEvent = event as CustomEvent;
+          if (customEvent.detail && typeof customEvent.detail === 'object' && 'mode' in customEvent.detail) {
+            setAuthModalMode(customEvent.detail.mode);
+            setAuthModalOpen(true);
+          }
+        }
+      } catch (error) {
+        console.error('인증 모달 이벤트 처리 중 오류:', error);
+      }
     };
 
-    window.addEventListener('openAuthModal', handleOpenAuthModal as EventListener);
+    window.addEventListener('openAuthModal', handleOpenAuthModal);
     
     return () => {
-      window.removeEventListener('openAuthModal', handleOpenAuthModal as EventListener);
+      window.removeEventListener('openAuthModal', handleOpenAuthModal);
     };
   }, []);
 
@@ -52,15 +62,10 @@ export default function MainLayout({ children, chatHeader }: MainLayoutProps) {
     }
   };
 
-  // 로딩 상태 처리 (타임아웃 추가)
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <div className="text-white text-xl">로딩 중...</div>
-          <div className="text-gray-400 text-sm mt-2">잠시만 기다려주세요</div>
-        </div>
+        <div className="text-white text-xl">로딩 중...</div>
       </div>
     );
   }

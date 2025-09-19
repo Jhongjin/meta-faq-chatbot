@@ -48,12 +48,6 @@ export default function HomePage() {
   const { data: systemStatus, isLoading: statusLoading, error: statusError } = useSystemStatus();
   const { data: latestUpdate, isLoading: updateLoading, error: updateError } = useLatestUpdate();
 
-  // 로딩 상태 확인 (개별적으로 처리)
-  const isAnyLoading = dashboardLoading || chatLoading || statusLoading || updateLoading;
-  
-  // 에러 상태 확인
-  const hasError = dashboardError || chatError || statusError || updateError;
-
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
@@ -63,7 +57,8 @@ export default function HomePage() {
       
       // 로그인 체크
       if (!user) {
-        alert('채팅 기능을 사용하려면 먼저 로그인해주세요.');
+        // alert 대신 더 나은 사용자 경험을 위한 처리
+        console.warn('로그인이 필요합니다.');
         setIsLoading(false);
         return;
       }
@@ -80,7 +75,9 @@ export default function HomePage() {
 
   const focusInput = () => {
     try {
-      inputRef.current?.focus();
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
     } catch (error) {
       console.error('Focus input error:', error);
     }
@@ -199,40 +196,6 @@ export default function HomePage() {
       gradient: "from-green-500 to-emerald-500"
     }
   ];
-
-  // 로딩 상태 처리
-  if (isAnyLoading) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <div className="text-lg text-gray-600">데이터를 불러오는 중...</div>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  // 에러 상태 처리
-  if (hasError) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <div className="text-lg text-gray-600 mb-4">데이터를 불러오는 중 오류가 발생했습니다.</div>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              다시 시도
-            </button>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
 
   return (
     <MainLayout>

@@ -41,10 +41,14 @@ export function useAuth() {
 
     // 인증 상태 변경 감지 (한 번만 처리)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('인증 상태 변경:', event, session?.user?.email);
-        setUser(session?.user ?? null);
-        // 로딩 상태는 초기화 후에는 변경하지 않음
+      (event, session) => {
+        try {
+          console.log('인증 상태 변경:', event, session?.user?.email);
+          setUser(session?.user ?? null);
+          // 로딩 상태는 초기화 후에는 변경하지 않음
+        } catch (error) {
+          console.error('인증 상태 변경 처리 중 오류:', error);
+        }
       }
     );
 
