@@ -334,26 +334,46 @@ export class RAGProcessor {
    */
   private simpleChunkDocument(document: DocumentData): ChunkData[] {
     try {
+      console.log('📄 청킹 시작:', {
+        contentLength: document.content.length,
+        title: document.title
+      });
+
       const chunkSize = 1000;
       const chunkOverlap = 200;
       const chunks: string[] = [];
       
+      // 내용이 비어있으면 빈 청크 반환
+      if (!document.content || document.content.trim() === '') {
+        console.warn('⚠️ 문서 내용이 비어있습니다.');
+        return [];
+      }
+
       let start = 0;
+      let chunkIndex = 0;
+      
       while (start < document.content.length) {
         const end = Math.min(start + chunkSize, document.content.length);
         const chunk = document.content.slice(start, end);
-        chunks.push(chunk);
         
-        // 다음 청크 시작점 계산 (겹침 고려)
+        // 빈 청크가 아닌 경우만 추가
+        if (chunk.trim().length > 0) {
+          chunks.push(chunk);
+          console.log(`📄 청크 ${chunkIndex}: ${chunk.length}자 (${start}-${end})`);
+        }
+        
+        // 다음 청크 시작점 계산
         start = end - chunkOverlap;
-        if (start < 0) start = 0; // 음수 방지
+        if (start < 0) start = 0;
         if (start >= document.content.length) break;
+        
+        chunkIndex++;
       }
       
-      console.log(`📄 간단한 청킹 완료: ${chunks.length}개 청크`);
+      console.log(`📄 청킹 완료: ${chunks.length}개 청크`);
 
       // 청크 데이터 생성
-      return chunks.map((chunk, index) => ({
+      const chunkData = chunks.map((chunk, index) => ({
         id: `${document.id}_chunk_${index}`,
         content: chunk,
         metadata: {
@@ -363,8 +383,11 @@ export class RAGProcessor {
           created_at: new Date().toISOString(),
         },
       }));
+
+      console.log('📄 청크 데이터 생성 완료:', chunkData.length, '개');
+      return chunkData;
     } catch (error) {
-      console.error('❌ 간단한 청킹 실패:', error);
+      console.error('❌ 청킹 실패:', error);
       return [];
     }
   }

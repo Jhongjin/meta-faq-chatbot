@@ -249,6 +249,13 @@ export default function NewDocumentUpload({ onUpload }: NewDocumentUploadProps) 
         throw new Error(errorMessage);
       }
 
+      // RAG 처리 결과 확인
+      if (!result.success || result.data?.status === 'failed') {
+        const errorMessage = result.data?.message || 'RAG 처리 중 오류가 발생했습니다.';
+        console.error('RAG 처리 실패:', errorMessage);
+        throw new Error(errorMessage);
+      }
+
       // 2단계: 처리 진행
       setFiles(prev => prev.map(f => 
         f.id === fileId ? { ...f, status: "processing", progress: 60 } : f
