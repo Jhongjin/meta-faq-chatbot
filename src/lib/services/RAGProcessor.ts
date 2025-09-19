@@ -86,57 +86,6 @@ export class RAGProcessor {
     }
   }
 
-  /**
-   * 문서를 청크로 분할
-   */
-  async chunkDocument(document: DocumentData): Promise<ChunkData[]> {
-    try {
-      console.log('📄 문서 청킹 시작:', document.title);
-      console.log('📄 원본 문서 내용 길이:', document.content.length, '자');
-      console.log('📄 원본 문서 내용 미리보기:', document.content.substring(0, 200) + '...');
-
-      // 간단한 텍스트 분할 (LangChain 대신 직접 구현)
-      const chunkSize = 1000;
-      const chunkOverlap = 200;
-      const chunks: string[] = [];
-      
-      let start = 0;
-      while (start < document.content.length) {
-        const end = Math.min(start + chunkSize, document.content.length);
-        const chunk = document.content.slice(start, end);
-        chunks.push(chunk);
-        start = end - chunkOverlap;
-        if (start >= document.content.length) break;
-      }
-      
-      console.log(`✅ 청킹 완료: ${chunks.length}개 청크 생성`);
-      console.log('📄 청크 타입:', typeof chunks);
-      console.log('📄 청크 배열 여부:', Array.isArray(chunks));
-      console.log(`📄 실제 청크 수: ${chunks.length}개`);
-
-      // 청크 데이터 생성
-      const chunkData: ChunkData[] = chunks.map((chunk, index) => ({
-        id: `${document.id}_chunk_${index}`,
-        content: chunk,
-        metadata: {
-          document_id: document.id,
-          chunk_index: index,
-          source: document.title,
-          created_at: new Date().toISOString(),
-        },
-      }));
-
-      // 각 청크 내용 출력
-      chunkData.forEach((chunk, index) => {
-        console.log(`📄 청크 ${index + 1} (${chunk.content.length}자):`, chunk.content.substring(0, 100) + '...');
-      });
-
-      return chunkData;
-    } catch (error) {
-      console.error('❌ 문서 청킹 오류:', error);
-      throw new Error(`문서 청킹 실패: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
 
   /**
    * 간단한 로컬 임베딩 생성 (API 키 없이)
@@ -309,9 +258,6 @@ export class RAGProcessor {
     chunkCount: number;
     success: boolean;
   }> {
-    let chunks: ChunkData[] = [];
-    let chunksWithEmbeddings: ChunkData[] = [];
-    
     try {
       console.log('🚀 RAG 문서 처리 시작:', document.title);
       console.log('📄 문서 정보:', {
@@ -322,119 +268,101 @@ export class RAGProcessor {
         fileType: document.file_type
       });
 
-      // Supabase 연결 상태 확인
+      // 1. 문서 청킹 (간단한 구현)
+      console.log('📄 문서 청킹 시작...');
+      const chunks = this.simpleChunkDocument(document);
+      console.log('✅ 문서 청킹 완료:', chunks.length, '개 청크');
+
+      if (chunks.length === 0) {
+        console.warn('⚠️ 청킹 결과가 비어있습니다.');
+        return {
+          documentId: document.id,
+          chunkCount: 0,
+          success: false,
+        };
+      }
+
+      // 2. 임베딩 생성
+      console.log('🔮 임베딩 생성 시작...');
+      const chunksWithEmbeddings = chunks.map(chunk => ({
+        ...chunk,
+        embedding: this.generateSimpleEmbedding(chunk.content),
+      }));
+      console.log('✅ 임베딩 생성 완료:', chunksWithEmbeddings.length, '개 청크');
+
+      // 3. Supabase에 저장
       const supabase = await this.getSupabaseClient();
-      const isMemoryMode = !supabase;
-      const isProduction = process.env.NODE_ENV === 'production';
-      
-      console.log('🔍 처리 모드 확인:', {
-        isMemoryMode,
-        isProduction,
-        hasSupabase: !!supabase
-      });
-
-      // 프로덕션에서는 항상 데이터베이스 저장 시도
-      if (isProduction) {
-        if (!supabase) {
-          throw new Error('프로덕션 환경에서 Supabase 연결이 필요합니다');
-        }
+      if (supabase) {
         try {
+          // 문서 저장
           await this.saveDocumentToDatabase(document);
           console.log('✅ 문서 데이터베이스 저장 완료');
-        } catch (error) {
-          console.error('❌ 프로덕션 환경에서 문서 저장 실패:', error);
-          throw error; // 프로덕션에서는 오류 발생
-        }
-      } else if (!isMemoryMode) {
-        try {
-          await this.saveDocumentToDatabase(document);
-          console.log('✅ 문서 데이터베이스 저장 완료');
-        } catch (error) {
-          console.warn('⚠️ 문서 데이터베이스 저장 실패:', error);
-        }
-      } else {
-        console.log('⚠️ 메모리 모드: 문서 저장 건너뛰기');
-      }
 
-      // 2. 문서 청킹 (항상 수행)
-      try {
-        console.log('📄 문서 청킹 시작...');
-        chunks = await this.chunkDocument(document);
-        console.log('✅ 문서 청킹 완료:', chunks.length, '개 청크');
-        
-        if (chunks.length === 0) {
-          console.warn('⚠️ 청킹 결과가 비어있습니다. 원본 내용 확인 필요');
-          console.log('📄 원본 내용:', document.content.substring(0, 500));
-        }
-      } catch (error) {
-        console.error('❌ 문서 청킹 실패:', error);
-        console.error('❌ 원본 문서 내용:', document.content.substring(0, 200));
-        throw new Error(`문서 청킹 실패: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-
-      // 3. 임베딩 생성 (항상 수행)
-      try {
-        chunksWithEmbeddings = await this.generateEmbeddings(chunks);
-        console.log('✅ 임베딩 생성 완료:', chunksWithEmbeddings.length, '개 청크');
-      } catch (error) {
-        console.warn('⚠️ 임베딩 생성 실패, 기본값으로 처리:', error);
-        // 임베딩 생성 실패 시에도 청크는 유지
-        chunksWithEmbeddings = chunks.map(chunk => ({
-          ...chunk,
-          embedding: this.generateSimpleEmbedding(chunk.content),
-        }));
-        console.log('✅ 기본 임베딩으로 대체 완료');
-      }
-
-      // 4. 청크를 데이터베이스에 저장 (프로덕션에서는 항상 저장)
-      if (isProduction) {
-        if (!supabase) {
-          throw new Error('프로덕션 환경에서 Supabase 연결이 필요합니다');
-        }
-        try {
+          // 청크 저장
           await this.saveChunksToDatabase(chunksWithEmbeddings);
           console.log('✅ 청크 데이터베이스 저장 완료');
         } catch (error) {
-          console.error('❌ 프로덕션 환경에서 청크 저장 실패:', error);
-          throw error; // 프로덕션에서는 오류 발생
-        }
-      } else if (!isMemoryMode) {
-        try {
-          await this.saveChunksToDatabase(chunksWithEmbeddings);
-          console.log('✅ 청크 데이터베이스 저장 완료');
-        } catch (error) {
-          console.warn('⚠️ 청크 데이터베이스 저장 실패:', error);
+          console.warn('⚠️ 데이터베이스 저장 실패:', error);
         }
       } else {
-        console.log('⚠️ 메모리 모드: 청크 저장 건너뛰기');
+        console.log('⚠️ Supabase 연결 없음, 메모리 모드');
       }
 
       console.log('✅ RAG 문서 처리 완료:', {
         documentId: document.id,
         chunkCount: chunks.length,
-        mode: isMemoryMode ? '메모리' : '데이터베이스',
-        isProduction,
-        hasSupabase: !!supabase
+        success: true
       });
 
       return {
         documentId: document.id,
         chunkCount: chunks.length,
-        success: true, // 청킹이 성공하면 성공으로 처리
+        success: true,
       };
     } catch (error) {
       console.error('❌ RAG 문서 처리 오류:', error);
-      console.error('❌ 오류 상세:', {
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        documentId: document.id,
-        chunkCount: chunks.length
-      });
       return {
         documentId: document.id,
-        chunkCount: chunks.length, // 청킹된 청크 수 반환
+        chunkCount: 0,
         success: false,
       };
+    }
+  }
+
+  /**
+   * 간단한 문서 청킹 (LangChain 없이)
+   */
+  private simpleChunkDocument(document: DocumentData): ChunkData[] {
+    try {
+      const chunkSize = 1000;
+      const chunkOverlap = 200;
+      const chunks: string[] = [];
+      
+      let start = 0;
+      while (start < document.content.length) {
+        const end = Math.min(start + chunkSize, document.content.length);
+        const chunk = document.content.slice(start, end);
+        chunks.push(chunk);
+        start = end - chunkOverlap;
+        if (start >= document.content.length) break;
+      }
+      
+      console.log(`📄 간단한 청킹 완료: ${chunks.length}개 청크`);
+
+      // 청크 데이터 생성
+      return chunks.map((chunk, index) => ({
+        id: `${document.id}_chunk_${index}`,
+        content: chunk,
+        metadata: {
+          document_id: document.id,
+          chunk_index: index,
+          source: document.title,
+          created_at: new Date().toISOString(),
+        },
+      }));
+    } catch (error) {
+      console.error('❌ 간단한 청킹 실패:', error);
+      return [];
     }
   }
 
