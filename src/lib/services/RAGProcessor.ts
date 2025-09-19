@@ -49,6 +49,11 @@ export class RAGProcessor {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
+    console.log('🔍 Supabase 환경 변수 체크:');
+    console.log('  - NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '설정됨' : '없음');
+    console.log('  - SUPABASE_SERVICE_ROLE_KEY:', supabaseKey ? '설정됨' : '없음');
+    console.log('  - NODE_ENV:', process.env.NODE_ENV);
+    
     // 환경 변수 체크
     if (!supabaseUrl || !supabaseKey) {
       console.warn('⚠️ Supabase 환경 변수가 설정되지 않음. 메모리 모드로 전환');
@@ -65,9 +70,18 @@ export class RAGProcessor {
       // 직접 Supabase 클라이언트 생성 (createPureClient 대신)
       const client = createClient(supabaseUrl, supabaseKey);
       console.log('✅ Supabase 클라이언트 생성 성공 (직접 생성)');
+      
+      // 연결 테스트
+      const { data, error } = await client.from('documents').select('count').limit(1);
+      if (error) {
+        console.error('❌ Supabase 연결 테스트 실패:', error);
+        return null;
+      }
+      console.log('✅ Supabase 연결 테스트 성공');
+      
       return client;
     } catch (error) {
-      console.warn('⚠️ Supabase 클라이언트 생성 실패:', error);
+      console.error('❌ Supabase 클라이언트 생성 실패:', error);
       return null;
     }
   }
@@ -286,11 +300,24 @@ export class RAGProcessor {
     
     try {
       console.log('🚀 RAG 문서 처리 시작:', document.title);
+      console.log('📄 문서 정보:', {
+        id: document.id,
+        title: document.title,
+        contentLength: document.content.length,
+        fileSize: document.file_size,
+        fileType: document.file_type
+      });
 
       // Supabase 연결 상태 확인
       const supabase = await this.getSupabaseClient();
       const isMemoryMode = !supabase;
       const isProduction = process.env.NODE_ENV === 'production';
+      
+      console.log('🔍 처리 모드 확인:', {
+        isMemoryMode,
+        isProduction,
+        hasSupabase: !!supabase
+      });
 
       // 프로덕션에서는 항상 데이터베이스 저장 시도
       if (isProduction) {
@@ -317,10 +344,17 @@ export class RAGProcessor {
 
       // 2. 문서 청킹 (항상 수행)
       try {
+        console.log('📄 문서 청킹 시작...');
         chunks = await this.chunkDocument(document);
         console.log('✅ 문서 청킹 완료:', chunks.length, '개 청크');
+        
+        if (chunks.length === 0) {
+          console.warn('⚠️ 청킹 결과가 비어있습니다. 원본 내용 확인 필요');
+          console.log('📄 원본 내용:', document.content.substring(0, 500));
+        }
       } catch (error) {
         console.error('❌ 문서 청킹 실패:', error);
+        console.error('❌ 원본 문서 내용:', document.content.substring(0, 200));
         throw new Error(`문서 청킹 실패: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
 
@@ -365,6 +399,8 @@ export class RAGProcessor {
         documentId: document.id,
         chunkCount: chunks.length,
         mode: isMemoryMode ? '메모리' : '데이터베이스',
+        isProduction,
+        hasSupabase: !!supabase
       });
 
       return {
@@ -374,6 +410,12 @@ export class RAGProcessor {
       };
     } catch (error) {
       console.error('❌ RAG 문서 처리 오류:', error);
+      console.error('❌ 오류 상세:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        documentId: document.id,
+        chunkCount: chunks.length
+      });
       return {
         documentId: document.id,
         chunkCount: chunks.length, // 청킹된 청크 수 반환
