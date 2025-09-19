@@ -62,8 +62,9 @@ export class RAGProcessor {
     }
     
     try {
-      const client = await createPureClient();
-      console.log('✅ Supabase 클라이언트 생성 성공');
+      // 직접 Supabase 클라이언트 생성 (createPureClient 대신)
+      const client = createClient(supabaseUrl, supabaseKey);
+      console.log('✅ Supabase 클라이언트 생성 성공 (직접 생성)');
       return client;
     } catch (error) {
       console.warn('⚠️ Supabase 클라이언트 생성 실패:', error);
@@ -292,15 +293,23 @@ export class RAGProcessor {
       const isProduction = process.env.NODE_ENV === 'production';
 
       // 프로덕션에서는 항상 데이터베이스 저장 시도
-      if (isProduction || !isMemoryMode) {
+      if (isProduction) {
+        if (!supabase) {
+          throw new Error('프로덕션 환경에서 Supabase 연결이 필요합니다');
+        }
+        try {
+          await this.saveDocumentToDatabase(document);
+          console.log('✅ 문서 데이터베이스 저장 완료');
+        } catch (error) {
+          console.error('❌ 프로덕션 환경에서 문서 저장 실패:', error);
+          throw error; // 프로덕션에서는 오류 발생
+        }
+      } else if (!isMemoryMode) {
         try {
           await this.saveDocumentToDatabase(document);
           console.log('✅ 문서 데이터베이스 저장 완료');
         } catch (error) {
           console.warn('⚠️ 문서 데이터베이스 저장 실패:', error);
-          if (isProduction) {
-            throw error; // 프로덕션에서는 오류 발생
-          }
         }
       } else {
         console.log('⚠️ 메모리 모드: 문서 저장 건너뛰기');
@@ -330,15 +339,23 @@ export class RAGProcessor {
       }
 
       // 4. 청크를 데이터베이스에 저장 (프로덕션에서는 항상 저장)
-      if (isProduction || !isMemoryMode) {
+      if (isProduction) {
+        if (!supabase) {
+          throw new Error('프로덕션 환경에서 Supabase 연결이 필요합니다');
+        }
+        try {
+          await this.saveChunksToDatabase(chunksWithEmbeddings);
+          console.log('✅ 청크 데이터베이스 저장 완료');
+        } catch (error) {
+          console.error('❌ 프로덕션 환경에서 청크 저장 실패:', error);
+          throw error; // 프로덕션에서는 오류 발생
+        }
+      } else if (!isMemoryMode) {
         try {
           await this.saveChunksToDatabase(chunksWithEmbeddings);
           console.log('✅ 청크 데이터베이스 저장 완료');
         } catch (error) {
           console.warn('⚠️ 청크 데이터베이스 저장 실패:', error);
-          if (isProduction) {
-            throw error; // 프로덕션에서는 오류 발생
-          }
         }
       } else {
         console.log('⚠️ 메모리 모드: 청크 저장 건너뛰기');
