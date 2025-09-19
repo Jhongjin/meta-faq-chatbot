@@ -31,21 +31,11 @@ export async function GET(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // 문서 조회 (document_metadata와 조인하여 실제 파일 타입 가져오기)
+    // 문서 조회 (간단한 방식으로 수정)
     console.log('📋 문서 조회 시작...');
     const { data: documents, error: docsError } = await supabase
       .from('documents')
-      .select(`
-        id, title, url, type, status, created_at, updated_at,
-        document_metadata!left(
-          type,
-          size,
-          uploaded_at,
-          status,
-          chunk_count,
-          embedding_count
-        )
-      `)
+      .select('id, title, url, type, status, created_at, updated_at, chunk_count')
       .order('created_at', { ascending: false });
 
     if (docsError) {
@@ -90,48 +80,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 문서에 청크 수 추가 및 실제 파일 타입 변환
-    const documentsWithChunks = documents?.map(doc => {
-      // document_metadata가 배열로 반환될 수 있으므로 첫 번째 요소 사용
-      const metadata = Array.isArray(doc.document_metadata) 
-        ? doc.document_metadata[0] 
-        : doc.document_metadata;
-        
-      // 상태 동기화: document_metadata의 상태를 우선시
-      let finalStatus = doc.status;
-      if (metadata?.status) {
-        // document_metadata에 상태가 있고, documents 테이블과 다르면 동기화
-        if (metadata.status !== doc.status) {
-          console.log(`🔄 상태 동기화 필요: ${doc.id} (${doc.status} -> ${metadata.status})`);
-          finalStatus = metadata.status;
-          
-          // 비동기적으로 상태 업데이트 (응답 속도를 위해)
-          supabase
-            .from('documents')
-            .update({ 
-              status: metadata.status,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', doc.id)
-            .then(({ error }) => {
-              if (error) {
-                console.error(`❌ 상태 동기화 실패: ${doc.id}`, error);
-              } else {
-                console.log(`✅ 상태 동기화 완료: ${doc.id} -> ${metadata.status}`);
-              }
-            });
-        }
-      }
-        
-      return {
-        ...doc,
-        status: finalStatus, // 동기화된 상태 사용
-        type: metadata?.type || doc.type, // 실제 파일 타입 사용
-        size: metadata?.size || 0,
-        chunk_count: metadata?.chunk_count || (chunkCounts[doc.id] || 0),
-        actual_chunk_count: chunkCounts[doc.id] || 0
-      };
-    }) || [];
+    // 문서에 청크 수 추가
+    const documentsWithChunks = documents?.map(doc => ({
+      ...doc,
+      chunk_count: doc.chunk_count || (chunkCounts[doc.id] || 0),
+      actual_chunk_count: chunkCounts[doc.id] || 0
+    })) || [];
 
     // 통계 계산
     const stats = {
