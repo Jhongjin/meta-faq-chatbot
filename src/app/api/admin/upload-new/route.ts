@@ -119,7 +119,24 @@ export async function POST(request: NextRequest) {
 
     // JSON 요청 처리 (Base64 파일)
     if (contentType?.includes('application/json')) {
-      const body = await request.json();
+      let body;
+      try {
+        const text = await request.text();
+        if (!text || text.trim() === '') {
+          return NextResponse.json(
+            { success: false, error: '요청 본문이 비어있습니다.' },
+            { status: 400 }
+          );
+        }
+        body = JSON.parse(text);
+      } catch (error) {
+        console.error('❌ JSON 파싱 오류:', error);
+        return NextResponse.json(
+          { success: false, error: '잘못된 JSON 형식입니다.' },
+          { status: 400 }
+        );
+      }
+      
       const { fileName, fileSize, fileType, fileContent } = body;
 
       if (!fileContent || !fileName) {
