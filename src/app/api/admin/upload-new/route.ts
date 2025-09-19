@@ -14,11 +14,6 @@ export const maxDuration = 120; // 타임아웃 증가
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// 메모리 사용량 제한
-export const experimental = {
-  serverComponentsExternalPackages: ['@supabase/supabase-js']
-};
-
 // 하드코딩된 메모리 저장소 (개발 환경용)
 interface Document {
   id: string;
