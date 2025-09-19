@@ -221,299 +221,6 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * JSON 요청 처리 (Base64 파일 또는 URL)
- */
-async function handleJsonRequest(request: NextRequest) {
-  try {
-    const body = await request.json();
-    console.log('📄 JSON 요청 본문:', { 
-      fileName: body.fileName, 
-      fileSize: body.fileSize, 
-      fileType: body.fileType,
-      hasFileContent: !!body.fileContent,
-      hasUrl: !!body.url,
-      type: body.type
-    });
-
-    if (body.fileContent && body.fileName) {
-      // Base64 파일 처리
-      console.log('📁 Base64 파일 처리 시작');
-      return await handleBase64File(body);
-    } else if (body.url) {
-      // URL 처리
-      console.log('🌐 URL 처리 시작');
-      return await handleUrlProcessing(body.url);
-    } else {
-      return NextResponse.json(
-        { 
-          success: false,
-          error: '파일 내용 또는 URL이 제공되지 않았습니다.' 
-        },
-        { status: 400 }
-      );
-    }
-
-  } catch (error) {
-    console.error('❌ JSON 요청 처리 오류:', error);
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'JSON 요청 처리 중 오류가 발생했습니다.',
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * FormData 요청 처리
- */
-async function handleFormDataRequest(request: NextRequest) {
-  try {
-    console.log('📁 FormData 요청 처리 시작');
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const type = formData.get('type') as string;
-
-    if (!file) {
-      return NextResponse.json(
-        { 
-          success: false,
-          error: '파일이 제공되지 않았습니다.' 
-        },
-        { status: 400 }
-      );
-    }
-
-    console.log('📄 FormData 파일 정보:', {
-      name: file.name,
-      size: file.size,
-      type: file.type
-    });
-
-    // 파일 유효성 검사
-    const validTypes = ['.pdf', '.docx', '.txt'];
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    
-    if (!validTypes.includes(fileExtension)) {
-      return NextResponse.json(
-        { 
-          success: false,
-          error: '지원하지 않는 파일 형식입니다. PDF, DOCX, TXT만 지원됩니다.' 
-        },
-        { status: 400 }
-      );
-    }
-
-    // 파일 크기 검사 (10MB 제한)
-    const maxFileSize = parseInt(process.env.MAX_FILE_SIZE || '10485760');
-    if (file.size > maxFileSize) {
-      return NextResponse.json(
-        { 
-          success: false,
-          error: `파일 크기가 ${Math.round(maxFileSize / 1024 / 1024)}MB를 초과합니다.` 
-        },
-        { status: 400 }
-      );
-    }
-
-    // 파일 처리
-    const processedDocument = await newDocumentProcessor.processFile(file);
-    const documentId = await newDocumentProcessor.saveDocument(processedDocument);
-
-    console.log(`✅ 파일 처리 완료: ${file.name} -> ${documentId}`);
-
-    return NextResponse.json({
-      success: true,
-      message: '파일이 성공적으로 업로드되고 처리되었습니다.',
-      data: {
-        documentId,
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        chunksProcessed: processedDocument.chunks.length,
-        status: 'completed',
-        processingTime: Date.now()
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ FormData 처리 오류:', error);
-    return NextResponse.json(
-      { 
-        success: false,
-        error: '파일 처리 중 오류가 발생했습니다.',
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * Base64 파일 처리 (완전 단순화)
- */
-async function handleBase64File(body: any) {
-  try {
-    const { fileName, fileSize, fileType, fileContent } = body;
-
-    if (!fileContent) {
-      return NextResponse.json(
-        { 
-          success: false,
-          error: '파일 내용이 제공되지 않았습니다.' 
-        },
-        { status: 400 }
-      );
-    }
-
-    console.log('📁 Base64 파일 처리 시작 (실제 저장 버전)');
-
-    // Base64 디코딩
-    const decodedContent = atob(fileContent);
-    console.log('📄 Base64 디코딩 완료');
-
-    // 실제 데이터베이스에 저장
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    const documentId = `doc_${Date.now()}`;
-    
-    // 1. 문서 레코드 저장
-    console.log('💾 문서 레코드 저장 중...');
-    const { error: docError } = await supabase
-      .from('documents')
-      .insert({
-        id: documentId,
-        title: fileName,
-        type: 'file',
-        status: 'completed',
-        content: decodedContent.substring(0, 1000), // 처음 1000자만 저장
-        chunk_count: 1,
-        file_size: fileSize,
-        file_type: fileType,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-
-    if (docError) {
-      console.error('❌ 문서 저장 실패:', docError);
-      throw new Error(`문서 저장 실패: ${docError.message}`);
-    }
-
-    // 2. 청크 데이터 저장
-    console.log('🧩 청크 데이터 저장 중...');
-    const { error: chunkError } = await supabase
-      .from('document_chunks')
-      .insert({
-        document_id: documentId,
-        chunk_id: 1,
-        content: decodedContent,
-        embedding: [],
-        metadata: {
-          chunkIndex: 0,
-          startChar: 0,
-          endChar: decodedContent.length,
-          chunkType: 'text',
-          title: fileName,
-          type: 'file',
-          model: 'bge-m3',
-          dimension: 0,
-          processingTime: Date.now(),
-          validated: true
-        },
-        created_at: new Date().toISOString()
-      });
-
-    if (chunkError) {
-      console.error('❌ 청크 저장 실패:', chunkError);
-      // 청크 저장 실패해도 문서는 저장된 상태로 유지
-    }
-    
-    console.log(`✅ 파일 처리 완료 (실제 저장): ${fileName} -> ${documentId}`);
-
-    return NextResponse.json({
-      success: true,
-      message: '파일이 성공적으로 업로드되고 저장되었습니다.',
-      data: {
-        documentId,
-        fileName: fileName,
-        fileSize: fileSize,
-        fileType: fileType,
-        chunksProcessed: 1,
-        status: 'completed',
-        processingTime: Date.now()
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Base64 파일 처리 오류:', error);
-    
-    return NextResponse.json(
-      { 
-        success: false,
-        error: '파일 처리 중 오류가 발생했습니다.',
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * URL 처리
- */
-async function handleUrlProcessing(url: string) {
-  try {
-    // URL 유효성 검사
-    try {
-      new URL(url);
-    } catch {
-      return NextResponse.json(
-        { 
-          success: false,
-          error: '유효하지 않은 URL 형식입니다.' 
-        },
-        { status: 400 }
-      );
-    }
-
-    // URL 처리
-    const processedDocument = await newDocumentProcessor.processUrl(url);
-    const documentId = await newDocumentProcessor.saveDocument(processedDocument);
-
-    console.log(`✅ URL 처리 완료: ${url} -> ${documentId}`);
-
-    return NextResponse.json({
-      success: true,
-      message: 'URL이 성공적으로 처리되었습니다.',
-      data: {
-        documentId,
-        url: url,
-        chunksProcessed: processedDocument.chunks.length,
-        status: 'completed',
-        processingTime: Date.now()
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ URL 처리 오류:', error);
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'URL 처리 중 오류가 발생했습니다.',
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/**
  * 문서 목록 조회
  */
 export async function GET(request: NextRequest) {
@@ -661,22 +368,20 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    console.log('🔄 파일 덮어쓰기 요청');
+    const contentType = request.headers.get('content-type');
     
-    const { searchParams } = new URL(request.url);
-    const action = searchParams.get('action');
-    
-    if (action === 'overwrite-file') {
+    if (contentType?.includes('multipart/form-data')) {
       return await handleFileOverwrite(request);
     } else {
       return NextResponse.json(
         { 
           success: false,
-          error: '지원하지 않는 액션입니다.' 
+          error: '지원하지 않는 Content-Type입니다.' 
         },
         { status: 400 }
       );
     }
+
   } catch (error) {
     console.error('❌ 파일 덮어쓰기 오류:', error);
     return NextResponse.json(
@@ -695,79 +400,70 @@ export async function PUT(request: NextRequest) {
  */
 async function handleFileOverwrite(request: NextRequest) {
   try {
-    console.log('🔄 파일 덮어쓰기 처리 시작');
-    
-    const body = await request.json();
-    const { fileName, fileSize, fileType, fileContent, existingDocumentId } = body;
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    const fileName = formData.get('fileName') as string;
+    const existingDocumentId = formData.get('documentId') as string;
 
-    if (!fileContent || !fileName || !existingDocumentId) {
+    if (!file || !fileName || !existingDocumentId) {
       return NextResponse.json(
         { 
           success: false,
-          error: '파일 내용, 파일명, 기존 문서 ID가 필요합니다.' 
+          error: '파일, 파일명, 문서 ID가 모두 필요합니다.' 
         },
         { status: 400 }
       );
     }
 
-    // Base64 디코딩
-    const decodedContent = atob(fileContent);
-    const buffer = Buffer.from(decodedContent, 'binary');
-    const file = new File([buffer], fileName, { type: fileType });
+    // 파일 내용 읽기
+    const fileContent = await file.text();
+    
+    // 문서 업데이트
+    const documentId = existingDocumentId;
+    const documentData: DocumentData = {
+      id: documentId,
+      title: fileName,
+      content: fileContent,
+      type: 'file',
+      file_size: file.size,
+      file_type: file.type,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-    console.log('🔄 덮어쓰기 파일 정보:', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      existingDocumentId
-    });
+    // RAG 처리 (청킹 + 임베딩 + 저장)
+    console.log('🔄 파일 덮어쓰기 RAG 처리 시작...');
+    const ragResult = await ragProcessor.processDocument(documentData);
 
-    // 기존 문서 삭제
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    // 기존 문서와 관련된 모든 청크 삭제
-    const { error: chunksError } = await supabase
-      .from('document_chunks')
-      .delete()
-      .eq('document_id', existingDocumentId);
-
-    if (chunksError) {
-      console.warn('기존 청크 삭제 실패:', chunksError);
+    // 메모리 저장소 업데이트
+    const documentIndex = documents.findIndex(doc => doc.id === documentId);
+    if (documentIndex !== -1) {
+      documents[documentIndex] = {
+        id: documentId,
+        title: fileName,
+        type: getFileTypeFromExtension(fileName),
+        status: ragResult.success ? 'completed' : 'failed',
+        content: fileContent.substring(0, 1000),
+        chunk_count: ragResult.chunkCount,
+        file_size: file.size,
+        file_type: file.type,
+        created_at: documents[documentIndex].created_at,
+        updated_at: new Date().toISOString()
+      };
     }
-
-    // 기존 문서 삭제
-    const { error: documentError } = await supabase
-      .from('documents')
-      .delete()
-      .eq('id', existingDocumentId);
-
-    if (documentError) {
-      throw new Error(`기존 문서 삭제 실패: ${documentError.message}`);
-    }
-
-    console.log(`🗑️ 기존 문서 삭제 완료: ${existingDocumentId}`);
-
-    // 새 파일 처리
-    const processedDocument = await newDocumentProcessor.processFile(file);
-    const documentId = await newDocumentProcessor.saveDocument(processedDocument);
-
+    
     console.log(`✅ 파일 덮어쓰기 완료: ${fileName} -> ${documentId}`);
 
     return NextResponse.json({
       success: true,
       message: '파일이 성공적으로 덮어쓰기되었습니다.',
       data: {
-        documentId,
-        fileName: fileName,
-        fileSize: fileSize,
-        fileType: fileType,
-        chunksProcessed: processedDocument.chunks.length,
-        status: 'completed',
-        processingTime: Date.now()
+        documentId: documentId,
+        message: ragResult.success 
+          ? `파일이 성공적으로 덮어쓰기되고 ${ragResult.chunkCount}개 청크로 처리되었습니다.`
+          : '파일 덮어쓰기는 성공했지만 RAG 처리 중 오류가 발생했습니다.',
+        status: ragResult.success ? 'completed' : 'failed',
+        chunkCount: ragResult.chunkCount
       }
     });
 
@@ -859,13 +555,17 @@ export async function DELETE(request: NextRequest) {
       throw new Error(`문서 삭제 실패: ${documentError.message}`);
     }
 
+    // 메모리에서도 삭제
+    documents = documents.filter(doc => doc.id !== targetDocumentId);
+
     console.log(`✅ 문서 삭제 완료: ${targetDocumentId}`);
 
     return NextResponse.json({
       success: true,
       message: '문서와 관련된 모든 데이터가 성공적으로 삭제되었습니다.',
       data: {
-        documentId: targetDocumentId
+        deletedChunks: 0, // 실제로는 삭제된 청크 수를 반환해야 함
+        deletedEmbeddings: 0
       }
     });
 

@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  // 전역 에러 핸들러 설정 (완전 간소화)
+  // 전역 에러 핸들러 설정
   useEffect(() => {
     const handleGlobalError = (event: ErrorEvent) => {
       // 이벤트 객체 에러는 무시
@@ -32,26 +32,23 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Create a stable QueryClient instance
+  // Create a stable QueryClient instance with robust error handling
   const [queryClient] = useState(
     () => new QueryClient({
       defaultOptions: {
         queries: {
           staleTime: 60 * 1000, // 1 minute
           retry: 1, // Only retry once
-          refetchOnWindowFocus: false // Disable refetch on window focus
+          refetchOnWindowFocus: false, // Disable refetch on window focus
         },
         mutations: {
           onError: (error) => {
-            // 뮤테이션 에러 로깅 및 처리 - 이벤트 객체 안전 처리
+            // 뮤테이션 에러 로깅 및 처리
             try {
-              // 이벤트 객체인지 확인하고 안전하게 직렬화
               if (error && typeof error === 'object' && 'type' in error) {
-                // 이벤트 객체인 경우 메시지만 추출
-                const errorMessage = error.message || error.toString() || 'Unknown mutation error';
+                const errorMessage = (error as any).message || error.toString() || 'Unknown mutation error';
                 console.error('React Query Mutation Error (Event):', errorMessage);
               } else {
-                // 일반 에러 객체인 경우
                 console.error('React Query Mutation Error:', error);
               }
             } catch (logError) {
