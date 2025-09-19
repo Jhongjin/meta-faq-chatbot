@@ -343,7 +343,10 @@ export class RAGProcessor {
         const end = Math.min(start + chunkSize, document.content.length);
         const chunk = document.content.slice(start, end);
         chunks.push(chunk);
+        
+        // 다음 청크 시작점 계산 (겹침 고려)
         start = end - chunkOverlap;
+        if (start < 0) start = 0; // 음수 방지
         if (start >= document.content.length) break;
       }
       
