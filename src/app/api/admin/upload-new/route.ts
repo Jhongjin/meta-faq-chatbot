@@ -94,21 +94,54 @@ export async function POST(request: NextRequest) {
       console.log('🔄 RAG 처리 시작...');
       const ragResult = await ragProcessor.processDocument(documentData);
 
-      // 메모리 저장소에도 저장 (UI 표시용)
-      const newDocument: Document = {
-        id: documentId,
-        title: file.name,
-        type: getFileTypeFromExtension(file.name),
-        status: ragResult.success ? 'completed' : 'failed',
-        content: fileContent.substring(0, 1000), // 처음 1000자만 저장
-        chunk_count: ragResult.chunkCount,
-        file_size: file.size,
-        file_type: file.type,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      // 실제 데이터베이스에 저장 (Supabase 모드 강제)
+      console.log('💾 실제 데이터베이스에 문서 저장 중...');
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
 
-      documents.push(newDocument);
+        // 문서 저장
+        const { error: docError } = await supabase
+          .from('documents')
+          .insert({
+            id: documentId,
+            title: file.name,
+            type: 'file',
+            status: ragResult.success ? 'completed' : 'failed',
+            content: fileContent.substring(0, 1000),
+            chunk_count: ragResult.chunkCount,
+            file_size: file.size,
+            file_type: file.type,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (docError) {
+          console.error('❌ 문서 저장 실패:', docError);
+        } else {
+          console.log('✅ 문서 데이터베이스 저장 완료');
+        }
+      } catch (error) {
+        console.warn('⚠️ 데이터베이스 저장 실패, 메모리 모드로 fallback:', error);
+        
+        // 메모리 저장소에도 저장 (fallback)
+        const newDocument: Document = {
+          id: documentId,
+          title: file.name,
+          type: getFileTypeFromExtension(file.name),
+          status: ragResult.success ? 'completed' : 'failed',
+          content: fileContent.substring(0, 1000),
+          chunk_count: ragResult.chunkCount,
+          file_size: file.size,
+          file_type: file.type,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        documents.push(newDocument);
+      }
       
       console.log('✅ 파일 업로드 및 RAG 처리 완료:', {
         documentId,
@@ -164,21 +197,54 @@ export async function POST(request: NextRequest) {
       console.log('🔄 RAG 처리 시작 (Base64)...');
       const ragResult = await ragProcessor.processDocument(documentData);
 
-      // 메모리 저장소에도 저장 (UI 표시용)
-      const newDocument: Document = {
-        id: documentId,
-        title: fileName,
-        type: getFileTypeFromExtension(fileName),
-        status: ragResult.success ? 'completed' : 'failed',
-        content: decodedContent.substring(0, 1000), // 처음 1000자만 저장
-        chunk_count: ragResult.chunkCount,
-        file_size: fileSize,
-        file_type: fileType,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      // 실제 데이터베이스에 저장 (Supabase 모드 강제)
+      console.log('💾 실제 데이터베이스에 문서 저장 중 (Base64)...');
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
 
-      documents.push(newDocument);
+        // 문서 저장
+        const { error: docError } = await supabase
+          .from('documents')
+          .insert({
+            id: documentId,
+            title: fileName,
+            type: 'file',
+            status: ragResult.success ? 'completed' : 'failed',
+            content: decodedContent.substring(0, 1000),
+            chunk_count: ragResult.chunkCount,
+            file_size: fileSize,
+            file_type: fileType,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (docError) {
+          console.error('❌ 문서 저장 실패:', docError);
+        } else {
+          console.log('✅ 문서 데이터베이스 저장 완료 (Base64)');
+        }
+      } catch (error) {
+        console.warn('⚠️ 데이터베이스 저장 실패, 메모리 모드로 fallback:', error);
+        
+        // 메모리 저장소에도 저장 (fallback)
+        const newDocument: Document = {
+          id: documentId,
+          title: fileName,
+          type: getFileTypeFromExtension(fileName),
+          status: ragResult.success ? 'completed' : 'failed',
+          content: decodedContent.substring(0, 1000),
+          chunk_count: ragResult.chunkCount,
+          file_size: fileSize,
+          file_type: fileType,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        documents.push(newDocument);
+      }
       
       console.log('✅ Base64 파일 업로드 및 RAG 처리 완료:', {
         documentId,
@@ -231,11 +297,12 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const type = searchParams.get('type');
 
-    // Supabase 환경 변수 체크
+    // Supabase 환경 변수 체크 (프로덕션에서는 항상 Supabase 모드 사용)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const isProduction = process.env.NODE_ENV === 'production';
 
-    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('dummy')) {
+    if (!isProduction && (!supabaseUrl || !supabaseKey || supabaseUrl.includes('dummy'))) {
       console.log('📋 문서 목록 조회 (메모리 모드):', { limit, offset, status, type });
 
       // 메모리에서 문서 필터링

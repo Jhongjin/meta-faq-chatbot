@@ -289,18 +289,18 @@ export class RAGProcessor {
       // Supabase 연결 상태 확인
       const supabase = await this.getSupabaseClient();
       const isMemoryMode = !supabase;
+      const isProduction = process.env.NODE_ENV === 'production';
 
-      if (isMemoryMode) {
-        console.log('📝 메모리 모드: 로컬 처리만 수행');
-      }
-
-      // 1. 문서를 데이터베이스에 저장 (메모리 모드에서는 건너뛰기)
-      if (!isMemoryMode) {
+      // 프로덕션에서는 항상 데이터베이스 저장 시도
+      if (isProduction || !isMemoryMode) {
         try {
           await this.saveDocumentToDatabase(document);
           console.log('✅ 문서 데이터베이스 저장 완료');
         } catch (error) {
-          console.warn('⚠️ 문서 데이터베이스 저장 실패, 메모리 모드로 전환:', error);
+          console.warn('⚠️ 문서 데이터베이스 저장 실패:', error);
+          if (isProduction) {
+            throw error; // 프로덕션에서는 오류 발생
+          }
         }
       } else {
         console.log('⚠️ 메모리 모드: 문서 저장 건너뛰기');
@@ -329,13 +329,16 @@ export class RAGProcessor {
         console.log('✅ 기본 임베딩으로 대체 완료');
       }
 
-      // 4. 청크를 데이터베이스에 저장 (메모리 모드에서는 건너뛰기)
-      if (!isMemoryMode) {
+      // 4. 청크를 데이터베이스에 저장 (프로덕션에서는 항상 저장)
+      if (isProduction || !isMemoryMode) {
         try {
           await this.saveChunksToDatabase(chunksWithEmbeddings);
           console.log('✅ 청크 데이터베이스 저장 완료');
         } catch (error) {
           console.warn('⚠️ 청크 데이터베이스 저장 실패:', error);
+          if (isProduction) {
+            throw error; // 프로덕션에서는 오류 발생
+          }
         }
       } else {
         console.log('⚠️ 메모리 모드: 청크 저장 건너뛰기');
