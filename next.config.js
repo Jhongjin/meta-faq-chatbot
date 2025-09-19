@@ -32,6 +32,18 @@ const nextConfig = {
       };
     }
 
+    // 바이너리 파일 처리 설정
+    config.module.rules.push({
+      test: /\.node$/,
+      use: 'node-loader',
+    });
+
+    // onnxruntime-node 바이너리 파일 제외
+    config.externals = config.externals || [];
+    config.externals.push({
+      'onnxruntime-node': 'commonjs onnxruntime-node',
+    });
+
     return config;
   },
 };
