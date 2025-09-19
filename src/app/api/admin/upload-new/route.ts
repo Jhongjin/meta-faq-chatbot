@@ -93,55 +93,7 @@ export async function POST(request: NextRequest) {
       // RAG 처리 (청킹 + 임베딩 + 저장)
       console.log('🔄 RAG 처리 시작...');
       const ragResult = await ragProcessor.processDocument(documentData);
-
-      // 실제 데이터베이스에 저장 (Supabase 모드 강제)
-      console.log('💾 실제 데이터베이스에 문서 저장 중...');
-      try {
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
-
-        // 문서 저장
-        const { error: docError } = await supabase
-          .from('documents')
-          .insert({
-            id: documentId,
-            title: file.name,
-            type: 'file',
-            status: ragResult.success ? 'completed' : 'failed',
-            content: fileContent.substring(0, 1000),
-            chunk_count: ragResult.chunkCount,
-            file_size: file.size,
-            file_type: file.type,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (docError) {
-          console.error('❌ 문서 저장 실패:', docError);
-        } else {
-          console.log('✅ 문서 데이터베이스 저장 완료');
-        }
-      } catch (error) {
-        console.warn('⚠️ 데이터베이스 저장 실패, 메모리 모드로 fallback:', error);
-        
-        // 메모리 저장소에도 저장 (fallback)
-        const newDocument: Document = {
-          id: documentId,
-          title: file.name,
-          type: getFileTypeFromExtension(file.name),
-          status: ragResult.success ? 'completed' : 'failed',
-          content: fileContent.substring(0, 1000),
-          chunk_count: ragResult.chunkCount,
-          file_size: file.size,
-          file_type: file.type,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        documents.push(newDocument);
-      }
+      console.log('✅ RAG 처리 완료:', ragResult);
       
       console.log('✅ 파일 업로드 및 RAG 처리 완료:', {
         documentId,
@@ -196,55 +148,7 @@ export async function POST(request: NextRequest) {
       // RAG 처리 (청킹 + 임베딩 + 저장)
       console.log('🔄 RAG 처리 시작 (Base64)...');
       const ragResult = await ragProcessor.processDocument(documentData);
-
-      // 실제 데이터베이스에 저장 (Supabase 모드 강제)
-      console.log('💾 실제 데이터베이스에 문서 저장 중 (Base64)...');
-      try {
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
-
-        // 문서 저장
-        const { error: docError } = await supabase
-          .from('documents')
-          .insert({
-            id: documentId,
-            title: fileName,
-            type: 'file',
-            status: ragResult.success ? 'completed' : 'failed',
-            content: decodedContent.substring(0, 1000),
-            chunk_count: ragResult.chunkCount,
-            file_size: fileSize,
-            file_type: fileType,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (docError) {
-          console.error('❌ 문서 저장 실패:', docError);
-        } else {
-          console.log('✅ 문서 데이터베이스 저장 완료 (Base64)');
-        }
-      } catch (error) {
-        console.warn('⚠️ 데이터베이스 저장 실패, 메모리 모드로 fallback:', error);
-        
-        // 메모리 저장소에도 저장 (fallback)
-        const newDocument: Document = {
-          id: documentId,
-          title: fileName,
-          type: getFileTypeFromExtension(fileName),
-          status: ragResult.success ? 'completed' : 'failed',
-          content: decodedContent.substring(0, 1000),
-          chunk_count: ragResult.chunkCount,
-          file_size: fileSize,
-          file_type: fileType,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        documents.push(newDocument);
-      }
+      console.log('✅ RAG 처리 완료 (Base64):', ragResult);
       
       console.log('✅ Base64 파일 업로드 및 RAG 처리 완료:', {
         documentId,
