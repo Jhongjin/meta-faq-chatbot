@@ -99,9 +99,15 @@ export class RAGProcessor {
       const chunks = await this.textSplitter.splitText(document.content);
       
       console.log(`✅ 청킹 완료: ${chunks.length}개 청크 생성`);
+      console.log('📄 청크 타입:', typeof chunks);
+      console.log('📄 청크 배열 여부:', Array.isArray(chunks));
+
+      // 청크가 배열이 아닌 경우 배열로 변환
+      const chunkArray = Array.isArray(chunks) ? chunks : [chunks];
+      console.log(`📄 실제 청크 수: ${chunkArray.length}개`);
 
       // 청크 데이터 생성
-      const chunkData: ChunkData[] = chunks.map((chunk, index) => ({
+      const chunkData: ChunkData[] = chunkArray.map((chunk, index) => ({
         id: `${document.id}_chunk_${index}`,
         content: chunk,
         metadata: {
