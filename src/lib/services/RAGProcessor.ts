@@ -339,35 +339,20 @@ export class RAGProcessor {
         title: document.title
       });
 
-      const chunkSize = 1000;
-      const chunkOverlap = 200;
-      const chunks: string[] = [];
-      
       // 내용이 비어있으면 빈 청크 반환
       if (!document.content || document.content.trim() === '') {
         console.warn('⚠️ 문서 내용이 비어있습니다.');
         return [];
       }
 
-      let start = 0;
-      let chunkIndex = 0;
+      // 간단하고 안전한 청킹 (무한 루프 방지)
+      const chunkSize = 1000;
+      const chunks: string[] = [];
       
-      while (start < document.content.length) {
-        const end = Math.min(start + chunkSize, document.content.length);
-        const chunk = document.content.slice(start, end);
-        
-        // 빈 청크가 아닌 경우만 추가
-        if (chunk.trim().length > 0) {
-          chunks.push(chunk);
-          console.log(`📄 청크 ${chunkIndex}: ${chunk.length}자 (${start}-${end})`);
-        }
-        
-        // 다음 청크 시작점 계산
-        start = end - chunkOverlap;
-        if (start < 0) start = 0;
-        if (start >= document.content.length) break;
-        
-        chunkIndex++;
+      // 단순하게 chunkSize씩 나누기
+      for (let i = 0; i < document.content.length; i += chunkSize) {
+        const chunk = document.content.slice(i, i + chunkSize);
+        chunks.push(chunk);
       }
       
       console.log(`📄 청킹 완료: ${chunks.length}개 청크`);
