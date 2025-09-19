@@ -39,23 +39,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         queries: {
           staleTime: 60 * 1000, // 1 minute
           retry: 1, // Only retry once
-          refetchOnWindowFocus: false, // Disable refetch on window focus
-          onError: (error) => {
-            // 에러 로깅 및 처리 - 이벤트 객체 안전 처리
-            try {
-              // 이벤트 객체인지 확인하고 안전하게 직렬화
-              if (error && typeof error === 'object' && 'type' in error) {
-                // 이벤트 객체인 경우 메시지만 추출
-                const errorMessage = error.message || error.toString() || 'Unknown error';
-                console.error('React Query Error (Event):', errorMessage);
-              } else {
-                // 일반 에러 객체인 경우
-                console.error('React Query Error:', error);
-              }
-            } catch (logError) {
-              console.error('Error logging failed:', logError);
-            }
-          },
+          refetchOnWindowFocus: false // Disable refetch on window focus
         },
         mutations: {
           onError: (error) => {

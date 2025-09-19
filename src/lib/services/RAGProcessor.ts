@@ -311,6 +311,11 @@ export class RAGProcessor {
       console.log('🔍 벡터 검색 시작:', query);
       const supabase = await this.getSupabaseClient();
 
+      if (!supabase) {
+        console.warn('⚠️ Supabase 클라이언트가 없습니다. 빈 결과를 반환합니다.');
+        return [];
+      }
+
       // 쿼리에 대한 임베딩 생성
       const queryEmbedding = this.generateSimpleEmbedding(query);
 

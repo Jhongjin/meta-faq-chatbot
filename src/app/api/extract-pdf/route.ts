@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pdf from 'pdf-parse';
 
 /**
  * PDF 파일에서 텍스트 추출 API
@@ -29,7 +28,8 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // PDF에서 텍스트 추출
+    // PDF에서 텍스트 추출 (동적 import 사용)
+    const pdf = (await import('pdf-parse')).default;
     const pdfData = await pdf(buffer);
     
     console.log(`✅ PDF 텍스트 추출 완료: ${pdfData.text.length}자`);
