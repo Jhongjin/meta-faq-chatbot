@@ -529,121 +529,52 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const type = searchParams.get('type');
 
-    // Supabase 환경 변수 체크
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // 임시로 메모리 모드만 사용 (Vercel 환경 문제 해결을 위해)
+    console.log('📋 문서 목록 조회 (메모리 모드):', { limit, offset, status, type });
 
-    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('dummy')) {
-      console.log('📋 문서 목록 조회 (메모리 모드):', { limit, offset, status, type });
-
-      // 메모리에서 문서 필터링
-      let filteredDocuments = [...documents];
-
-      if (status) {
-        filteredDocuments = filteredDocuments.filter(doc => doc.status === status);
-      }
-
-      if (type) {
-        filteredDocuments = filteredDocuments.filter(doc => doc.type === type);
-      }
-
-      // 정렬 (최신순)
-      filteredDocuments.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-
-      // 페이지네이션
-      const paginatedDocuments = filteredDocuments.slice(offset, offset + limit);
-
-      // 통계 계산
-      const stats = {
-        totalDocuments: documents.length,
-        completedDocuments: documents.filter(doc => doc.status === 'completed').length,
-        totalChunks: documents.reduce((sum, doc) => sum + doc.chunk_count, 0),
-        pendingDocuments: documents.filter(doc => doc.status === 'pending').length,
-        failedDocuments: documents.filter(doc => doc.status === 'failed').length,
-      };
-
-      console.log('📊 문서 목록 조회 완료 (메모리):', {
-        documentsCount: paginatedDocuments.length,
-        totalDocuments: documents.length,
-        stats: stats
-      });
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          documents: paginatedDocuments,
-          stats: stats,
-          pagination: {
-            limit,
-            offset,
-            total: filteredDocuments.length
-          }
-        }
-      });
-    }
-
-    // Supabase에서 데이터 조회
-    console.log('📋 문서 목록 조회 (Supabase):', { limit, offset, status, type });
-
-    const supabase = await createPureClient();
-
-    // documents 테이블에서 데이터 조회 (document_metadata와 조인하지 않음)
-    let query = supabase
-      .from('documents')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    // 메모리에서 문서 필터링
+    let filteredDocuments = [...documents];
 
     if (status) {
-      query = query.eq('status', status);
+      filteredDocuments = filteredDocuments.filter(doc => doc.status === status);
     }
 
     if (type) {
-      query = query.eq('type', type);
+      filteredDocuments = filteredDocuments.filter(doc => doc.type === type);
     }
 
-    const { data: documentsData, error: documentsError } = await query;
+    // 정렬 (최신순)
+    filteredDocuments.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
 
-    if (documentsError) {
-      console.error('❌ 문서 조회 오류:', documentsError);
-      throw new Error(`문서 조회 실패: ${documentsError.message}`);
-    }
-
-    // 통계 조회
-    const { data: statsData, error: statsError } = await supabase
-      .from('documents')
-      .select('status, chunk_count');
-
-    if (statsError) {
-      console.error('❌ 통계 조회 오류:', statsError);
-    }
+    // 페이지네이션
+    const paginatedDocuments = filteredDocuments.slice(offset, offset + limit);
 
     // 통계 계산
     const stats = {
-      totalDocuments: statsData?.length || 0,
-      completedDocuments: statsData?.filter(doc => doc.status === 'completed').length || 0,
-      totalChunks: statsData?.reduce((sum, doc) => sum + (doc.chunk_count || 0), 0) || 0,
-      pendingDocuments: statsData?.filter(doc => doc.status === 'pending').length || 0,
-      failedDocuments: statsData?.filter(doc => doc.status === 'failed').length || 0,
+      totalDocuments: documents.length,
+      completedDocuments: documents.filter(doc => doc.status === 'completed').length,
+      totalChunks: documents.reduce((sum, doc) => sum + doc.chunk_count, 0),
+      pendingDocuments: documents.filter(doc => doc.status === 'pending').length,
+      failedDocuments: documents.filter(doc => doc.status === 'failed').length,
     };
 
-    console.log('📊 문서 목록 조회 완료 (Supabase):', {
-      documentsCount: documentsData?.length || 0,
-      totalDocuments: stats.totalDocuments,
+    console.log('📊 문서 목록 조회 완료 (메모리):', {
+      documentsCount: paginatedDocuments.length,
+      totalDocuments: documents.length,
       stats: stats
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        documents: documentsData || [],
+        documents: paginatedDocuments,
         stats: stats,
         pagination: {
           limit,
           offset,
-          total: stats.totalDocuments
+          total: filteredDocuments.length
         }
       }
     });

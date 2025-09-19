@@ -43,32 +43,12 @@ export class RAGProcessor {
   }
 
   /**
-   * Supabase 클라이언트 가져오기
+   * Supabase 클라이언트 가져오기 (임시로 메모리 모드만 사용)
    */
   private async getSupabaseClient() {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
-    // 환경 변수 체크
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('⚠️ Supabase 환경 변수가 설정되지 않음. 메모리 모드로 전환');
-      return null;
-    }
-    
-    // 더미 URL 체크
-    if (supabaseUrl === 'https://dummy.supabase.co' || supabaseUrl.includes('dummy')) {
-      console.warn('⚠️ 더미 Supabase URL 감지. 메모리 모드로 전환');
-      return null;
-    }
-    
-    try {
-      const client = await createPureClient();
-      console.log('✅ Supabase 클라이언트 생성 성공');
-      return client;
-    } catch (error) {
-      console.warn('⚠️ Supabase 클라이언트 생성 실패:', error);
-      return null;
-    }
+    // 임시로 항상 null 반환하여 메모리 모드 사용
+    console.warn('⚠️ 임시 메모리 모드: Supabase 연결 비활성화');
+    return null;
   }
 
   /**
