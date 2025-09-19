@@ -95,20 +95,27 @@ export class RAGProcessor {
       console.log('📄 원본 문서 내용 길이:', document.content.length, '자');
       console.log('📄 원본 문서 내용 미리보기:', document.content.substring(0, 200) + '...');
 
-      // 텍스트 분할 - createDocuments 사용
-      const documents = await this.textSplitter.createDocuments([document.content]);
-      const chunks = documents.map(doc => doc.pageContent);
+      // 간단한 텍스트 분할 (LangChain 대신 직접 구현)
+      const chunkSize = 1000;
+      const chunkOverlap = 200;
+      const chunks: string[] = [];
+      
+      let start = 0;
+      while (start < document.content.length) {
+        const end = Math.min(start + chunkSize, document.content.length);
+        const chunk = document.content.slice(start, end);
+        chunks.push(chunk);
+        start = end - chunkOverlap;
+        if (start >= document.content.length) break;
+      }
       
       console.log(`✅ 청킹 완료: ${chunks.length}개 청크 생성`);
       console.log('📄 청크 타입:', typeof chunks);
       console.log('📄 청크 배열 여부:', Array.isArray(chunks));
-
-      // 청크가 배열이 아닌 경우 배열로 변환
-      const chunkArray = Array.isArray(chunks) ? chunks : [chunks];
-      console.log(`📄 실제 청크 수: ${chunkArray.length}개`);
+      console.log(`📄 실제 청크 수: ${chunks.length}개`);
 
       // 청크 데이터 생성
-      const chunkData: ChunkData[] = chunkArray.map((chunk, index) => ({
+      const chunkData: ChunkData[] = chunks.map((chunk, index) => ({
         id: `${document.id}_chunk_${index}`,
         content: chunk,
         metadata: {
