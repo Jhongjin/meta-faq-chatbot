@@ -249,6 +249,34 @@ export class NewDocumentProcessor {
   }
 
   /**
+   * UTF-8 인코딩 보장 함수
+   */
+  private async ensureUtf8Encoding(text: string): Promise<string> {
+    try {
+      // 통합된 인코딩 처리 유틸리티 사용
+      const { processTextEncoding } = await import('../utils/textEncoding');
+      const result = processTextEncoding(text, { 
+        strictMode: true,
+        preserveOriginal: false 
+      });
+      
+      console.log(`🔧 NewDocumentProcessor 텍스트 인코딩 처리:`, {
+        originalLength: text.length,
+        cleanedLength: result.cleanedText.length,
+        encoding: result.encoding,
+        hasIssues: result.hasIssues,
+        issues: result.issues
+      });
+      
+      return result.cleanedText;
+    } catch (error) {
+      console.warn('⚠️ 통합 인코딩 처리 실패, 기본 처리 사용:', error);
+      // 기본 처리로 폴백
+      return text.replace(/\0/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+    }
+  }
+
+  /**
    * 파일 내용 추출
    */
   private async extractFileContent(file: File): Promise<string> {
@@ -257,7 +285,9 @@ export class NewDocumentProcessor {
     try {
       switch (fileExtension) {
         case 'txt':
-          return await file.text();
+          const textContent = await file.text();
+          // UTF-8 인코딩 보장
+          return await this.ensureUtf8Encoding(textContent);
         
         case 'pdf':
           // PDF 파일 처리 - 간단한 메타데이터 기반 처리
@@ -280,19 +310,21 @@ export class NewDocumentProcessor {
 3. 추출된 텍스트를 청킹하여 임베딩 생성
 
 이 파일은 관리자가 나중에 수동으로 처리하거나, PDF 처리 기능이 추가될 때까지 대기 상태로 유지됩니다.`;
-          return pdfContent;
+          return await this.ensureUtf8Encoding(pdfContent);
         
         case 'docx':
           // DOCX 파일 처리 - 서버사이드에서 처리하도록 안내
           console.log(`⚠️ DOCX 파일 감지: ${file.name} - 서버사이드 처리 필요`);
-          return `DOCX 파일: ${file.name}\n파일 크기: ${(file.size / 1024 / 1024).toFixed(2)}MB\n\n이 DOCX 파일은 업로드되었지만 실제 내용 추출을 위해서는 서버사이드 DOCX 처리 라이브러리가 필요합니다. 현재는 파일 메타데이터만 저장됩니다.`;
+          const docxContent = `DOCX 파일: ${file.name}\n파일 크기: ${(file.size / 1024 / 1024).toFixed(2)}MB\n\n이 DOCX 파일은 업로드되었지만 실제 내용 추출을 위해서는 서버사이드 DOCX 처리 라이브러리가 필요합니다. 현재는 파일 메타데이터만 저장됩니다.`;
+          return await this.ensureUtf8Encoding(docxContent);
         
         default:
           // 기본적으로 텍스트로 처리
           try {
-            return await file.text();
+            const textContent = await file.text();
+            return await this.ensureUtf8Encoding(textContent);
           } catch {
-            return `파일: ${file.name}\n\n파일 내용을 읽을 수 없습니다.`;
+            return await this.ensureUtf8Encoding(`파일: ${file.name}\n\n파일 내용을 읽을 수 없습니다.`);
           }
       }
     } catch (error) {
@@ -303,35 +335,75 @@ export class NewDocumentProcessor {
 
 
   /**
-   * URL 크롤링
+   * URL 크롤링 (개선된 버전)
    */
   private async crawlUrl(url: string): Promise<string> {
     try {
+      console.log('🌐 URL 크롤링 시작:', url);
+      
       const response = await fetch(url, {
+        method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; AdMate-Bot/1.0)',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Cache-Control': 'max-age=0'
         },
+        redirect: 'follow',
+        timeout: 30000
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText.substring(0, 200)}`);
       }
 
       const html = await response.text();
+      console.log('✅ HTML 수신 완료:', url, `(${html.length}자)`);
       
-      // 간단한 HTML 텍스트 추출 (실제로는 더 정교한 파싱 필요)
-      const text = html
-        .replace(/<script[^>]*>.*?<\/script>/gi, '')
-        .replace(/<style[^>]*>.*?<\/style>/gi, '')
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
+      // 개선된 HTML 텍스트 추출
+      const text = this.extractTextFromHTML(html);
+      
+      console.log('✅ 텍스트 추출 완료:', url, `(${text.length}자)`);
       return text || `URL 크롤링 실패: ${url}`;
+      
     } catch (error) {
-      console.error(`URL 크롤링 오류: ${error}`);
+      console.error(`❌ URL 크롤링 오류: ${url}`, error);
       return `URL 크롤링 실패: ${url}\n오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`;
     }
+  }
+
+  /**
+   * HTML에서 텍스트 추출 (개선된 버전)
+   */
+  private extractTextFromHTML(html: string): string {
+    // 스크립트와 스타일 태그 제거
+    let text = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // HTML 엔티티 디코딩
+    text = text
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'");
+
+    return text;
   }
 
   /**

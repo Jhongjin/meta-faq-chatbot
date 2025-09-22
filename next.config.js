@@ -16,6 +16,13 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
   
+  // API 라우트 설정
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb', // 50MB 파일 업로드 제한
+    },
+  },
+  
   // Webpack 설정 단순화
   webpack: (config, { isServer }) => {
     // 클라이언트 사이드에서 서버 전용 모듈 제외

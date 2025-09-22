@@ -60,24 +60,41 @@ async function searchSimilarChunks(
     // 실제 Supabase RAG 검색 실행
     console.log('📊 Supabase에서 통합 벡터 검색 실행 중...');
     
-    // 1. 키워드 기반 검색 (벡터 검색 대신)
-    console.log('🔍 키워드 기반 검색 실행 중...');
+    // 1. 벡터 검색 (RAGProcessor 사용)
+    console.log('🔍 벡터 검색 실행 중...');
     
-    const { data: chunksData, error: chunksError } = await supabase
-      .from('document_chunks')
-      .select('chunk_id, content, metadata, document_id, created_at')
-      .or(`content.ilike.%${query}%,content.ilike.%${query.split(' ')[0]}%,content.ilike.%${query.split(' ')[1] || ''}%`)
-      .limit(limit * 2)
-      .order('created_at', { ascending: false });
+    let chunksData = null;
+    
+    try {
+      const { ragProcessor } = await import('@/lib/services/RAGProcessor');
+      const chunks = await ragProcessor.searchSimilarChunks(query, limit);
 
-    if (chunksError) {
-      console.error('❌ 키워드 검색 오류:', chunksError);
+      if (!chunks || chunks.length === 0) {
+        console.log('⚠️ 벡터 검색 결과 없음. Fallback 데이터 사용');
+        return getFallbackSearchResults(query, limit);
+      }
+
+      console.log(`📊 벡터 검색 완료: ${chunks.length}개 청크 발견`);
+
+      // ChunkData를 기존 형식으로 변환
+      chunksData = chunks.map((chunk) => ({
+        chunk_id: chunk.id,
+        content: chunk.content,
+        metadata: chunk.metadata,
+        document_id: chunk.metadata.document_id,
+        created_at: chunk.metadata.created_at,
+        similarity: chunk.similarity || 0.8
+      }));
+
+      console.log(`📊 Supabase에서 ${chunksData.length}개 청크 조회됨`);
+    } catch (error) {
+      console.error('❌ 벡터 검색 오류:', error);
       console.log('⚠️ Fallback 데이터로 전환');
       return getFallbackSearchResults(query, limit);
     }
 
     if (!chunksData || chunksData.length === 0) {
-      console.log('⚠️ document_chunks 데이터가 없음. Fallback 데이터 사용');
+      console.log('⚠️ 벡터 검색 결과가 없음. Fallback 데이터 사용');
       return getFallbackSearchResults(query, limit);
     }
 
@@ -90,9 +107,9 @@ async function searchSimilarChunks(
     
     const { data: documentsData, error: documentsError } = await supabase
       .from('documents')
-      .select('id, title, type, status, created_at, updated_at')
+      .select('id, title, type, status, created_at, updated_at, url')
       .in('id', documentIds)
-      .eq('status', 'completed');
+      .neq('status', 'failed'); // failed가 아닌 모든 상태 포함
 
     if (documentsError) {
       console.error('❌ documents 조회 오류:', documentsError);
@@ -100,13 +117,18 @@ async function searchSimilarChunks(
       return getFallbackSearchResults(query, limit);
     }
 
+    console.log(`📊 documents 조회 결과: ${documentsData?.length || 0}개 문서`);
+    console.log(`📋 documents 데이터:`, documentsData);
+
     // 3. 데이터 조합
     const documentsMap = new Map();
     if (documentsData) {
       documentsData.forEach((doc: any) => {
         documentsMap.set(doc.id, doc);
-        console.log(`📄 문서 정보: ID=${doc.id}, 제목="${doc.title}", 타입=${doc.type}`);
+        console.log(`📄 문서 정보: ID=${doc.id}, 제목="${doc.title}", 타입=${doc.type}, 상태=${doc.status}`);
       });
+    } else {
+      console.log('⚠️ documentsData가 null 또는 undefined입니다.');
     }
 
     const data = chunksData.map((chunk: any) => {
@@ -122,6 +144,24 @@ async function searchSimilarChunks(
         }
       }
       
+      // 문서가 조회되지 않은 경우 더 나은 fallback 제목 생성
+      let fallbackTitle = 'Unknown Document';
+      if (chunk.document_id.startsWith('url_')) {
+        // URL 문서인 경우
+        try {
+          // document_id에서 URL 추출 시도
+          const urlMatch = chunk.document_id.match(/url_(\d+)_/);
+          if (urlMatch) {
+            fallbackTitle = '웹페이지 문서';
+          }
+        } catch {
+          fallbackTitle = '웹페이지 문서';
+        }
+      } else if (chunk.document_id.startsWith('file_') || chunk.document_id.startsWith('doc_')) {
+        // 파일 문서인 경우
+        fallbackTitle = '업로드된 파일';
+      }
+
       return {
         ...chunk,
         documents: document ? {
@@ -129,12 +169,12 @@ async function searchSimilarChunks(
           type: documentType
         } : { 
           id: chunk.document_id, 
-          title: `문서 ${chunk.document_id}`, 
+          title: fallbackTitle,
           type: documentType, 
           status: 'unknown',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          document_url: null
+          url: null
         }
       };
     });
@@ -148,35 +188,20 @@ async function searchSimilarChunks(
 
     console.log(`📊 전체 검색 결과: ${data.length}개 (파일+URL 통합)`);
     
-    // 2. 질문과 관련성 있는 결과 필터링 (개선된 로직)
-    const queryKeywords = query.toLowerCase().split(/\s+/).filter(word => word.length > 1);
-    console.log(`🔍 검색 키워드: [${queryKeywords.join(', ')}]`);
+    // 벡터 검색이 성공했으므로 유사도 기반으로 정렬 (키워드 점수 계산 생략)
+    console.log('✅ 벡터 검색 성공 - 유사도 기반 정렬 사용');
     
-    // 키워드 매칭 점수로 정렬 (필터링 대신 점수 기반 정렬)
     const scoredData = data.map((item: any) => {
-      const content = item.content?.toLowerCase() || '';
-      const title = item.documents?.title?.toLowerCase() || '';
-      const combinedText = `${content} ${title}`;
-
-      // 키워드 매칭 점수 계산 (제목에 더 높은 가중치)
-      const contentScore = queryKeywords.reduce((score, keyword) => {
-        return score + (content.includes(keyword) ? 1 : 0);
-      }, 0);
+      // 벡터 검색에서 이미 유사도가 계산되었으므로 이를 우선 사용
+      const similarityScore = item.similarity || 0.8;
       
-      const titleScore = queryKeywords.reduce((score, keyword) => {
-        return score + (title.includes(keyword) ? 2 : 0);
-      }, 0);
+      console.log(`📝 벡터 유사도: ${item.chunk_id}, 유사도: ${similarityScore}`);
       
-      const totalScore = contentScore + titleScore;
-      
-      console.log(`📝 문서 점수: ${item.chunk_id}, 내용: ${contentScore}, 제목: ${titleScore}, 총점: ${totalScore}`);
-      
-      return { ...item, score: totalScore };
+      return { ...item, score: similarityScore * 10 }; // 유사도를 10배하여 점수로 변환
     });
     
-    // 점수 순으로 정렬하고 상위 결과만 선택
+    // 유사도 순으로 정렬하고 상위 결과만 선택
     const filteredData = scoredData
-      .filter(item => item.score > 0) // 최소 1점 이상인 것만
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
 
@@ -204,8 +229,13 @@ async function searchSimilarChunks(
       // URL 생성 로직 개선
       let documentUrl = '';
       if (isUrl) {
-        // URL 타입인 경우 document.id가 실제 URL
-        documentUrl = document?.id || '';
+        // URL 타입인 경우 document.url 필드에서 실제 URL 가져오기
+        documentUrl = document?.url || '';
+        
+        // URL이 없으면 document.id를 URL로 사용 (fallback)
+        if (!documentUrl) {
+          documentUrl = document?.id || '';
+        }
       } else {
         // 파일 타입인 경우 metadata에서 document_url 찾기
         documentUrl = item.metadata?.document_url || item.metadata?.url || '';
@@ -213,19 +243,112 @@ async function searchSimilarChunks(
         // URL이 없으면 실제 파일 다운로드 URL 생성
         if (!documentUrl) {
           // 실제 파일 다운로드를 위한 URL 생성 (document_id 사용)
-          documentUrl = `/api/download/${document?.id || item.document_id}`;
+          documentUrl = `/api/admin/document-actions?action=download&documentId=${document?.id || item.document_id}`;
         }
       }
 
       console.log(`🔗 URL 생성: isUrl=${isUrl}, documentUrl="${documentUrl}"`);
       console.log(`📄 문서 상세: type=${document?.type}, document_url=${document?.document_url}`);
 
+      // 강력한 텍스트 디코딩 및 정리
+      let content = item.content || '';
+      try {
+        // 1. null 문자 제거
+        content = content.replace(/\0/g, '');
+        
+        // 2. 제어 문자 제거 (탭, 줄바꿈, 캐리지 리턴 제외)
+        content = content.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+        
+        // 3. UTF-8 인코딩 보장
+        content = Buffer.from(content, 'utf-8').toString('utf-8');
+        
+        // 4. 연속된 공백을 하나로 정리
+        content = content.replace(/\s+/g, ' ');
+        
+        // 5. 앞뒤 공백 제거
+        content = content.trim();
+        
+        console.log(`🔧 텍스트 정리 완료: "${content.substring(0, 50)}..."`);
+      } catch (error) {
+        console.warn('⚠️ 텍스트 인코딩 변환 실패, 기본 정리만 적용:', error);
+        // 기본 정리만 적용
+        content = content.replace(/\0/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+      }
+
+      // 출처 제목 생성 로직 개선
+      let displayTitle = document?.title || 'Unknown Document';
+      const chunkIndex = item.metadata?.chunk_index || 0;
+      const pageNumber = Math.floor(chunkIndex / 5) + 1; // 청크 5개당 1페이지로 가정
+      
+      if (isUrl) {
+        // URL 크롤링 데이터: 도메인 + 페이지 제목 + 페이지 번호
+        try {
+          // URL 문서의 경우 document.url 필드에서 실제 URL을 가져옴
+          const actualUrl = document?.url || document?.id || '';
+          const url = new URL(actualUrl);
+          const domain = url.hostname.replace('www.', '');
+          
+          // URL 문서의 실제 제목 사용
+          let actualTitle = document?.title || '웹페이지';
+          
+          // 실제 제목이 있는 경우 (문서 ID와 다른 경우)
+          if (actualTitle !== document?.id && !actualTitle.startsWith('url_')) {
+            // 실제 제목이 있는 경우 - 그대로 사용
+            actualTitle = actualTitle.replace(/^문서\s+/, '');
+            
+            // 제목이 너무 길면 줄이기
+            if (actualTitle.length > 50) {
+              actualTitle = actualTitle.substring(0, 47) + '...';
+            }
+          } else {
+            // 문서 ID와 제목이 같은 경우 (실제 제목이 저장되지 않은 경우)
+            // Meta 페이지의 경우 도메인별로 의미있는 제목 생성
+            if (domain.includes('facebook.com')) {
+              if (url.pathname.includes('/policies/ads')) {
+                actualTitle = 'Facebook 광고 정책';
+              } else if (url.pathname.includes('/business/help')) {
+                actualTitle = 'Facebook 비즈니스 도움말';
+              } else {
+                actualTitle = 'Facebook 가이드';
+              }
+            } else if (domain.includes('instagram.com')) {
+              if (url.pathname.includes('/help')) {
+                actualTitle = 'Instagram 비즈니스 도움말';
+              } else {
+                actualTitle = 'Instagram 비즈니스 가이드';
+              }
+            } else if (domain.includes('developers.facebook.com')) {
+              actualTitle = 'Facebook 개발자 문서';
+            } else {
+              actualTitle = 'Meta 광고 가이드';
+            }
+          }
+          
+          displayTitle = `${domain} - ${actualTitle} (${pageNumber}페이지)`;
+        } catch {
+          // URL 파싱 실패 시 기본 제목 사용
+          const cleanTitle = document?.title?.replace(/^문서\s+/, '') || '웹페이지';
+          displayTitle = `${cleanTitle} (${pageNumber}페이지)`;
+        }
+      } else {
+        // 파일 데이터: 파일명 + 페이지 번호
+        const fileName = document?.title || 'Unknown Document';
+        let cleanFileName = fileName.replace(/^문서\s+/, '').replace(/\.(pdf|docx|txt)$/i, '');
+        
+        // 파일명이 너무 길면 줄이기
+        if (cleanFileName.length > 40) {
+          cleanFileName = cleanFileName.substring(0, 37) + '...';
+        }
+        
+        displayTitle = `${cleanFileName} (${pageNumber}페이지)`;
+      }
+
       return {
         id: `supabase-${index}`, // 문자열 ID 생성
-        content: item.content || '',
-        similarity: item.score ? item.score / 10 : 0.8, // 점수를 유사도로 변환
+        content: content,
+        similarity: item.similarity || (item.score ? item.score / 10 : 0.8), // 벡터 유사도 우선 사용
         documentId: document?.id || 'unknown',
-        documentTitle: document?.title || 'Unknown Document',
+        documentTitle: displayTitle,
         documentUrl: documentUrl,
         chunkIndex: item.metadata?.chunk_index || 0,
         metadata: {
@@ -702,12 +825,38 @@ export async function POST(request: NextRequest) {
     // 출처 정보 생성
     const sources = searchResults.map(result => {
       console.log(`📚 출처 정보: 제목="${result.documentTitle}", URL="${result.documentUrl}", 유사도=${result.similarity}`);
+      
+      // 강력한 excerpt 디코딩 및 정리
+      let excerpt = result.content.substring(0, 200) + (result.content.length > 200 ? '...' : '');
+      try {
+        // 1. null 문자 제거
+        excerpt = excerpt.replace(/\0/g, '');
+        
+        // 2. 제어 문자 제거 (탭, 줄바꿈, 캐리지 리턴 제외)
+        excerpt = excerpt.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+        
+        // 3. UTF-8 인코딩 보장
+        excerpt = Buffer.from(excerpt, 'utf-8').toString('utf-8');
+        
+        // 4. 연속된 공백을 하나로 정리
+        excerpt = excerpt.replace(/\s+/g, ' ');
+        
+        // 5. 앞뒤 공백 제거
+        excerpt = excerpt.trim();
+        
+        console.log(`🔧 excerpt 정리 완료: "${excerpt.substring(0, 30)}..."`);
+      } catch (error) {
+        console.warn('⚠️ excerpt 인코딩 변환 실패, 기본 정리만 적용:', error);
+        // 기본 정리만 적용
+        excerpt = excerpt.replace(/\0/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+      }
+      
       return {
         id: result.id,
         title: result.documentTitle,
         url: result.documentUrl,
         updatedAt: result.metadata?.updatedAt || new Date().toISOString(),
-        excerpt: result.content.substring(0, 200) + (result.content.length > 200 ? '...' : ''),
+        excerpt: excerpt,
         similarity: result.similarity,
         sourceType: result.metadata?.sourceType,
         documentType: result.metadata?.documentType

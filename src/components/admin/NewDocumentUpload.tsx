@@ -137,8 +137,8 @@ export default function NewDocumentUpload({ onUpload }: NewDocumentUploadProps) 
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
       const isValidType = validTypes.includes(file.type) || ['.pdf', '.docx', '.txt'].includes(`.${fileExtension}`);
 
-      // 파일 크기 제한 (10MB)
-      const maxFileSize = parseInt(process.env.NEXT_PUBLIC_MAX_FILE_SIZE || '10485760'); // 10MB
+      // 파일 크기 제한 (20MB)
+      const maxFileSize = parseInt(process.env.NEXT_PUBLIC_MAX_FILE_SIZE || '52428800'); // 50MB
       const isValidSize = file.size <= maxFileSize;
 
       if (!isValidType) {
@@ -151,7 +151,7 @@ export default function NewDocumentUpload({ onUpload }: NewDocumentUploadProps) 
       if (!isValidSize) {
         toast({
           title: "파일 크기 초과",
-          description: `${file.name} 파일은 ${Math.round(maxFileSize / 1024 / 1024)}MB를 초과할 수 없습니다.`,
+          description: `${file.name} 파일은 ${Math.round(maxFileSize / 1024 / 1024)}MB를 초과할 수 없습니다. 최대 50MB까지 업로드 가능합니다.`,
           variant: "destructive",
         });
       }
@@ -437,7 +437,7 @@ export default function NewDocumentUpload({ onUpload }: NewDocumentUploadProps) 
               PDF, DOCX, TXT 파일을 지원합니다
             </p>
             <div className="flex items-center justify-center space-x-4 text-xs text-gray-500">
-              <span className="text-gray-500">• 최대 10MB</span>
+              <span className="text-gray-500">• 최대 20MB</span>
             </div>
           </div>
 

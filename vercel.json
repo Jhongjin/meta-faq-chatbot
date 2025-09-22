@@ -10,6 +10,9 @@
       "memory": 2048
     }
   },
+  "limits": {
+    "maxRequestSize": "50mb"
+  },
   "routes": [
     {
       "src": "/api/admin/upload-new",

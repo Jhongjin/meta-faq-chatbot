@@ -16,7 +16,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, FileText, Calendar, Download, Trash2, RefreshCw, CheckCircle, AlertTriangle, Filter, SortAsc, MoreHorizontal, Eye, Edit, Archive, ExternalLink, Link, Globe, Upload, Info, HelpCircle, Clock, CheckCircle2, XCircle, Loader2, AlertCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, FileText, Calendar, Trash2, RefreshCw, CheckCircle, Filter, SortAsc, MoreHorizontal, Edit, Archive, ExternalLink, Link, Globe, Upload, Info, HelpCircle, Clock, CheckCircle2, XCircle, Loader2, AlertCircle, Check, Square, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { documentGroupingService, DocumentGroup, GroupedDocument } from "@/lib/services/DocumentGroupingService";
 
@@ -34,9 +35,27 @@ interface Document {
 interface DocumentStats {
   totalDocuments: number;
   indexedDocuments: number;
+  completedDocuments?: number;
+  pendingDocuments?: number;
   totalChunks: number;
   totalEmbeddings: number;
+  fileStats?: {
+    totalDocuments: number;
+    completedDocuments: number;
+    totalChunks: number;
+    pendingDocuments: number;
+    failedDocuments: number;
+  };
+  urlStats?: {
+    totalDocuments: number;
+    completedDocuments: number;
+    totalChunks: number;
+    pendingDocuments: number;
+    failedDocuments: number;
+  };
 }
+
+// 중복 파일 처리는 DocumentUpload 컴포넌트에서 처리
 
 export default function DocumentManagementPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -48,6 +67,8 @@ export default function DocumentManagementPage() {
   });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // 중복 파일 처리는 DocumentUpload 컴포넌트에서 처리
   const [activeTab, setActiveTab] = useState("upload");
   const [documentGroups, setDocumentGroups] = useState<DocumentGroup[]>([]);
 
@@ -65,85 +86,185 @@ export default function DocumentManagementPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
+  const [isAllSelected, setIsAllSelected] = useState(false);
   const { toast } = useToast();
 
-  // 문서 다운로드 함수
-  const handleDownloadDocument = async (documentId: string, documentTitle: string) => {
-    setActionLoading(prev => ({ ...prev, [`${documentId}_download`]: true }));
-    try {
-      const response = await fetch(`/api/admin/document-actions?action=download&documentId=${documentId}`);
+  // 필터링 및 정렬된 문서 목록
+  const getFilteredAndSortedDocuments = () => {
+    console.log('🔍 getFilteredAndSortedDocuments 호출:', {
+      activeTab,
+      totalDocuments: documents.length,
+      documents: documents.map(d => ({ id: d.id, title: d.title, type: d.type }))
+    });
+    
+    // 활성 탭에 따라 필터링
+    let filtered = documents;
+    
+    if (activeTab === 'upload') {
+      // 문서 업로드 탭: 파일 타입 문서만 표시 (pdf, docx, txt, file)
+      filtered = documents.filter(doc => 
+        doc.type === 'file' || 
+        doc.type === 'pdf' || 
+        doc.type === 'docx' || 
+        doc.type === 'txt'
+      );
+      console.log('📁 파일 업로드 탭 필터링 결과:', {
+        originalCount: documents.length,
+        filteredCount: filtered.length,
+        filteredDocs: filtered.map(d => ({ id: d.id, title: d.title, type: d.type }))
+      });
+    } else if (activeTab === 'crawling') {
+      // URL 크롤링 탭: URL 타입만
+      filtered = documents.filter(doc => doc.type === 'url');
+      console.log('🌐 URL 크롤링 탭 필터링 결과:', {
+        originalCount: documents.length,
+        filteredCount: filtered.length,
+        filteredDocs: filtered.map(d => ({ id: d.id, title: d.title, type: d.type }))
+      });
+    }
+
+    // 검색어 필터링
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(doc => 
+        doc.title.toLowerCase().includes(query) ||
+        doc.type.toLowerCase().includes(query)
+      );
+    }
+
+    // 타입 필터링
+    if (filterType !== 'all') {
+      filtered = filtered.filter(doc => doc.type === filterType);
+    }
+
+    // 상태 필터링
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(doc => doc.status === filterStatus);
+    }
+
+    // 정렬
+    filtered.sort((a, b) => {
+      const aValue = a[sortField];
+      const bValue = b[sortField];
       
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '다운로드에 실패했습니다.');
-      }
+      if (aValue === undefined || bValue === undefined) return 0;
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
 
-      // 파일 다운로드
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = documentTitle;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+    return filtered;
+  };
 
-      toast({
-        title: "다운로드 완료",
-        description: "문서가 성공적으로 다운로드되었습니다.",
-        variant: "default",
-        duration: 3000,
-      });
-    } catch (error) {
-      console.error('다운로드 오류:', error);
-      toast({
-        title: "다운로드 실패",
-        description: `다운로드 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
-        variant: "destructive",
-        duration: 3000,
-      });
-    } finally {
-      setActionLoading(prev => {
-        const newState = { ...prev };
-        delete newState[`${documentId}_download`];
-        return newState;
-      });
+  // 전체선택 핸들러
+  const handleSelectAll = () => {
+    const filteredDocs = getFilteredAndSortedDocuments();
+    if (isAllSelected) {
+      setSelectedDocuments(new Set());
+      setIsAllSelected(false);
+    } else {
+      const allIds = new Set(filteredDocs.map(doc => doc.id));
+      setSelectedDocuments(allIds);
+      setIsAllSelected(true);
     }
   };
 
-  // 문서 미리보기 함수
-  const handlePreviewDocument = async (documentId: string) => {
-    setActionLoading(prev => ({ ...prev, [`${documentId}_preview`]: true }));
-    try {
-      const response = await fetch(`/api/admin/document-actions?action=preview&documentId=${documentId}`);
-      const result = await response.json();
+  // 개별선택 핸들러
+  const handleSelectDocument = (documentId: string) => {
+    const newSelected = new Set(selectedDocuments);
+    if (newSelected.has(documentId)) {
+      newSelected.delete(documentId);
+    } else {
+      newSelected.add(documentId);
+    }
+    setSelectedDocuments(newSelected);
+    
+    // 전체선택 상태 업데이트
+    const filteredDocs = getFilteredAndSortedDocuments();
+    setIsAllSelected(newSelected.size === filteredDocs.length && filteredDocs.length > 0);
+  };
 
-      if (!response.ok) {
-        throw new Error(result.error || '미리보기에 실패했습니다.');
-      }
-
-      // 미리보기 모달 표시 (간단한 alert로 구현)
-      const data = result.data;
-      let previewText = `제목: ${data.title}\n타입: ${data.type}\n상태: ${data.status}\n청크 수: ${data.chunk_count}\n생성일: ${new Date(data.created_at).toLocaleString()}`;
-      
-      if (data.preview) {
-        previewText += `\n\n미리보기:\n${data.preview}`;
-      }
-
-      alert(previewText);
-    } catch (error) {
-      console.error('미리보기 오류:', error);
+  // 선택된 문서 일괄 삭제
+  const handleBulkDelete = async () => {
+    if (selectedDocuments.size === 0) {
       toast({
-        title: "미리보기 실패",
-        description: `미리보기 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
+        title: "선택된 문서 없음",
+        description: "삭제할 문서를 선택해주세요.",
         variant: "destructive",
         duration: 3000,
+      });
+      return;
+    }
+
+    const selectedCount = selectedDocuments.size;
+    if (!confirm(`선택된 ${selectedCount}개의 문서를 모두 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 관련된 모든 임베딩 데이터도 함께 삭제됩니다.`)) {
+      return;
+    }
+
+    setActionLoading(prev => ({ ...prev, bulkDelete: true }));
+    
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      for (const documentId of selectedDocuments) {
+        try {
+          const response = await fetch(`/api/admin/upload-new?documentId=${documentId}`, {
+            method: 'DELETE',
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || '문서 삭제에 실패했습니다.');
+          }
+
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          errors.push(`문서 ID ${documentId}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+
+      // 결과 토스트 표시
+      if (successCount > 0) {
+        toast({
+          title: "일괄 삭제 완료",
+          description: `${successCount}개의 문서가 성공적으로 삭제되었습니다.${errorCount > 0 ? ` (실패: ${errorCount}개)` : ''}`,
+          variant: successCount === selectedCount ? "default" : "destructive",
+          duration: 5000,
+        });
+      }
+
+      if (errorCount > 0) {
+        console.error('일괄 삭제 오류:', errors);
+        toast({
+          title: "일부 삭제 실패",
+          description: `${errorCount}개의 문서 삭제에 실패했습니다. 자세한 내용은 콘솔을 확인하세요.`,
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
+
+      // 선택 상태 초기화 및 문서 목록 새로고침
+      setSelectedDocuments(new Set());
+      setIsAllSelected(false);
+      await loadDocuments();
+      
+    } catch (error) {
+      console.error('일괄 삭제 오류:', error);
+      toast({
+        title: "일괄 삭제 실패",
+        description: `일괄 삭제 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
+        variant: "destructive",
+        duration: 5000,
       });
     } finally {
       setActionLoading(prev => {
         const newState = { ...prev };
-        delete newState[`${documentId}_preview`];
+        delete newState.bulkDelete;
         return newState;
       });
     }
@@ -193,6 +314,91 @@ export default function DocumentManagementPage() {
     }
   };
 
+  // 문서 다운로드 함수
+  const handleDownloadDocument = async (documentId: string, documentTitle: string) => {
+    try {
+      console.log(`📥 다운로드 시작: ${documentTitle} (${documentId})`);
+      setActionLoading(prev => ({ ...prev, [`${documentId}_download`]: true }));
+      
+      const response = await fetch(`/api/admin/document-actions?action=download&documentId=${documentId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ 다운로드 API 오류:', errorData);
+        
+        // 다운로드 불가능한 파일에 대한 특별 처리
+        if (errorData.error === '다운로드 불가') {
+          toast({
+            title: "다운로드 불가",
+            description: errorData.message || '이 파일은 다운로드할 수 없습니다.',
+            variant: "destructive",
+            duration: 5000,
+          });
+          return;
+        }
+        
+        throw new Error(errorData.error || `다운로드에 실패했습니다. (${response.status})`);
+      }
+
+      // 응답에서 파일명 추출
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = documentTitle;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename\*=UTF-8''(.+)/);
+        if (filenameMatch) {
+          filename = decodeURIComponent(filenameMatch[1]);
+        } else {
+          const simpleFilenameMatch = contentDisposition.match(/filename="(.+)"/);
+          if (simpleFilenameMatch) {
+            filename = simpleFilenameMatch[1];
+          }
+        }
+      }
+
+      console.log(`📁 다운로드 파일명: ${filename}`);
+
+      // Blob으로 변환하여 다운로드
+      const blob = await response.blob();
+      console.log(`📦 Blob 크기: ${blob.size} bytes`);
+      
+      if (blob.size === 0) {
+        throw new Error('다운로드된 파일이 비어있습니다.');
+      }
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log(`✅ 다운로드 완료: ${filename}`);
+      toast({
+        title: "다운로드 완료",
+        description: `"${documentTitle}" 파일이 다운로드되었습니다.`,
+        variant: "default",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('❌ 다운로드 오류:', error);
+      toast({
+        title: "다운로드 실패",
+        description: `다운로드 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setActionLoading(prev => {
+        const newState = { ...prev };
+        delete newState[`${documentId}_download`];
+        return newState;
+      });
+    }
+  };
+
   // 문서 삭제 함수
   const handleDeleteDocument = async (documentId: string, documentTitle: string) => {
     if (!confirm(`"${documentTitle}" 문서를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 관련된 모든 임베딩 데이터도 함께 삭제됩니다.`)) {
@@ -201,7 +407,7 @@ export default function DocumentManagementPage() {
 
     setDeletingDocument(documentId);
     try {
-      const response = await fetch(`/api/admin/upload?documentId=${documentId}`, {
+      const response = await fetch(`/api/admin/upload-new?documentId=${documentId}`, {
         method: 'DELETE',
       });
 
@@ -234,85 +440,49 @@ export default function DocumentManagementPage() {
     }
   };
 
-  // 필터링 및 정렬된 문서 목록
-  const getFilteredAndSortedDocuments = () => {
-    // 활성 탭에 따라 필터링
-    let filtered = documents;
-    
-    if (activeTab === 'upload') {
-      // 문서 업로드 탭: type이 'file'인 문서만 표시
-      filtered = documents.filter(doc => doc.type === 'file');
-    } else if (activeTab === 'crawling') {
-      // URL 크롤링 탭: URL 타입만
-      filtered = documents.filter(doc => doc.type === 'url');
-    }
-
-    // 검색 필터
-    if (searchQuery) {
-      filtered = filtered.filter(doc => 
-        doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.status.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // 타입 필터
-    if (filterType !== 'all') {
-      filtered = filtered.filter(doc => doc.type === filterType);
-    }
-
-    // 상태 필터
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(doc => doc.status === filterStatus);
-    }
-
-    // 정렬
-    filtered.sort((a, b) => {
-      const aValue = a[sortField];
-      const bValue = b[sortField];
-      
-      // null/undefined 체크
-      if (aValue == null && bValue == null) return 0;
-      if (aValue == null) return sortDirection === 'asc' ? -1 : 1;
-      if (bValue == null) return sortDirection === 'asc' ? 1 : -1;
-      
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return filtered;
-  };
-
   // 탭별 통계 계산
   const getTabStats = () => {
+    console.log('📊 getTabStats 호출:', {
+      activeTab,
+      stats,
+      fileStats: stats.fileStats,
+      urlStats: stats.urlStats
+    });
+
     if (activeTab === 'upload') {
-      // 파일 업로드 탭: type이 'file'인 문서만 카운트
-      const fileDocuments = documents.filter(doc => doc.type === 'file');
-      return {
-        total: fileDocuments.length,
-        completed: fileDocuments.filter(doc => doc.status === 'completed' || doc.status === 'indexed').length,
-        pending: fileDocuments.filter(doc => doc.status === 'pending').length,
-        processing: fileDocuments.filter(doc => doc.status === 'processing').length
+      // 파일 업로드 탭: API에서 받은 fileStats 사용
+      const result = {
+        total: stats.fileStats?.totalDocuments || 0,
+        completed: stats.fileStats?.completedDocuments || 0,
+        pending: stats.fileStats?.pendingDocuments || 0,
+        processing: stats.fileStats?.pendingDocuments || 0,
+        totalChunks: stats.fileStats?.totalChunks || 0
       };
+      console.log('📊 파일 업로드 탭 통계:', result);
+      return result;
     } else if (activeTab === 'crawling') {
-      // URL 크롤링 탭: URL 타입만 카운트
-      const urlDocuments = documents.filter(doc => doc.type === 'url');
-      return {
-        total: urlDocuments.length,
-        completed: urlDocuments.filter(doc => doc.status === 'completed' || doc.status === 'indexed').length,
-        pending: urlDocuments.filter(doc => doc.status === 'pending').length,
-        processing: urlDocuments.filter(doc => doc.status === 'processing').length
+      // URL 크롤링 탭: API에서 받은 urlStats 사용
+      const result = {
+        total: stats.urlStats?.totalDocuments || 0,
+        completed: stats.urlStats?.completedDocuments || 0,
+        pending: stats.urlStats?.pendingDocuments || 0,
+        processing: stats.urlStats?.pendingDocuments || 0,
+        totalChunks: stats.urlStats?.totalChunks || 0
       };
+      console.log('📊 URL 크롤링 탭 통계:', result);
+      return result;
     }
     
-    // 기본값
-    return {
-      total: documents.length,
-      completed: documents.filter(doc => doc.status === 'completed' || doc.status === 'indexed').length,
-      pending: documents.filter(doc => doc.status === 'pending').length,
-      processing: documents.filter(doc => doc.status === 'processing').length
+    // 기본값 (전체 통계)
+    const result = {
+      total: stats.totalDocuments || 0,
+      completed: stats.completedDocuments || 0,
+      pending: stats.pendingDocuments || 0,
+      processing: stats.pendingDocuments || 0,
+      totalChunks: stats.totalChunks || 0
     };
+    console.log('📊 기본 통계:', result);
+    return result;
   };
 
   // 정렬 핸들러
@@ -329,23 +499,53 @@ export default function DocumentManagementPage() {
   const loadDocuments = async () => {
     try {
       setLoading(true);
+      console.log('🔄 loadDocuments 시작');
       const response = await fetch('/api/admin/upload-new');
       const data = await response.json();
       
+      console.log('📊 API 응답:', data);
+      
       if (data.success) {
         const docs = data.data?.documents || [];
-        setDocuments(docs);
+        console.log('📋 원본 API 응답 data:', data);
+        console.log('📋 data.data:', data.data);
+        console.log('📋 data.data.documents:', data.data?.documents);
+        console.log('📋 문서 배열:', docs);
+        console.log('📋 문서 수:', docs.length);
+        console.log('📋 첫 번째 문서:', docs[0]);
+        console.log('📋 첫 번째 문서 타입:', typeof docs[0]);
+        console.log('📋 첫 번째 문서 키들:', docs[0] ? Object.keys(docs[0]) : '없음');
+        
+        // 문서 데이터가 올바르게 있는지 확인
+        if (docs.length > 0 && docs[0] && Object.keys(docs[0]).length > 0) {
+          setDocuments(docs);
+          console.log('✅ setDocuments 호출 완료');
+        } else {
+          console.error('❌ 문서 데이터가 비어있거나 잘못된 형식입니다:', docs);
+          setDocuments([]);
+        }
+        
         setStats({
           totalDocuments: data.data?.stats?.totalDocuments || 0,
           indexedDocuments: data.data?.stats?.completedDocuments || 0,
           totalChunks: data.data?.stats?.totalChunks || 0,
-          totalEmbeddings: data.data?.stats?.totalChunks || 0
+          totalEmbeddings: data.data?.stats?.totalChunks || 0,
+          fileStats: data.data?.stats?.fileStats,
+          urlStats: data.data?.stats?.urlStats
         });
+        console.log('✅ setStats 호출 완료');
         
         // URL 문서들을 그룹화
         const urlDocuments = docs.filter((doc: Document) => doc.type === 'url');
+        console.log('🔍 URL 문서 필터링 결과:', {
+          totalDocs: docs.length,
+          urlDocs: urlDocuments.length,
+          urlDocsData: urlDocuments
+        });
+        
         const groups = documentGroupingService.groupDocumentsByDomain(urlDocuments);
         setDocumentGroups(groups);
+        console.log('✅ setDocumentGroups 호출 완료:', groups.length, '개 그룹');
       } else {
         throw new Error(data.error || '문서를 불러오는데 실패했습니다.');
       }
@@ -393,8 +593,13 @@ export default function DocumentManagementPage() {
     let filtered = documents;
     
     if (tab === 'upload') {
-      // 파일 업로드 탭: type이 'file'인 문서만 표시
-      filtered = documents.filter(doc => doc.type === 'file');
+      // 파일 업로드 탭: PDF, DOCX, TXT 파일만 표시
+      filtered = documents.filter(doc => 
+        doc.type === 'pdf' || 
+        doc.type === 'docx' || 
+        doc.type === 'txt' ||
+        doc.type === 'file'
+      );
     } else if (tab === 'crawling') {
       // URL 크롤링 탭: URL로 크롤링된 문서만 표시
       filtered = documents.filter(doc => doc.type === 'url');
@@ -436,15 +641,27 @@ export default function DocumentManagementPage() {
 
   const handleUpload = async (files: File[]) => {
     console.log("Upload files:", files);
-    // 업로드 후 데이터 새로고침
-    setTimeout(async () => {
-      await loadDocuments();
-    }, 2000); // 2초 후 문서 목록 새로고침
-    
-    // 성공 토스트 표시
-    toast({
-      title: "업로드 완료",
-      description: `${files.length}개 파일이 성공적으로 업로드되었습니다.`,
+    // DocumentUpload 컴포넌트가 모든 파일 업로드를 처리하므로 여기서는 아무것도 하지 않음
+    // 파일 업로드 후 약간의 지연을 두고 loadDocuments()를 호출하여 목록을 새로고침
+    // 🔧 임시로 자동 새로고침 비활성화 - RAG 처리 로그 확인을 위해
+    // setTimeout(async () => {
+    //   console.log("🔄 업로드 완료 후 문서 목록 새로고침 시작");
+    //   await loadDocuments();
+    // }, 1000); // 1초 지연
+  };
+
+  // 중복 파일 처리는 DocumentUpload 컴포넌트에서 처리
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        const base64Content = base64.split(',')[1]; // data:image/jpeg;base64, 부분 제거
+        resolve(base64Content);
+      };
+      reader.onerror = error => reject(error);
     });
   };
 
@@ -562,7 +779,10 @@ export default function DocumentManagementPage() {
           </TabsList>
           
           <TabsContent value="upload" className="mt-6">
-            <DocumentUpload onUpload={handleUpload} />
+            <DocumentUpload 
+              onUpload={handleUpload} 
+              onDocumentListRefresh={loadDocuments}
+            />
           </TabsContent>
           
           <TabsContent value="crawling" className="mt-6">
@@ -607,6 +827,22 @@ export default function DocumentManagementPage() {
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               새로고침
             </Button>
+            {selectedDocuments.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={actionLoading.bulkDelete}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {actionLoading.bulkDelete ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4 mr-2" />
+                )}
+                선택된 {selectedDocuments.size}개 삭제
+              </Button>
+            )}
             <div className="flex items-center space-x-2">
               <select
                 value={filterType}
@@ -678,8 +914,12 @@ export default function DocumentManagementPage() {
             onToggleAllSubPages={handleToggleAllSubPages}
             onReindexDocument={handleReindexDocument}
             onDownloadDocument={handleDownloadDocument}
-            onPreviewDocument={handlePreviewDocument}
             onDeleteDocument={handleDeleteDocument}
+            onSelectAll={handleSelectAll}
+            onSelectDocument={handleSelectDocument}
+            onBulkDelete={handleBulkDelete}
+            selectedDocuments={selectedDocuments}
+            isAllSelected={isAllSelected}
             actionLoading={actionLoading}
             deletingDocument={deletingDocument}
           />
@@ -690,6 +930,20 @@ export default function DocumentManagementPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-white/20">
+                    <TableHead className="text-white font-semibold w-12">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSelectAll}
+                        className="p-1 h-6 w-6 hover:bg-gray-700/50"
+                      >
+                        {isAllSelected ? (
+                          <Check className="w-4 h-4 text-blue-400" />
+                        ) : (
+                          <Square className="w-4 h-4 text-gray-400" />
+                        )}
+                      </Button>
+                    </TableHead>
                     <TableHead className="text-enhanced font-semibold w-24">상태</TableHead>
                     <TableHead 
                       className="text-white font-semibold cursor-pointer hover:bg-gray-700/50 select-none"
@@ -752,6 +1006,20 @@ export default function DocumentManagementPage() {
                 <TableBody>
                   {getFilteredAndSortedDocuments().map((doc, index) => (
                     <TableRow key={doc.id} className="border-white/10 hover:bg-white/5">
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSelectDocument(doc.id)}
+                          className="p-1 h-6 w-6 hover:bg-gray-700/50"
+                        >
+                          {selectedDocuments.has(doc.id) ? (
+                            <Check className="w-4 h-4 text-blue-400" />
+                          ) : (
+                            <Square className="w-4 h-4 text-gray-400" />
+                          )}
+                        </Button>
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2 min-w-0">
                           {getStatusIcon(doc.status)}
@@ -832,29 +1100,6 @@ export default function DocumentManagementPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleReindexDocument(doc.id, doc.title)}
-                                  disabled={actionLoading[`${doc.id}_reindex`] || doc.status === "processing"}
-                                  className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10"
-                                >
-                                  {actionLoading[`${doc.id}_reindex`] ? (
-                                    <RefreshCw className="w-4 h-4 animate-spin" />
-                                  ) : (
-                                    <RefreshCw className="w-4 h-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>재인덱싱</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
                                   onClick={() => handleDownloadDocument(doc.id, doc.title)}
                                   disabled={actionLoading[`${doc.id}_download`]}
                                   className="text-gray-400 hover:text-green-400 hover:bg-green-500/10"
@@ -871,26 +1116,26 @@ export default function DocumentManagementPage() {
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-
+                          
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handlePreviewDocument(doc.id)}
-                                  disabled={actionLoading[`${doc.id}_preview`]}
-                                  className="text-gray-400 hover:text-purple-400 hover:bg-purple-500/10"
+                                  onClick={() => handleReindexDocument(doc.id, doc.title)}
+                                  disabled={actionLoading[`${doc.id}_reindex`] || doc.status === "processing"}
+                                  className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10"
                                 >
-                                  {actionLoading[`${doc.id}_preview`] ? (
+                                  {actionLoading[`${doc.id}_reindex`] ? (
                                     <RefreshCw className="w-4 h-4 animate-spin" />
                                   ) : (
-                                    <Eye className="w-4 h-4" />
+                                    <RefreshCw className="w-4 h-4" />
                                   )}
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>미리보기</p>
+                                <p>재인덱싱</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -943,8 +1188,10 @@ export default function DocumentManagementPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white mb-1">{stats.totalDocuments}</div>
-            <p className="text-xs text-gray-400">업로드된 문서</p>
+            <div className="text-3xl font-bold text-white mb-1">{getTabStats().total}</div>
+            <p className="text-xs text-gray-400">
+              {activeTab === 'upload' ? '업로드된 파일' : activeTab === 'crawling' ? '크롤링된 URL' : '전체 문서'}
+            </p>
           </CardContent>
         </Card>
 
@@ -956,7 +1203,7 @@ export default function DocumentManagementPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white mb-1">{stats.indexedDocuments}</div>
+            <div className="text-3xl font-bold text-white mb-1">{getTabStats().completed}</div>
             <p className="text-xs text-gray-400">처리 완료</p>
           </CardContent>
         </Card>
@@ -969,11 +1216,13 @@ export default function DocumentManagementPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white mb-1">{stats.totalChunks}</div>
+            <div className="text-3xl font-bold text-white mb-1">{getTabStats().totalChunks}</div>
             <p className="text-xs text-gray-400">텍스트 청크</p>
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* 중복 파일 처리는 DocumentUpload 컴포넌트에서 처리 */}
     </AdminLayout>
   );
 }

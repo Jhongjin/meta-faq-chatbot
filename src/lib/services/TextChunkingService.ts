@@ -138,6 +138,15 @@ export class TextChunkingService {
     metadata: Record<string, any> = {}
   ): Promise<ChunkedDocument> {
     try {
+      // UTF-8 인코딩 보장
+      let cleanText = text;
+      try {
+        cleanText = Buffer.from(text, 'utf-8').toString('utf-8');
+      } catch (error) {
+        console.warn('⚠️ 텍스트 인코딩 변환 실패, 원본 사용:', error);
+        cleanText = text;
+      }
+
       // 한국어 문장 구분자 추가
       const koreanSeparators = [
         '\n\n', // 문단 구분
@@ -159,7 +168,7 @@ export class TextChunkingService {
         keepSeparator: true
       });
 
-      const documents = await koreanSplitter.createDocuments([text], [metadata]);
+      const documents = await koreanSplitter.createDocuments([cleanText], [metadata]);
       
       const chunks: DocumentChunk[] = documents.map((doc, index) => ({
         content: doc.pageContent,
@@ -180,7 +189,7 @@ export class TextChunkingService {
           averageChunkSize: Math.round(
             chunks.reduce((sum, chunk) => sum + chunk.content.length, 0) / chunks.length
           ),
-          originalLength: text.length
+          originalLength: cleanText.length
         }
       };
     } catch (error) {

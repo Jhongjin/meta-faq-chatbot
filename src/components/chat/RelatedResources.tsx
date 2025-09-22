@@ -14,8 +14,14 @@ import {
   Download,
   Eye,
   BookOpen,
-  Globe
+  Globe,
+  Shield,
+  CheckCircle
 } from "lucide-react";
+import { motion } from "framer-motion";
+import AnswerSummary from "./AnswerSummary";
+import RelatedQuestions from "./RelatedQuestions";
+import LearningResources from "./LearningResources";
 
 interface ResourceItem {
   id: string;
@@ -30,6 +36,7 @@ interface ResourceItem {
   tags: string[];
   sourceType?: 'file' | 'url';
   documentType?: string;
+  similarity?: number; // 유사도 정보 추가
 }
 
 interface RelatedResourcesProps {
@@ -45,7 +52,9 @@ interface RelatedResourcesProps {
     excerpt: string;
     sourceType?: 'file' | 'url';
     documentType?: string;
+    similarity?: number;
   }>;
+  onQuestionClick?: (question: string) => void;
 }
 
 // 샘플 데이터
@@ -98,9 +107,45 @@ export default function RelatedResources({
   isLoading = false, 
   userQuestion, 
   aiResponse, 
-  sources = []
+  sources = [],
+  onQuestionClick
 }: RelatedResourcesProps) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  // 강력한 텍스트 디코딩 함수
+  const decodeText = (text: string | undefined): string => {
+    if (!text) return '';
+    
+    try {
+      // 1. null 문자 제거
+      let cleanText = text.replace(/\0/g, '');
+      
+      // 2. 제어 문자 제거 (탭, 줄바꿈, 캐리지 리턴 제외)
+      cleanText = cleanText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+      
+      // 3. UTF-8 인코딩 보장
+      cleanText = Buffer.from(cleanText, 'utf-8').toString('utf-8');
+      
+      // 4. 연속된 공백을 하나로 정리
+      cleanText = cleanText.replace(/\s+/g, ' ');
+      
+      // 5. 앞뒤 공백 제거
+      cleanText = cleanText.trim();
+      
+      // 6. 추가 한글 텍스트 정리 (깨진 문자 패턴 수정)
+      cleanText = cleanText
+        .replace(/[^\x20-\x7E\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, '') // 한글과 기본 ASCII만 유지
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      console.log(`🔧 RelatedResources 텍스트 정리: "${cleanText.substring(0, 30)}..."`);
+      return cleanText;
+    } catch (error) {
+      console.warn('⚠️ 텍스트 디코딩 실패, 기본 정리만 적용:', error);
+      // 기본 정리만 적용
+      return text.replace(/\0/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+    }
+  };
 
   // 파일 다운로드 핸들러
   const handleFileDownload = async (resource: ResourceItem) => {
@@ -130,9 +175,17 @@ export default function RelatedResources({
         return `_page_${chunkNumber}`;
       });
       
-      // 확장자 추가
+      // 확장자 추가 (원본 파일 확장자 유지)
       if (!fileName.includes('.')) {
-        fileName += '.txt';
+        // 원본 파일명에서 확장자 추출 시도
+        const originalFileName = resource.title;
+        const lastDotIndex = originalFileName.lastIndexOf('.');
+        if (lastDotIndex > 0) {
+          const extension = originalFileName.substring(lastDotIndex);
+          fileName += extension;
+        } else {
+          fileName += '.txt'; // 기본값
+        }
       }
       
       link.download = fileName;
@@ -152,7 +205,25 @@ export default function RelatedResources({
   const handleUrlOpen = (resource: ResourceItem) => {
     if (resource.url) {
       console.log(`🌐 웹페이지 열기: ${resource.url}`);
-      window.open(resource.url, '_blank');
+      
+      // URL이 상대 경로인 경우 절대 URL로 변환
+      let targetUrl = resource.url;
+      if (targetUrl.startsWith('/api/') || targetUrl.startsWith('/download/')) {
+        // API 경로인 경우 실제 URL로 변환 시도
+        console.log('⚠️ API 경로 감지, 실제 URL 찾기 시도');
+        // 실제 URL을 찾을 수 없는 경우 알림
+        alert('이 문서는 다운로드 전용입니다. 파일 다운로드를 사용해주세요.');
+        return;
+      }
+      
+      // URL이 유효한지 확인
+      try {
+        new URL(targetUrl);
+        window.open(targetUrl, '_blank');
+      } catch {
+        // URL이 유효하지 않은 경우 상대 경로로 처리
+        window.open(targetUrl, '_blank');
+      }
     } else {
       console.error('웹페이지 URL이 없습니다:', resource);
       alert('열 수 있는 웹페이지 URL을 찾을 수 없습니다.');
@@ -169,7 +240,7 @@ export default function RelatedResources({
       return sampleResources; // 기본 샘플 데이터 사용
     }
 
-    // 중복 제거를 위한 Map 사용
+    // 중복 제거를 위한 Map 사용 (제목과 URL을 기준으로 중복 제거)
     const uniqueSources = new Map();
     
     sources
@@ -178,26 +249,83 @@ export default function RelatedResources({
         const excerpt = source.excerpt || '';
         let title = source.title || `관련 문서 ${index + 1}`;
         
-        // _chunk_0 패턴을 _page_N으로 변경
-        title = title.replace(/_chunk_\d+/g, (match) => {
-          const chunkNumber = match.match(/\d+/)?.[0] || '1';
-          return `_page_${chunkNumber}`;
-        });
+        // 제목 개선 로직
+        if (source.sourceType === 'url') {
+          // URL 크롤링 데이터: 도메인 + 페이지 제목 + 페이지 번호
+          try {
+            const url = new URL(source.url || '');
+            const domain = url.hostname.replace('www.', '');
+            const chunkIndex = source.id?.match(/_chunk_(\d+)/)?.[1] || '0';
+            const pageNumber = Math.floor(parseInt(chunkIndex) / 5) + 1;
+            
+            // 실제 제목이 있는 경우 처리
+            let actualTitle = title;
+            if (title && !title.startsWith('url_') && title !== source.id) {
+              // 제목이 너무 길면 줄이기
+              if (actualTitle.length > 50) {
+                actualTitle = actualTitle.substring(0, 47) + '...';
+              }
+            } else {
+              // 문서 ID와 제목이 같은 경우 도메인별로 의미있는 제목 생성
+              if (domain.includes('facebook.com')) {
+                if (url.pathname.includes('/policies/ads')) {
+                  actualTitle = 'Facebook 광고 정책';
+                } else if (url.pathname.includes('/business/help')) {
+                  actualTitle = 'Facebook 비즈니스 도움말';
+                } else {
+                  actualTitle = 'Facebook 가이드';
+                }
+              } else if (domain.includes('instagram.com')) {
+                if (url.pathname.includes('/help')) {
+                  actualTitle = 'Instagram 비즈니스 도움말';
+                } else {
+                  actualTitle = 'Instagram 비즈니스 가이드';
+                }
+              } else if (domain.includes('developers.facebook.com')) {
+                actualTitle = 'Facebook 개발자 문서';
+              } else {
+                actualTitle = 'Meta 광고 가이드';
+              }
+            }
+            
+            title = `${domain} - ${actualTitle} (${pageNumber}페이지)`;
+          } catch {
+            const chunkIndex = source.id?.match(/_chunk_(\d+)/)?.[1] || '0';
+            const pageNumber = Math.floor(parseInt(chunkIndex) / 5) + 1;
+            title = `${title} (${pageNumber}페이지)`;
+          }
+        } else {
+          // 파일 데이터: 파일명 + 페이지 번호
+          const chunkIndex = source.id?.match(/_chunk_(\d+)/)?.[1] || '0';
+          const pageNumber = Math.floor(parseInt(chunkIndex) / 5) + 1;
+          
+          // 파일 확장자 제거
+          let nameWithoutExt = title.replace(/\.(pdf|docx|txt)$/i, '');
+          
+          // 파일명이 너무 길면 줄이기
+          if (nameWithoutExt.length > 40) {
+            nameWithoutExt = nameWithoutExt.substring(0, 37) + '...';
+          }
+          
+          title = `${nameWithoutExt} (${pageNumber}페이지)`;
+        }
 
-        const resourceKey = `${source.id || title}`;
+        // 중복 제거를 위한 키 생성 (제목과 URL 조합)
+        const resourceKey = `${title}_${source.url || source.id}`;
         
         if (!uniqueSources.has(resourceKey)) {
           uniqueSources.set(resourceKey, {
             id: source.id || `source-${index}`,
             title: title,
             type: 'document' as const,
-            description: excerpt.length > 100 ? excerpt.substring(0, 100) + '...' : excerpt,
+            description: '', // 중간 텍스트 제거
             url: source.url || `/api/download/${source.id}`,
             updatedAt: source.updatedAt || new Date().toISOString(),
             content: excerpt,
             tags: ['문서', '관련자료'],
             sourceType: source.sourceType || 'file',
-            documentType: source.documentType || 'document'
+            documentType: source.documentType || 'document',
+            similarity: source.similarity // 유사도 정보 추가
           });
         }
       });
@@ -301,170 +429,31 @@ export default function RelatedResources({
 
   return (
     <div className="space-y-4">
-      <Card className="w-full bg-gradient-to-br from-white/95 to-[#FAF8F3]/95 backdrop-blur-sm border-orange-200/30 shadow-lg">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center space-x-2 text-gray-800 text-sm font-medium">
-            <BookOpen className="w-4 h-4 text-orange-500" />
-            <span>관련 자료</span>
-            <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 border-orange-200">
-              {displayResources.length}개
-            </Badge>
-          </CardTitle>
-          <Separator className="bg-orange-200/50" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {displayResources.map((resource) => (
-            <div key={resource.id} className="space-y-2">
-              <Card className="bg-gradient-to-r from-white/80 to-[#FAF8F3]/80 border-orange-200/40 hover:from-white/90 hover:to-[#FAF8F3]/90 transition-all duration-200 backdrop-blur-sm shadow-sm hover:shadow-md">
-                <CardContent className="p-4">
-                  <div className="flex items-start space-x-3">
-                    <div className={`w-8 h-8 ${getTypeColor(resource.type)} rounded-full flex items-center justify-center flex-shrink-0`}>
-                      {getTypeIcon(resource.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-gray-800 mb-1 line-clamp-2">
-                            {resource.title}
-                          </h4>
-                          <p className="text-xs text-gray-600 mb-2 line-clamp-2">
-                            {resource.description}
-                          </p>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs ${
-                                resource.sourceType === 'file' 
-                                  ? 'bg-green-50 text-green-700 border-green-200' 
-                                  : 'bg-purple-50 text-purple-700 border-purple-200'
-                              }`}
-                            >
-                              {resource.sourceType === 'file' ? '📄 파일' : '🌐 웹페이지'}
-                            </Badge>
-                            <div className="flex flex-wrap gap-1">
-                              {resource.tags.slice(0, 2).map((tag, index) => (
-                                <Badge key={index} variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-1 ml-2">
-                          {resource.sourceType === 'file' ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-100"
-                              onClick={() => handleFileDownload(resource)}
-                              title="파일 다운로드"
-                            >
-                              <Download className="w-3 h-3" />
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100"
-                              onClick={() => handleUrlOpen(resource)}
-                              title="웹페이지 열기"
-                            >
-                              <Globe className="w-3 h-3" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleExpanded(resource.id)}
-                            className="h-6 w-6 p-0 text-gray-500 hover:text-orange-600 hover:bg-orange-100"
-                          >
-                            <Eye className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {expandedItems.has(resource.id) && (
-                        <div className="mt-3 pt-3 border-t border-orange-200/50">
-                          {resource.type === 'image' && resource.imageUrl && (
-                            <div className="mb-3">
-                              <img 
-                                src={resource.imageUrl} 
-                                alt={resource.title}
-                                className="w-full h-32 object-cover rounded-lg"
-                              />
-                            </div>
-                          )}
-                          
-                          {resource.type === 'table' && resource.tableData && (
-                            <div className="mb-3 overflow-x-auto">
-                              <table className="w-full text-xs text-gray-700">
-                                <thead>
-                                  <tr className="border-b border-orange-200">
-                                    {Object.keys(resource.tableData[0]).map((header) => (
-                                      <th key={header} className="text-left py-2 px-2 font-medium">
-                                        {header}
-                                      </th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {resource.tableData.map((row, index) => (
-                                    <tr key={index} className="border-b border-orange-100">
-                                      {Object.values(row).map((cell, cellIndex) => (
-                                        <td key={cellIndex} className="py-2 px-2">
-                                          {cell}
-                                        </td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                          
-                          {resource.content && (
-                            <div className="mb-3">
-                              <p className="text-xs text-gray-600 leading-relaxed">
-                                {resource.content}
-                              </p>
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              {resource.sourceType === 'file' ? (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
-                                  onClick={() => handleFileDownload(resource)}
-                                >
-                                  <Download className="w-3 h-3 mr-1" />
-                                  파일 다운로드
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                  onClick={() => handleUrlOpen(resource)}
-                                >
-                                  <Globe className="w-3 h-3 mr-1" />
-                                  웹페이지 열기
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      {/* 답변 핵심 요약 */}
+      {userQuestion && aiResponse && (
+        <AnswerSummary 
+          aiResponse={aiResponse}
+          sources={sources}
+          userQuestion={userQuestion}
+        />
+      )}
+
+      {/* 관련 질문 예측 */}
+      {userQuestion && aiResponse && (
+        <RelatedQuestions 
+          userQuestion={userQuestion}
+          aiResponse={aiResponse}
+          onQuestionClick={onQuestionClick}
+        />
+      )}
+
+      {/* 추가 학습 자료 */}
+      {userQuestion && aiResponse && (
+        <LearningResources 
+          userQuestion={userQuestion}
+          aiResponse={aiResponse}
+        />
+      )}
 
     </div>
   );

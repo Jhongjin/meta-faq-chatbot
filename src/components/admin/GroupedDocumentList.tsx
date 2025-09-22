@@ -22,7 +22,9 @@ import {
   Trash2,
   Globe,
   Link,
-  CheckCircle2
+  CheckCircle2,
+  Check,
+  Square
 } from 'lucide-react';
 
 interface GroupedDocument {
@@ -61,8 +63,12 @@ interface GroupedDocumentListProps {
   onToggleAllSubPages: (groupIndex: number) => void;
   onReindexDocument: (id: string, title: string) => void;
   onDownloadDocument: (id: string, title: string) => void;
-  onPreviewDocument: (id: string) => void;
   onDeleteDocument: (id: string, title: string) => void;
+  onSelectAll: () => void;
+  onSelectDocument: (id: string) => void;
+  onBulkDelete: () => void;
+  selectedDocuments: Set<string>;
+  isAllSelected: boolean;
   actionLoading: { [key: string]: boolean };
   deletingDocument: string | null;
 }
@@ -74,8 +80,12 @@ export default function GroupedDocumentList({
   onToggleAllSubPages,
   onReindexDocument,
   onDownloadDocument,
-  onPreviewDocument,
   onDeleteDocument,
+  onSelectAll,
+  onSelectDocument,
+  onBulkDelete,
+  selectedDocuments,
+  isAllSelected,
   actionLoading,
   deletingDocument
 }: GroupedDocumentListProps) {
@@ -161,6 +171,48 @@ export default function GroupedDocumentList({
 
   return (
     <div className="space-y-4">
+      {/* 전체선택 및 선택삭제 헤더 */}
+      <Card className="bg-gray-800/50 border-gray-700">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onSelectAll}
+                className="p-2 hover:bg-gray-700/50"
+              >
+                {isAllSelected ? (
+                  <Check className="w-4 h-4 text-blue-400" />
+                ) : (
+                  <Square className="w-4 h-4 text-gray-400" />
+                )}
+              </Button>
+              <span className="text-sm text-gray-300">
+                {isAllSelected ? '전체 해제' : '전체 선택'}
+              </span>
+            </div>
+            
+            {selectedDocuments && selectedDocuments.size > 0 && (
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-300">
+                  {selectedDocuments.size}개 선택됨
+                </span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={onBulkDelete}
+                  className="h-8 px-4"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  선택 삭제
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {groups.map((group, groupIndex) => (
         <Card key={group.domain} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors">
           <CardHeader className="pb-3">
@@ -185,6 +237,18 @@ export default function GroupedDocumentList({
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onSelectDocument(group.mainDocument.id)}
+                      className="p-1 h-6 w-6 hover:bg-gray-700/50"
+                    >
+                      {selectedDocuments?.has(group.mainDocument.id) ? (
+                        <Check className="w-4 h-4 text-blue-400" />
+                      ) : (
+                        <Square className="w-4 h-4 text-gray-400" />
+                      )}
+                    </Button>
                     <h3 className="font-semibold text-white text-lg truncate">
                       {group.mainDocument.title}
                     </h3>
@@ -218,6 +282,17 @@ export default function GroupedDocumentList({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
+                        {/* URL 크롤링 문서는 다운로드 기능 숨김 */}
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>다운로드</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -234,52 +309,6 @@ export default function GroupedDocumentList({
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>재인덱싱</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDownloadDocument(group.mainDocument.id, group.mainDocument.title)}
-                          disabled={actionLoading[`${group.mainDocument.id}_download`]}
-                          className="text-gray-400 hover:text-green-400 hover:bg-green-500/10"
-                        >
-                          {actionLoading[`${group.mainDocument.id}_download`] ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>다운로드</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onPreviewDocument(group.mainDocument.id)}
-                          disabled={actionLoading[`${group.mainDocument.id}_preview`]}
-                          className="text-gray-400 hover:text-purple-400 hover:bg-purple-500/10"
-                        >
-                          {actionLoading[`${group.mainDocument.id}_preview`] ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>미리보기</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -327,13 +356,30 @@ export default function GroupedDocumentList({
                           하위 페이지 ({group.subPages.length}개)
                         </h4>
                         <div className="flex items-center space-x-2">
-                          <Checkbox
-                            checked={group.subPages.every(sub => 
-                              group.selectedSubPages.includes(sub.url)
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              // 하위 페이지 전체 선택/해제
+                              const allSubPageIds = group.subPages.map(sub => sub.id);
+                              const allSelected = allSubPageIds.every(id => selectedDocuments?.has(id));
+                              
+                              if (allSelected) {
+                                // 모두 선택되어 있으면 해제
+                                allSubPageIds.forEach(id => onSelectDocument(id));
+                              } else {
+                                // 일부만 선택되어 있으면 전체 선택
+                                allSubPageIds.forEach(id => onSelectDocument(id));
+                              }
+                            }}
+                            className="p-1 h-6 w-6 hover:bg-gray-700/50"
+                          >
+                            {group.subPages.every(sub => selectedDocuments?.has(sub.id)) ? (
+                              <Check className="w-4 h-4 text-blue-400" />
+                            ) : (
+                              <Square className="w-4 h-4 text-gray-400" />
                             )}
-                            onCheckedChange={() => onToggleAllSubPages(groupIndex)}
-                            className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                          />
+                          </Button>
                           <span className="text-xs text-gray-400">전체 선택</span>
                         </div>
                       </div>
@@ -347,11 +393,18 @@ export default function GroupedDocumentList({
                             transition={{ delay: subIndex * 0.05 }}
                             className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors"
                           >
-                            <Checkbox
-                              checked={group.selectedSubPages.includes(subPage.url)}
-                              onCheckedChange={() => onToggleSubPageSelection(groupIndex, subPage.url)}
-                              className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onSelectDocument(subPage.id)}
+                              className="p-1 h-6 w-6 hover:bg-gray-700/50"
+                            >
+                              {selectedDocuments?.has(subPage.id) ? (
+                                <Check className="w-4 h-4 text-blue-400" />
+                              ) : (
+                                <Square className="w-4 h-4 text-gray-400" />
+                              )}
+                            </Button>
                             
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-2 mb-1">
@@ -387,6 +440,17 @@ export default function GroupedDocumentList({
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
+                                    {/* URL 크롤링 문서는 다운로드 기능 숨김 */}
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>다운로드</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -403,52 +467,6 @@ export default function GroupedDocumentList({
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>재인덱싱</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => onDownloadDocument(subPage.id, subPage.title)}
-                                      disabled={actionLoading[`${subPage.id}_download`]}
-                                      className="text-gray-400 hover:text-green-400 hover:bg-green-500/10 p-1"
-                                    >
-                                      {actionLoading[`${subPage.id}_download`] ? (
-                                        <RefreshCw className="w-3 h-3 animate-spin" />
-                                      ) : (
-                                        <Download className="w-3 h-3" />
-                                      )}
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>다운로드</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => onPreviewDocument(subPage.id)}
-                                      disabled={actionLoading[`${subPage.id}_preview`]}
-                                      className="text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 p-1"
-                                    >
-                                      {actionLoading[`${subPage.id}_preview`] ? (
-                                        <RefreshCw className="w-3 h-3 animate-spin" />
-                                      ) : (
-                                        <Eye className="w-3 h-3" />
-                                      )}
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>미리보기</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
