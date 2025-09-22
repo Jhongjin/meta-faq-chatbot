@@ -70,7 +70,11 @@ let documents: Document[] = [];
         const existingDocument = isDuplicate ? {
           id: data[0].id,
           title: data[0].title,
+          type: 'file', // 기본값 설정
+          content: '', // 기본값 설정
+          file_type: 'unknown', // 기본값 설정
           created_at: data[0].created_at,
+          updated_at: data[0].created_at, // created_at과 동일하게 설정
           file_size: data[0].file_size || 0,
           chunk_count: data[0].chunk_count || 0,
           status: data[0].status || 'indexed'
