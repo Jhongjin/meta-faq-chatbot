@@ -137,3 +137,7 @@ railway.json
 
 # Preview files
 preview/
+
+# Backup folders (exclude from build)
+AdMate_전체코드완료_임시/
+backup/

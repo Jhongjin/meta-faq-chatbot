@@ -195,3 +195,6 @@ export class DocumentIndexingService {
     }
   }
 }
+
+// 싱글톤 인스턴스
+export const documentIndexingService = new DocumentIndexingService();
