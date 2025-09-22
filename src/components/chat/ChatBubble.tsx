@@ -11,39 +11,39 @@ import remarkGfm from 'remark-gfm';
 // 커스텀 마크다운 컴포넌트
 const customMarkdownComponents = {
   // 제목 스타일링
-  h1: ({ children }: { children: React.ReactNode }) => (
+  h1: ({ children }: { children?: React.ReactNode }) => (
     <h1 className="text-xl font-bold text-blue-300 mb-4 mt-6 border-b border-blue-500/30 pb-2">
       {children}
     </h1>
   ),
-  h2: ({ children }: { children: React.ReactNode }) => (
+  h2: ({ children }: { children?: React.ReactNode }) => (
     <h2 className="text-lg font-semibold text-blue-200 mb-3 mt-5 border-l-4 border-blue-400 pl-3">
       {children}
     </h2>
   ),
-  h3: ({ children }: { children: React.ReactNode }) => (
+  h3: ({ children }: { children?: React.ReactNode }) => (
     <h3 className="text-base font-semibold text-blue-100 mb-2 mt-4">
       {children}
     </h3>
   ),
-  h4: ({ children }: { children: React.ReactNode }) => (
+  h4: ({ children }: { children?: React.ReactNode }) => (
     <h4 className="text-sm font-semibold text-blue-50 mb-2 mt-3">
       {children}
     </h4>
   ),
   // 강조 텍스트
-  strong: ({ children }: { children: React.ReactNode }) => (
+  strong: ({ children }: { children?: React.ReactNode }) => (
     <strong className="font-bold text-yellow-300">
       {children}
     </strong>
   ),
-  em: ({ children }: { children: React.ReactNode }) => (
+  em: ({ children }: { children?: React.ReactNode }) => (
     <em className="italic text-green-300">
       {children}
     </em>
   ),
   // 코드 블록
-  code: ({ children, className }: { children: React.ReactNode; className?: string }) => {
+  code: ({ children, className }: { children?: React.ReactNode; className?: string }) => {
     const isInline = !className;
     if (isInline) {
       return (
@@ -58,23 +58,23 @@ const customMarkdownComponents = {
       </code>
     );
   },
-  pre: ({ children }: { children: React.ReactNode }) => (
+  pre: ({ children }: { children?: React.ReactNode }) => (
     <pre className="bg-gray-800 border border-gray-600 rounded-lg p-4 overflow-x-auto">
       {children}
     </pre>
   ),
   // 리스트
-  ul: ({ children }: { children: React.ReactNode }) => (
+  ul: ({ children }: { children?: React.ReactNode }) => (
     <ul className="space-y-2 my-4 pl-4">
       {children}
     </ul>
   ),
-  ol: ({ children }: { children: React.ReactNode }) => (
+  ol: ({ children }: { children?: React.ReactNode }) => (
     <ol className="space-y-2 my-4 pl-4 list-decimal list-inside">
       {children}
     </ol>
   ),
-  li: ({ children }: { children: React.ReactNode }) => (
+  li: ({ children }: { children?: React.ReactNode }) => (
     <li className="text-gray-200 leading-relaxed">
       {children}
     </li>
@@ -92,7 +92,7 @@ const customMarkdownComponents = {
     </a>
   ),
   // 인용문
-  blockquote: ({ children }: { children: React.ReactNode }) => (
+  blockquote: ({ children }: { children?: React.ReactNode }) => (
     <blockquote className="border-l-4 border-blue-400 pl-4 py-2 my-4 bg-blue-900/20 rounded-r-lg">
       <p className="text-blue-100 italic">
         {children}
@@ -104,40 +104,40 @@ const customMarkdownComponents = {
     <hr className="my-6 border-gray-600" />
   ),
   // 테이블
-  table: ({ children }: { children: React.ReactNode }) => (
+  table: ({ children }: { children?: React.ReactNode }) => (
     <div className="overflow-x-auto my-4">
       <table className="min-w-full border border-gray-600 rounded-lg">
         {children}
       </table>
     </div>
   ),
-  thead: ({ children }: { children: React.ReactNode }) => (
+  thead: ({ children }: { children?: React.ReactNode }) => (
     <thead className="bg-gray-700">
       {children}
     </thead>
   ),
-  tbody: ({ children }: { children: React.ReactNode }) => (
+  tbody: ({ children }: { children?: React.ReactNode }) => (
     <tbody className="divide-y divide-gray-600">
       {children}
     </tbody>
   ),
-  tr: ({ children }: { children: React.ReactNode }) => (
+  tr: ({ children }: { children?: React.ReactNode }) => (
     <tr className="hover:bg-gray-700/50">
       {children}
     </tr>
   ),
-  th: ({ children }: { children: React.ReactNode }) => (
+  th: ({ children }: { children?: React.ReactNode }) => (
     <th className="px-4 py-2 text-left text-xs font-semibold text-gray-200 uppercase tracking-wider">
       {children}
     </th>
   ),
-  td: ({ children }: { children: React.ReactNode }) => (
+  td: ({ children }: { children?: React.ReactNode }) => (
     <td className="px-4 py-2 text-sm text-gray-300">
       {children}
     </td>
   ),
   // 단락
-  p: ({ children }: { children: React.ReactNode }) => (
+  p: ({ children }: { children?: React.ReactNode }) => (
     <p className="mb-3 text-gray-200 leading-relaxed">
       {children}
     </p>
