@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
             id: documentId,
             url: result.url,
             title: result.title,
-            chunkCount: ragResult.chunks?.length || 0
+            chunkCount: ragResult.chunkCount || 0
           });
           console.log('✅ URL 저장 완료:', result.url);
         } else {
