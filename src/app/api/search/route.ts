@@ -17,11 +17,11 @@ export async function POST(request: NextRequest) {
 
     // 문서 검색 실행
     const ragSearchService = new RAGSearchService();
-    const results = await ragSearchService.searchDocuments(query, {
-      matchThreshold: options.matchThreshold || 0.7,
-      matchCount: options.matchCount || 10,
-      documentTypes: options.documentTypes
-    });
+    const results = await ragSearchService.searchSimilarChunks(
+      query,
+      options.matchCount || 10,
+      options.matchThreshold || 0.7
+    );
 
     return NextResponse.json({
       success: true,
@@ -64,11 +64,11 @@ export async function GET(request: NextRequest) {
 
     // 문서 검색 실행
     const ragSearchService = new RAGSearchService();
-    const results = await ragSearchService.searchDocuments(query, {
-      matchThreshold,
+    const results = await ragSearchService.searchSimilarChunks(
+      query,
       matchCount,
-      documentTypes
-    });
+      matchThreshold
+    );
 
     return NextResponse.json({
       success: true,
