@@ -106,51 +106,7 @@ export class VectorStorageService {
         metadata.uploadedAt = documentData.uploadedAt;
       }
       
-      console.log(`document_metadata 저장 시도: ${documentData.id}`, {
-        id: documentData.id,
-        title: documentData.title,
-        type: metadataType,
-        size: documentData.size || 0,
-        uploaded_at: documentData.uploadedAt,
-        status: 'pending',
-        chunk_count: 0,
-        embedding_count: 0,
-        metadata: metadata
-      });
-
-      const { error: metaError } = await this.supabase
-        .from('document_metadata')
-        .insert({
-          id: documentData.id,
-          title: documentData.title,
-          type: metadataType,
-          size: documentData.size || 0, // 파일 크기 기본값 0
-          uploaded_at: documentData.uploadedAt,
-          status: 'pending',
-          chunk_count: 0,
-          embedding_count: 0,
-          metadata: metadata,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (metaError) {
-        console.error('document_metadata 저장 실패:', metaError);
-        console.error('저장 시도한 데이터:', {
-          id: documentData.id,
-          title: documentData.title,
-          type: metadataType,
-          size: documentData.size || 0,
-          uploaded_at: documentData.uploadedAt,
-          status: 'pending',
-          chunk_count: 0,
-          embedding_count: 0,
-          metadata: metadata
-        });
-        throw new Error(`메타데이터 저장 실패: ${metaError.message}`);
-      }
-
-      console.log(`✅ document_metadata 저장 완료: ${documentData.id}`);
+      // document_metadata 테이블은 사용하지 않음 (documents 테이블만 사용)
 
       return data;
     } catch (error) {

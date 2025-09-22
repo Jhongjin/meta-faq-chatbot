@@ -14,14 +14,25 @@ export async function GET(request: NextRequest) {
       throw new Error(`문서 조회 실패: ${docError.message}`);
     }
 
-    // 2. document_metadata 테이블 확인
-    const { data: metadata, error: metaError } = await vectorStorageService.supabase
-      .from('document_metadata')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (metaError) {
-      throw new Error(`메타데이터 조회 실패: ${metaError.message}`);
+    // 2. document_metadata 테이블 확인 (선택적)
+    let metadata = [];
+    let metaError = null;
+    
+    try {
+      const { data, error } = await vectorStorageService.supabase
+        .from('document_metadata')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.warn('document_metadata 테이블 조회 실패:', error.message);
+        metadata = [];
+      } else {
+        metadata = data || [];
+      }
+    } catch (err) {
+      console.warn('document_metadata 테이블이 존재하지 않습니다. documents 테이블만 사용합니다.');
+      metadata = [];
     }
 
     // 3. document_chunks 테이블 확인
