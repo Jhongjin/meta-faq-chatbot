@@ -242,8 +242,9 @@ export default function DocumentUpload({ onUpload, onDocumentListRefresh }: Docu
       console.log('📡 API 응답 헤더:', Object.fromEntries(response.headers.entries()));
 
       let result;
+      let responseText = '';
       try {
-        const responseText = await response.text();
+        responseText = await response.text();
         console.log('📡 서버 응답 텍스트 길이:', responseText.length);
         console.log('📡 서버 응답 텍스트 (처음 500자):', responseText.substring(0, 500));
         
@@ -262,7 +263,7 @@ export default function DocumentUpload({ onUpload, onDocumentListRefresh }: Docu
         console.error('❌ JSON 파싱 오류:', parseError);
         console.error('❌ 응답 상태:', response.status, response.statusText);
         console.error('❌ 응답 헤더:', Object.fromEntries(response.headers.entries()));
-        console.error('❌ 응답 텍스트:', responseText);
+        console.error('❌ 응답 텍스트:', responseText || '응답 텍스트 없음');
         
         throw new Error(`서버 응답 처리 오류: ${parseError instanceof Error ? parseError.message : '알 수 없는 오류'}`);
       }
