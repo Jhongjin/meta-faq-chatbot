@@ -37,8 +37,7 @@ export async function POST(request: NextRequest) {
             'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8',
             'Cache-Control': 'no-cache'
           },
-          redirect: 'follow',
-          timeout: 10000
+          redirect: 'follow'
         });
 
         if (!response.ok) {
