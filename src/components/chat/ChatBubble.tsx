@@ -80,7 +80,7 @@ const customMarkdownComponents = {
     </li>
   ),
   // 링크
-  a: ({ href, children, ...props }: { href?: string; children: React.ReactNode; [key: string]: any }) => (
+  a: ({ href, children, ...props }: { href?: string; children?: React.ReactNode; [key: string]: any }) => (
     <a 
       href={href} 
       target="_blank" 
