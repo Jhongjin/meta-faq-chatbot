@@ -91,7 +91,7 @@ export async function GET(
       
       // 청크 내용을 합치되, 중복된 문장 제거
       const contentParts = sortedChunks.map(chunk => chunk.content.trim()).filter(content => content.length > 0);
-      const uniqueParts = [];
+      const uniqueParts: string[] = [];
       
       for (const part of contentParts) {
         // 이미 추가된 부분과 중복되는지 확인 (더 정교한 중복 검사)
