@@ -472,8 +472,8 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('❌ 파일 업로드 중 오류 발생:', {
         fileName: file.name,
-        error: error.message,
-        stack: error.stack
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       });
       
       return NextResponse.json(
