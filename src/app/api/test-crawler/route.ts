@@ -33,8 +33,7 @@ export async function POST(request: NextRequest) {
             'Sec-Fetch-Site': 'none',
             'Cache-Control': 'max-age=0'
           },
-          redirect: 'follow',
-          timeout: 15000
+          redirect: 'follow'
         });
 
         if (!response.ok) {
