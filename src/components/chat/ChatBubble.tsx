@@ -80,12 +80,13 @@ const customMarkdownComponents = {
     </li>
   ),
   // 링크
-  a: ({ href, children }: { href?: string; children: React.ReactNode }) => (
+  a: ({ href, children, ...props }: { href?: string; children: React.ReactNode; [key: string]: any }) => (
     <a 
       href={href} 
       target="_blank" 
       rel="noopener noreferrer"
       className="text-blue-400 hover:text-blue-300 underline decoration-blue-400/50 hover:decoration-blue-300 transition-colors"
+      {...props}
     >
       {children}
     </a>
