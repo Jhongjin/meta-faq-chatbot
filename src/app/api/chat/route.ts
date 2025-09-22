@@ -83,7 +83,7 @@ async function searchSimilarChunks(
         metadata: chunk.metadata,
         document_id: chunk.metadata.document_id,
         created_at: chunk.metadata.created_at,
-        similarity: chunk.similarity || 0.8
+        similarity: 0.8 // 기본 유사도 값
       }));
 
       console.log(`📊 Supabase에서 ${chunksData.length}개 청크 조회됨`);
