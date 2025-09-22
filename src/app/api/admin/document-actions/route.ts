@@ -1067,7 +1067,7 @@ async function handleReindex(documentId: string) {
           });
           
           if (!ragResult.success) {
-            throw new Error(`대용량 파일 RAG 처리 실패: ${ragResult.error || 'Unknown error'}`);
+            throw new Error(`대용량 파일 RAG 처리 실패: 문서 처리 중 오류가 발생했습니다.`);
           }
           
           // 문서 상태와 청크 수를 업데이트
