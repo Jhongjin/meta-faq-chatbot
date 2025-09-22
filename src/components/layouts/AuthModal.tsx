@@ -46,11 +46,31 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 입력값 검증
-    if (!formData.email || !formData.password) {
+    // 입력값 검증 강화
+    if (!formData.email || !formData.email.trim()) {
       toast({
         title: "입력 오류",
-        description: "이메일과 비밀번호를 입력해주세요.",
+        description: "이메일을 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      toast({
+        title: "입력 오류",
+        description: "올바른 이메일 형식을 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.password || !formData.password.trim()) {
+      toast({
+        title: "입력 오류",
+        description: "비밀번호를 입력해주세요.",
         variant: "destructive",
       });
       return;
@@ -116,7 +136,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
           setFormData({ email: "@nasmedia.co.kr", password: "", confirmPassword: "", name: "" });
         }
       } else {
-        const { data, error } = await signIn(formData.email, formData.password);
+        const { data, error } = await signIn(formData.email.trim(), formData.password);
         
         if (error) {
           toast({
@@ -134,9 +154,10 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
         }
       }
     } catch (error) {
+      console.error('AuthModal handleSubmit error:', error);
       toast({
         title: "시스템 오류",
-        description: `예상치 못한 오류가 발생했습니다: ${error}`,
+        description: "예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
         variant: "destructive",
       });
     } finally {

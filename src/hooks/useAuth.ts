@@ -12,6 +12,16 @@ export function useAuth() {
     const supabase = createClient();
     let timeoutId: NodeJS.Timeout;
     
+    // Supabase 연결 상태 확인
+    const isDummyClient = supabase.supabaseUrl === 'https://dummy.supabase.co';
+    
+    if (isDummyClient) {
+      console.warn('Supabase 환경변수가 설정되지 않았습니다. 더미 클라이언트를 사용합니다.');
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+    
     // 현재 세션 확인
     const getSession = async () => {
       try {
@@ -158,9 +168,33 @@ export function useAuth() {
 
   const signIn = async (email: string, password: string) => {
     try {
+      // 이메일 유효성 검사 강화
+      if (!email || !email.trim()) {
+        return { data: null, error: { message: '이메일을 입력해주세요.' } };
+      }
+      
+      if (!email.includes('@')) {
+        return { data: null, error: { message: '올바른 이메일 형식을 입력해주세요.' } };
+      }
+      
+      if (!password || !password.trim()) {
+        return { data: null, error: { message: '비밀번호를 입력해주세요.' } };
+      }
+
       const supabase = createClient();
+      
+      // Supabase 연결 상태 확인
+      if (supabase.supabaseUrl === 'https://dummy.supabase.co') {
+        return { 
+          data: null, 
+          error: { 
+            message: 'Supabase 환경변수가 설정되지 않았습니다. 관리자에게 문의해주세요.' 
+          } 
+        };
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -174,6 +208,10 @@ export function useAuth() {
           errorMessage = '이메일 인증이 완료되지 않았습니다. 이메일을 확인해주세요.';
         } else if (error.message.includes('Too many requests')) {
           errorMessage = '너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.';
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = '네트워크 연결에 문제가 있습니다. 인터넷 연결을 확인해주세요.';
+        } else if (error.message.includes('Could not establish connection')) {
+          errorMessage = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
         } else {
           errorMessage = error.message;
         }
@@ -184,6 +222,17 @@ export function useAuth() {
       return { data, error: null };
     } catch (error: any) {
       console.error('로그인 오류:', error);
+      
+      // 네트워크 관련 오류 처리
+      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+        return { 
+          data: null, 
+          error: { 
+            message: '네트워크 연결에 문제가 있습니다. 인터넷 연결을 확인해주세요.' 
+          } 
+        };
+      }
+      
       return { data: null, error: { message: '로그인 중 오류가 발생했습니다.' } };
     }
   };
