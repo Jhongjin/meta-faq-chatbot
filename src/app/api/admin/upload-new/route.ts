@@ -439,7 +439,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { 
             success: false, 
-            error: `문서 처리 중 예외가 발생했습니다: ${ragError.message}`,
+            error: `문서 처리 중 예외가 발생했습니다: ${ragError instanceof Error ? ragError.message : String(ragError)}`,
             fileName: cleanFileName
           },
           { status: 500 }
