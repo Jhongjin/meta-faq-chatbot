@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { documentIndexingService } from '@/lib/services/DocumentIndexingService';
+import { RAGSearchService } from '@/lib/services/RAGSearchService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
     console.log('검색 요청:', { query, options });
 
     // 문서 검색 실행
-    const results = await documentIndexingService.searchDocuments(query, {
+    const ragSearchService = new RAGSearchService();
+    const results = await ragSearchService.searchDocuments(query, {
       matchThreshold: options.matchThreshold || 0.7,
       matchCount: options.matchCount || 10,
       documentTypes: options.documentTypes
@@ -62,7 +63,8 @@ export async function GET(request: NextRequest) {
     console.log('검색 요청 (GET):', { query, matchThreshold, matchCount, documentTypes });
 
     // 문서 검색 실행
-    const results = await documentIndexingService.searchDocuments(query, {
+    const ragSearchService = new RAGSearchService();
+    const results = await ragSearchService.searchDocuments(query, {
       matchThreshold,
       matchCount,
       documentTypes
