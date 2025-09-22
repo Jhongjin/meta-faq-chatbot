@@ -479,7 +479,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           success: false, 
-          error: `파일 업로드 중 오류가 발생했습니다: ${error.message}`,
+          error: `파일 업로드 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
           fileName: file.name
         },
         { status: 500 }
