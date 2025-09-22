@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import puppeteer, { Browser, Page } from 'puppeteer';
 import { parseStringPromise } from 'xml2js';
 
 export interface DiscoveredUrl {
@@ -19,7 +19,7 @@ export interface DiscoveryOptions {
 }
 
 export class SitemapDiscoveryService {
-  private browser: puppeteer.Browser | null = null;
+  private browser: Browser | null = null;
   private defaultOptions: DiscoveryOptions = {
     maxDepth: 3,
     maxUrls: 100,
@@ -350,7 +350,7 @@ export class SitemapDiscoveryService {
     );
     
     // 우선순위별 정렬 (sitemap > links > pattern)
-    const sourcePriority = { sitemap: 1, links: 2, pattern: 3 };
+    const sourcePriority = { sitemap: 1, robots: 1, links: 2, pattern: 3 };
     filteredPages.sort((a, b) => {
       const priorityA = sourcePriority[a.source] || 4;
       const priorityB = sourcePriority[b.source] || 4;

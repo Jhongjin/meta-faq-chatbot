@@ -507,7 +507,7 @@ DOCX 텍스트 추출이 비활성화되었습니다.
           
         case 'txt':
           // TXT 파일은 다양한 인코딩 시도
-          const encodings = ['utf-8', 'euc-kr', 'cp949', 'iso-8859-1'];
+          const encodings: BufferEncoding[] = ['utf-8', 'latin1'];
           let bestResult: TextEncodingResult | null = null;
           let bestScore = 0;
 
@@ -863,7 +863,7 @@ DOCX 텍스트 추출이 비활성화되었습니다.
 
       // 쿼리에 대한 임베딩 생성 (BGE-M3 모델 사용)
       console.log('🧠 쿼리 임베딩 생성 중...');
-      const queryEmbedding = await this.generateSimpleEmbedding(query, parseInt(process.env.EMBEDDING_DIM || '1024'));
+      const queryEmbedding = this.generateSimpleEmbedding(query);
       console.log('✅ 쿼리 임베딩 생성 완료:', queryEmbedding.length, '차원');
 
       // 새로운 search_documents 함수 사용

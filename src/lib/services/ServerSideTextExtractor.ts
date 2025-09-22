@@ -128,7 +128,7 @@ npm install mammoth
   async extractFromTXT(fileBuffer: Buffer, fileName: string): Promise<ExtractionResult> {
     try {
       // 다양한 인코딩 시도
-      const encodings = ['utf-8', 'euc-kr', 'cp949', 'iso-8859-1'];
+      const encodings: BufferEncoding[] = ['utf-8', 'latin1'];
       let bestResult: TextEncodingResult | null = null;
       let bestScore = 0;
 
@@ -187,9 +187,9 @@ npm install mammoth
       const { PuppeteerCrawlingService } = await import('./PuppeteerCrawlingService');
       const crawler = new PuppeteerCrawlingService();
       
-      const result = await crawler.crawlUrl(url);
+      const result = await crawler.crawlMetaPage(url);
       
-      if (!result.success || !result.content) {
+      if (!result || !result.content) {
         throw new Error('URL 크롤링 실패');
       }
 

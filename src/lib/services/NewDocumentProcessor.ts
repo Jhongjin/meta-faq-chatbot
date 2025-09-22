@@ -356,8 +356,7 @@ export class NewDocumentProcessor {
           'Sec-Fetch-Site': 'none',
           'Cache-Control': 'max-age=0'
         },
-        redirect: 'follow',
-        timeout: 30000
+        redirect: 'follow'
       });
 
       if (!response.ok) {

@@ -13,7 +13,7 @@ export function useAuth() {
     let timeoutId: NodeJS.Timeout;
     
     // Supabase 연결 상태 확인
-    const isDummyClient = supabase.supabaseUrl === 'https://dummy.supabase.co';
+    const isDummyClient = process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://dummy.supabase.co';
     
     if (isDummyClient) {
       console.warn('Supabase 환경변수가 설정되지 않았습니다. 더미 클라이언트를 사용합니다.');
@@ -184,7 +184,8 @@ export function useAuth() {
       const supabase = createClient();
       
       // Supabase 연결 상태 확인
-      if (supabase.supabaseUrl === 'https://dummy.supabase.co') {
+      const isDummyClient = process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://dummy.supabase.co';
+      if (isDummyClient) {
         return { 
           data: null, 
           error: { 
