@@ -420,15 +420,15 @@ export async function POST(request: NextRequest) {
         console.log('✅ RAG 처리 완료:', {
           success: ragResult.success,
           chunkCount: ragResult.chunkCount,
-          error: ragResult.error
+          error: ragResult.success ? null : 'RAG 처리 실패'
         });
         
         if (!ragResult.success) {
-          console.error('❌ RAG 처리 실패:', ragResult.error);
+          console.error('❌ RAG 처리 실패: 문서 처리 중 오류가 발생했습니다.');
           return NextResponse.json(
             { 
               success: false, 
-              error: `문서 처리 중 오류가 발생했습니다: ${ragResult.error}`,
+              error: '문서 처리 중 오류가 발생했습니다.',
               fileName: cleanFileName
             },
             { status: 500 }
