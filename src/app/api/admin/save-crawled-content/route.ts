@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
         } else {
           errors.push({
             url: result.url,
-            error: ragResult.error || 'RAG 처리 실패'
+            error: 'RAG 처리 실패'
           });
         }
 
