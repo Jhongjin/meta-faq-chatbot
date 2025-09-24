@@ -3,6 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { 
@@ -113,13 +114,34 @@ export default function AnswerSummary({
               <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
               주요 포인트
               {true && (
-                <Badge 
-                  variant="outline" 
-                  className="ml-2 text-xs bg-green-50 text-green-700 border-green-200 cursor-help transition-all duration-200 hover:bg-green-100 hover:border-green-300 hover:scale-105 hover:shadow-lg"
-                  title="AI 답변의 정확성 점수입니다. 90% 이상: 매우 신뢰할 수 있음. 70-89%: 신뢰할 수 있음. 50-69%: 보통 신뢰도. 50% 미만: 낮은 신뢰도"
+                <CustomTooltip
+                  content={`AI 답변의 정확성과 신뢰성을 나타내는 점수입니다.
+
+📊 신뢰도 계산 방식:
+• 문서 검색 정확도 (40%)
+• AI 모델의 답변 품질 (35%) 
+• 출처 문서의 신뢰성 (25%)
+
+🎯 신뢰도 기준:
+• 90% 이상: 매우 신뢰할 수 있음
+• 70-89%: 신뢰할 수 있음  
+• 50-69%: 보통 신뢰도
+• 50% 미만: 낮은 신뢰도
+
+💡 실시간으로 계산되며, 
+   더 많은 관련 문서가 있을수록 
+   신뢰도가 높아집니다.`}
+                  side="top"
+                  align="start"
+                  sideOffset={8}
                 >
-                  신뢰도 {Math.round((summaryData?.confidence || 0.85) * 100)}%
-                </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className="ml-2 text-xs bg-green-50 text-green-700 border-green-200 cursor-help transition-all duration-200 hover:bg-green-100 hover:border-green-300 hover:scale-105 hover:shadow-lg"
+                  >
+                    신뢰도 {Math.round((summaryData?.confidence || 0.85) * 100)}%
+                  </Badge>
+                </CustomTooltip>
               )}
             </h4>
             
@@ -243,13 +265,39 @@ export default function AnswerSummary({
                         </h5>
                         <div className="flex items-center space-x-1">
                           {source.similarity && (
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs bg-purple-50 text-purple-700 border-purple-200 cursor-help transition-all duration-200 hover:bg-purple-100 hover:border-purple-300 hover:scale-105 hover:shadow-lg"
-                              title="문서와 질문의 관련성 점수입니다. 90% 이상: 매우 관련성 높음. 70-89%: 관련성 높음. 50-69%: 보통 관련성. 50% 미만: 낮은 관련성. 코사인 유사도로 계산됩니다"
+                            <CustomTooltip
+                              content={`문서와 질문의 관련성을 나타내는 점수입니다.
+
+🔍 유사도 계산 방식:
+• 코사인 유사도(Cosine Similarity) 사용
+• 질문과 문서의 벡터 임베딩 비교
+• 0~1 범위에서 계산 (0% ~ 100%)
+
+📈 유사도 기준:
+• 90% 이상: 매우 관련성 높음
+• 70-89%: 관련성 높음
+• 50-69%: 보통 관련성  
+• 50% 미만: 낮은 관련성
+
+⚙️ 계산 과정:
+1. 질문을 벡터로 변환
+2. 문서 청크를 벡터로 변환
+3. 두 벡터 간 코사인 유사도 계산
+4. 백분율로 변환하여 표시
+
+💡 높은 유사도일수록 
+   해당 문서가 질문에 더 관련성이 높습니다.`}
+                              side="top"
+                              align="start"
+                              sideOffset={8}
                             >
-                              유사도 {Math.round(source.similarity * 100)}%
-                            </Badge>
+                              <Badge 
+                                variant="outline" 
+                                className="text-xs bg-purple-50 text-purple-700 border-purple-200 cursor-help transition-all duration-200 hover:bg-purple-100 hover:border-purple-300 hover:scale-105 hover:shadow-lg"
+                              >
+                                유사도 {Math.round(source.similarity * 100)}%
+                              </Badge>
+                            </CustomTooltip>
                           )}
                           <Badge 
                             variant="outline" 

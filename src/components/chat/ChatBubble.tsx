@@ -5,6 +5,7 @@ import { ThumbsUp, ThumbsDown, ExternalLink, Calendar, FileText, User, Download,
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { CustomTooltip } from "@/components/ui/custom-tooltip";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -509,13 +510,39 @@ export default function ChatBubble({
                                         {source.sourceType === 'file' ? '📄 파일' : '🔗 링크'}
                                       </Badge>
                                             {source.similarity && (
-                                              <Badge 
-                                                variant="outline" 
-                                                className="text-xs bg-purple-600/30 text-purple-300 border-purple-500/50 cursor-help transition-all duration-200 hover:bg-purple-600/50 hover:border-purple-400 hover:scale-105 hover:shadow-lg"
-                                                title="문서와 질문의 관련성 점수입니다. 90% 이상: 매우 관련성 높음. 70-89%: 관련성 높음. 50-69%: 보통 관련성. 50% 미만: 낮은 관련성. 코사인 유사도로 계산됩니다"
+                                              <CustomTooltip
+                                                content={`문서와 질문의 관련성을 나타내는 점수입니다.
+
+🔍 유사도 계산 방식:
+• 코사인 유사도(Cosine Similarity) 사용
+• 질문과 문서의 벡터 임베딩 비교
+• 0~1 범위에서 계산 (0% ~ 100%)
+
+📈 유사도 기준:
+• 90% 이상: 매우 관련성 높음
+• 70-89%: 관련성 높음
+• 50-69%: 보통 관련성  
+• 50% 미만: 낮은 관련성
+
+⚙️ 계산 과정:
+1. 질문을 벡터로 변환
+2. 문서 청크를 벡터로 변환
+3. 두 벡터 간 코사인 유사도 계산
+4. 백분율로 변환하여 표시
+
+💡 높은 유사도일수록 
+   해당 문서가 질문에 더 관련성이 높습니다.`}
+                                                side="top"
+                                                align="start"
+                                                sideOffset={8}
                                               >
-                                                유사도 {Math.round(source.similarity * 100)}%
-                                              </Badge>
+                                                <Badge 
+                                                  variant="outline" 
+                                                  className="text-xs bg-purple-600/30 text-purple-300 border-purple-500/50 cursor-help transition-all duration-200 hover:bg-purple-600/50 hover:border-purple-400 hover:scale-105 hover:shadow-lg"
+                                                >
+                                                  유사도 {Math.round(source.similarity * 100)}%
+                                                </Badge>
+                                              </CustomTooltip>
                                             )}
                                       <span className="text-xs text-gray-400">
                                         마지막 업데이트: {new Date(source.updatedAt).toLocaleDateString('ko-KR')}
