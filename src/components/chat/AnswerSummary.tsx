@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   FileText, 
   Calendar, 
@@ -243,12 +244,35 @@ export default function AnswerSummary({
                         </h5>
                         <div className="flex items-center space-x-1">
                           {source.similarity && (
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs bg-purple-50 text-purple-700 border-purple-200"
-                            >
-                              유사도 {Math.round(source.similarity * 100)}%
-                            </Badge>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs bg-purple-50 text-purple-700 border-purple-200 cursor-help"
+                                  >
+                                    유사도 {Math.round(source.similarity * 100)}%
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="max-w-xs">
+                                    <p className="font-semibold mb-1">유사도 점수</p>
+                                    <p className="text-sm">
+                                      이 문서가 질문과 얼마나 관련성이 높은지를 나타내는 점수입니다.
+                                    </p>
+                                    <div className="mt-2 text-xs text-gray-600">
+                                      <p>• 90% 이상: 매우 관련성 높음</p>
+                                      <p>• 70-89%: 관련성 높음</p>
+                                      <p>• 50-69%: 보통 관련성</p>
+                                      <p>• 50% 미만: 낮은 관련성</p>
+                                    </div>
+                                    <p className="mt-2 text-xs text-gray-500">
+                                      코사인 유사도로 계산됩니다.
+                                    </p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                           <Badge 
                             variant="outline" 

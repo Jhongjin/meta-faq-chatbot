@@ -5,6 +5,7 @@ import { ThumbsUp, ThumbsDown, ExternalLink, Calendar, FileText, User, Download,
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -509,12 +510,35 @@ export default function ChatBubble({
                                         {source.sourceType === 'file' ? '📄 파일' : '🔗 링크'}
                                       </Badge>
                                       {source.similarity && (
-                                        <Badge 
-                                          variant="outline" 
-                                          className="text-xs bg-purple-600/30 text-purple-300 border-purple-500/50"
-                                        >
-                                          유사도 {Math.round(source.similarity * 100)}%
-                                        </Badge>
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Badge 
+                                                variant="outline" 
+                                                className="text-xs bg-purple-600/30 text-purple-300 border-purple-500/50 cursor-help"
+                                              >
+                                                유사도 {Math.round(source.similarity * 100)}%
+                                              </Badge>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <div className="max-w-xs">
+                                                <p className="font-semibold mb-1">유사도 점수</p>
+                                                <p className="text-sm">
+                                                  이 문서가 질문과 얼마나 관련성이 높은지를 나타내는 점수입니다.
+                                                </p>
+                                                <div className="mt-2 text-xs text-gray-300">
+                                                  <p>• 90% 이상: 매우 관련성 높음</p>
+                                                  <p>• 70-89%: 관련성 높음</p>
+                                                  <p>• 50-69%: 보통 관련성</p>
+                                                  <p>• 50% 미만: 낮은 관련성</p>
+                                                </div>
+                                                <p className="mt-2 text-xs text-gray-400">
+                                                  코사인 유사도로 계산됩니다.
+                                                </p>
+                                              </div>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
                                       )}
                                       <span className="text-xs text-gray-400">
                                         마지막 업데이트: {new Date(source.updatedAt).toLocaleDateString('ko-KR')}
