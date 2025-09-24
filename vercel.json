@@ -4,10 +4,10 @@
   "outputDirectory": ".next",
   "installCommand": "npm install",
   "devCommand": "npm run dev",
+  "rootDirectory": "./",
   "functions": {
     "src/app/api/**/*.ts": {
-      "maxDuration": 120,
-      "memory": 2048
+      "maxDuration": 120
     }
   },
   "routes": [
