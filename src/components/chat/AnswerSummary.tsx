@@ -118,12 +118,14 @@ export default function AnswerSummary({
               <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
               주요 포인트
               {true && (
-                <TooltipProvider>
+                <TooltipProvider delayDuration={300}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge 
                         variant="outline" 
                         className="ml-2 text-xs bg-green-50 text-green-700 border-green-200 cursor-help transition-all duration-200 hover:bg-green-100 hover:border-green-300 hover:scale-105 hover:shadow-lg"
+                        onMouseEnter={() => console.log('신뢰도 배지 호버 시작')}
+                        onMouseLeave={() => console.log('신뢰도 배지 호버 종료')}
                       >
                         신뢰도 {Math.round((summaryData?.confidence || 0.85) * 100)}%
                       </Badge>
@@ -131,7 +133,7 @@ export default function AnswerSummary({
                     <TooltipContent 
                       side="top" 
                       align="start"
-                      sideOffset={30}
+                      sideOffset={50}
                       className="max-w-sm bg-white border border-green-200 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200"
                     >
                       <div className="p-3">
