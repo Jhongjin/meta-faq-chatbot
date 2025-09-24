@@ -1064,7 +1064,7 @@ function ChatPageContent() {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyPress}
                     placeholder="메타 광고에 대해 궁금한 점을 질문해주세요..."
-                    className="pr-80 sm:pr-96 resize-none min-h-[24px] sm:min-h-[26px] max-h-[60px] sm:max-h-[72px] text-sm sm:text-base border-gray-600 text-white placeholder-gray-400 focus:border-gray-500"
+                    className="pr-72 sm:pr-80 resize-none min-h-[24px] sm:min-h-[26px] max-h-[60px] sm:max-h-[72px] text-sm sm:text-base border-gray-600 text-white placeholder-gray-400 focus:border-gray-500"
                     style={{ backgroundColor: '#1a1a1a', borderRadius: '8px' }}
                     disabled={isLoading}
                     rows={1}

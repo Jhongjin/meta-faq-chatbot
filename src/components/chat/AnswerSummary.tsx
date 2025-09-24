@@ -116,7 +116,7 @@ export default function AnswerSummary({
                 <Badge 
                   variant="outline" 
                   className="ml-2 text-xs bg-green-50 text-green-700 border-green-200 cursor-help transition-all duration-200 hover:bg-green-100 hover:border-green-300 hover:scale-105 hover:shadow-lg"
-                  title="AI가 생성한 답변의 정확성과 신뢰성을 나타내는 점수입니다. 90% 이상: 매우 신뢰할 수 있음, 70-89%: 신뢰할 수 있음, 50-69%: 보통 신뢰도, 50% 미만: 낮은 신뢰도"
+                  title="AI 답변의 정확성 점수\n90%+: 매우 신뢰\n70-89%: 신뢰\n50-69%: 보통\n50%-: 낮음"
                 >
                   신뢰도 {Math.round((summaryData?.confidence || 0.85) * 100)}%
                 </Badge>
@@ -246,7 +246,7 @@ export default function AnswerSummary({
                             <Badge 
                               variant="outline" 
                               className="text-xs bg-purple-50 text-purple-700 border-purple-200 cursor-help transition-all duration-200 hover:bg-purple-100 hover:border-purple-300 hover:scale-105 hover:shadow-lg"
-                              title="이 문서가 질문과 얼마나 관련성이 높은지를 나타내는 점수입니다. 90% 이상: 매우 관련성 높음, 70-89%: 관련성 높음, 50-69%: 보통 관련성, 50% 미만: 낮은 관련성. 코사인 유사도로 계산됩니다."
+                              title="문서와 질문의 관련성 점수\n90%+: 매우 높음\n70-89%: 높음\n50-69%: 보통\n50%-: 낮음\n코사인 유사도 계산"
                             >
                               유사도 {Math.round(source.similarity * 100)}%
                             </Badge>
