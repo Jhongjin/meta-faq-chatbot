@@ -439,6 +439,10 @@ async function generateStreamAnswerWithGemini(
     // Gemini API가 설정되지 않은 경우 fallback 답변 생성
     if (!genAI) {
       console.log('⚠️ Gemini API가 설정되지 않음. Fallback 답변 생성');
+      console.log('🔍 환경변수 확인:', {
+        GOOGLE_API_KEY: process.env.GOOGLE_API_KEY ? '설정됨' : '설정되지 않음',
+        API_KEY_LENGTH: process.env.GOOGLE_API_KEY?.length || 0
+      });
       const fallbackAnswer = generateFallbackAnswer(query, searchResults);
       
       // Fallback 답변을 청크 단위로 전송
@@ -500,8 +504,18 @@ ${context}
 답변:`;
 
     console.log('📝 Gemini API 호출 시작');
-    const result = await model.generateContentStream(prompt);
-    console.log('✅ Gemini API 응답 완료');
+    let result;
+    try {
+      result = await model.generateContentStream(prompt);
+      console.log('✅ Gemini API 응답 완료');
+    } catch (apiError) {
+      console.error('❌ Gemini API 스트림 호출 실패:', apiError);
+      console.error('❌ API 에러 상세:', {
+        message: apiError instanceof Error ? apiError.message : '알 수 없는 오류',
+        stack: apiError instanceof Error ? apiError.stack : undefined
+      });
+      throw apiError;
+    }
 
     let fullAnswer = '';
     for await (const chunk of result.stream) {
@@ -589,15 +603,24 @@ ${context}
 답변:`;
 
     console.log('📝 Gemini API 호출 시작');
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    
-    const answer = response.text();
-    console.log('✅ Gemini API 응답 완료');
-    console.log('- 답변 길이:', answer.length);
-    console.log('- 답변 미리보기:', answer.substring(0, 100) + '...');
-    
-    return answer;
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      
+      const answer = response.text();
+      console.log('✅ Gemini API 응답 완료');
+      console.log('- 답변 길이:', answer.length);
+      console.log('- 답변 미리보기:', answer.substring(0, 100) + '...');
+      
+      return answer;
+    } catch (apiError) {
+      console.error('❌ Gemini API 호출 실패:', apiError);
+      console.error('❌ API 에러 상세:', {
+        message: apiError instanceof Error ? apiError.message : '알 수 없는 오류',
+        stack: apiError instanceof Error ? apiError.stack : undefined
+      });
+      throw apiError;
+    }
     
   } catch (error) {
     console.error('Gemini API 오류:', error);
