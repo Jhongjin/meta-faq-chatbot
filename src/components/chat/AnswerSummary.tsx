@@ -95,11 +95,7 @@ export default function AnswerSummary({
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
+    <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
       <Card className="w-full bg-gradient-to-br from-blue-50/95 to-indigo-50/95 backdrop-blur-sm border-blue-200/30 shadow-lg">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center space-x-2 text-gray-800 text-xl font-bold">
@@ -130,10 +126,10 @@ export default function AnswerSummary({
                     </Badge>
                   </TooltipTrigger>
                   <TooltipContent 
-                    side="top" 
+                    side="bottom" 
                     align="start"
-                    sideOffset={50}
-                    className="max-w-sm bg-white border border-green-200 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200 z-50"
+                    sideOffset={5}
+                    className="max-w-sm bg-white border border-green-200 shadow-xl z-[9999]"
                   >
                       <div className="p-3">
                         <div className="flex items-center gap-2 mb-2">
@@ -417,6 +413,6 @@ export default function AnswerSummary({
           )}
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }
