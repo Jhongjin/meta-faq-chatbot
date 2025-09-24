@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 // 환경 변수 확인 및 조건부 클라이언트 생성
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -56,7 +58,7 @@ export async function GET(request: NextRequest) {
     // 임시 하드코딩된 사용자 데이터 (개발 환경용)
     const mockUsers: User[] = [
       {
-        id: '1',
+        id: '550e8400-e29b-41d4-a716-446655440001',
         email: 'secho@nasmedia.co.kr',
         name: '조성은',
         avatar_url: undefined,
@@ -68,7 +70,7 @@ export async function GET(request: NextRequest) {
         conversation_count: 15
       },
       {
-        id: '2',
+        id: '550e8400-e29b-41d4-a716-446655440002',
         email: 'woolela@nasmedia.co.kr',
         name: '전홍진',
         avatar_url: undefined,
@@ -80,7 +82,7 @@ export async function GET(request: NextRequest) {
         conversation_count: 8
       },
       {
-        id: '3',
+        id: '550e8400-e29b-41d4-a716-446655440003',
         email: 'dsko@nasmedia.co.kr',
         name: '고대승',
         avatar_url: undefined,
@@ -92,7 +94,7 @@ export async function GET(request: NextRequest) {
         conversation_count: 12
       },
       {
-        id: '4',
+        id: '550e8400-e29b-41d4-a716-446655440004',
         email: 'hjchoi@nasmedia.co.kr',
         name: '최호준',
         avatar_url: undefined,
@@ -104,7 +106,7 @@ export async function GET(request: NextRequest) {
         conversation_count: 6
       },
       {
-        id: '5',
+        id: '550e8400-e29b-41d4-a716-446655440005',
         email: 'sunjung@nasmedia.co.kr',
         name: '임선정',
         avatar_url: undefined,

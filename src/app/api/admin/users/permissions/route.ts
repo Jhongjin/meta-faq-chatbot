@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 // 환경 변수 확인 및 조건부 클라이언트 생성
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -28,6 +30,12 @@ async function isAdminUser(email: string): Promise<boolean> {
   return !!data;
 }
 
+// UUID 유효성 검사 함수
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
 export async function POST(request: NextRequest) {
     // Supabase 클라이언트 확인
     if (!supabase) {
@@ -45,6 +53,15 @@ export async function POST(request: NextRequest) {
     if (!userId || !action) {
       return NextResponse.json(
         { success: false, error: '사용자 ID와 작업이 필요합니다.' },
+        { status: 400 }
+      );
+    }
+
+    // UUID 유효성 검사
+    if (!isValidUUID(userId)) {
+      console.error('❌ 잘못된 UUID 형식:', userId);
+      return NextResponse.json(
+        { success: false, error: `잘못된 사용자 ID 형식입니다: ${userId}` },
         { status: 400 }
       );
     }
