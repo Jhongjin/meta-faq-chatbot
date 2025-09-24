@@ -520,21 +520,43 @@ export default function ChatBubble({
                                                 유사도 {Math.round(source.similarity * 100)}%
                                               </Badge>
                                             </TooltipTrigger>
-                                            <TooltipContent>
-                                              <div className="max-w-xs">
-                                                <p className="font-semibold mb-1">유사도 점수</p>
-                                                <p className="text-sm">
+                                            <TooltipContent 
+                                              side="top" 
+                                              align="center"
+                                              sideOffset={8}
+                                              className="max-w-sm bg-gray-900 border border-purple-500/30 shadow-xl"
+                                            >
+                                              <div className="p-3">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                                                  <p className="font-semibold text-purple-300 text-sm">유사도 점수</p>
+                                                </div>
+                                                <p className="text-xs text-gray-300 mb-3 leading-relaxed">
                                                   이 문서가 질문과 얼마나 관련성이 높은지를 나타내는 점수입니다.
                                                 </p>
-                                                <div className="mt-2 text-xs text-gray-300">
-                                                  <p>• 90% 이상: 매우 관련성 높음</p>
-                                                  <p>• 70-89%: 관련성 높음</p>
-                                                  <p>• 50-69%: 보통 관련성</p>
-                                                  <p>• 50% 미만: 낮은 관련성</p>
+                                                <div className="space-y-1 text-xs">
+                                                  <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                                                    <span className="text-green-300">90% 이상: 매우 관련성 높음</span>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                                                    <span className="text-blue-300">70-89%: 관련성 높음</span>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                                                    <span className="text-yellow-300">50-69%: 보통 관련성</span>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                                                    <span className="text-red-300">50% 미만: 낮은 관련성</span>
+                                                  </div>
                                                 </div>
-                                                <p className="mt-2 text-xs text-gray-400">
-                                                  코사인 유사도로 계산됩니다.
-                                                </p>
+                                                <div className="mt-3 pt-2 border-t border-gray-700">
+                                                  <p className="text-xs text-gray-400">
+                                                    💡 코사인 유사도로 계산됩니다
+                                                  </p>
+                                                </div>
                                               </div>
                                             </TooltipContent>
                                           </Tooltip>
