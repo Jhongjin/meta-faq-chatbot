@@ -10,9 +10,22 @@ console.log('- SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KE
 
 // 환경변수 값 직접 출력 (디버깅용)
 console.log('- GOOGLE_API_KEY 값:', process.env.GOOGLE_API_KEY?.substring(0, 10) + '...');
+console.log('- GOOGLE_API_KEY 전체 길이:', process.env.GOOGLE_API_KEY?.length);
 console.log('- NEXT_PUBLIC_SUPABASE_URL 값:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+console.log('- NODE_ENV:', process.env.NODE_ENV);
+console.log('- VERCEL:', process.env.VERCEL);
+console.log('- VERCEL_ENV:', process.env.VERCEL_ENV);
+console.log('- 모든 GOOGLE/GEMINI 관련 환경변수:', Object.keys(process.env).filter(key => key.includes('GOOGLE') || key.includes('GEMINI')));
 
 const genAI = process.env.GOOGLE_API_KEY ? new GoogleGenerativeAI(process.env.GOOGLE_API_KEY) : null;
+
+// Gemini AI 초기화 결과 확인
+console.log('🤖 Gemini AI 초기화 결과:');
+console.log('- genAI 객체:', genAI ? '생성됨' : 'null');
+console.log('- genAI 타입:', typeof genAI);
+if (genAI) {
+  console.log('- genAI 생성자:', genAI.constructor.name);
+}
 
 // Supabase 클라이언트 초기화 (환경변수 확인)
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY 
@@ -512,7 +525,13 @@ ${context}
       console.error('❌ Gemini API 스트림 호출 실패:', apiError);
       console.error('❌ API 에러 상세:', {
         message: apiError instanceof Error ? apiError.message : '알 수 없는 오류',
-        stack: apiError instanceof Error ? apiError.stack : undefined
+        stack: apiError instanceof Error ? apiError.stack : undefined,
+        name: apiError instanceof Error ? apiError.name : undefined
+      });
+      console.error('❌ API 키 상태 재확인:', {
+        hasApiKey: !!process.env.GOOGLE_API_KEY,
+        keyLength: process.env.GOOGLE_API_KEY?.length,
+        keyStart: process.env.GOOGLE_API_KEY?.substring(0, 10)
       });
       throw apiError;
     }
@@ -617,7 +636,13 @@ ${context}
       console.error('❌ Gemini API 호출 실패:', apiError);
       console.error('❌ API 에러 상세:', {
         message: apiError instanceof Error ? apiError.message : '알 수 없는 오류',
-        stack: apiError instanceof Error ? apiError.stack : undefined
+        stack: apiError instanceof Error ? apiError.stack : undefined,
+        name: apiError instanceof Error ? apiError.name : undefined
+      });
+      console.error('❌ API 키 상태 재확인:', {
+        hasApiKey: !!process.env.GOOGLE_API_KEY,
+        keyLength: process.env.GOOGLE_API_KEY?.length,
+        keyStart: process.env.GOOGLE_API_KEY?.substring(0, 10)
       });
       throw apiError;
     }
