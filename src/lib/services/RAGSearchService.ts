@@ -332,7 +332,7 @@ export class RAGSearchService {
     if (lowerQuery.includes('광고') && lowerQuery.includes('정책')) {
       return `**Meta 광고 정책 안내**
 
-Meta 광고 정책에 대한 질문이군요. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있어, 기본 정보를 제공해드립니다.
+Meta 광고 정책에 대한 질문이군요. 검색된 문서를 바탕으로 기본 정보를 제공해드립니다.
 
 **주요 광고 정책:**
 - 광고는 정확하고 진실된 정보를 포함해야 합니다
@@ -353,7 +353,7 @@ ${searchResults.map((result, index) => `${index + 1}. ${result.content.substring
     if (lowerQuery.includes('facebook') || lowerQuery.includes('instagram')) {
       return `**Facebook/Instagram 광고 안내**
 
-Facebook이나 Instagram 관련 질문이군요. 현재 AI 답변 생성 서비스가 일시적으로 중단되어 있어, 기본 정보를 제공해드립니다.
+Facebook이나 Instagram 관련 질문이군요. 검색된 문서를 바탕으로 기본 정보를 제공해드립니다.
 
 **주요 플랫폼 특징:**
 - Facebook: 광범위한 타겟팅 옵션과 다양한 광고 형식

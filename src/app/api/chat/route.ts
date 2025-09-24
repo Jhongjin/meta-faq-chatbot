@@ -675,7 +675,7 @@ ${searchResults.map((result, index) => `• [출처 ${index + 1}] ${result.conte
 
 ${getRandomClosing()}
 
-*참고: 현재 AI 답변 생성 서비스가 일시적으로 제한되어 있어 기본 정보를 제공하고 있습니다.*`;
+*이 답변은 검색된 문서를 바탕으로 제공되었습니다. 더 정확한 답변을 원하시면 구체적인 질문을 해주세요.*`;
   }
   
   if (lowerQuery.includes('facebook') || lowerQuery.includes('instagram')) {
@@ -706,7 +706,7 @@ ${searchResults.map((result, index) => `• [출처 ${index + 1}] ${result.conte
 
 ${getRandomClosing()}
 
-*참고: 현재 AI 답변 생성 서비스가 일시적으로 제한되어 있어 기본 정보를 제공하고 있습니다.*`;
+*이 답변은 검색된 문서를 바탕으로 제공되었습니다. 더 정확한 답변을 원하시면 구체적인 질문을 해주세요.*`;
   }
   
   return `${getRandomGreeting()}
@@ -731,7 +731,7 @@ ${searchResults.slice(0, 3).map((result, index) => `• [출처 ${index + 1}] ${
 
 ${getRandomClosing()}
 
-*참고: 현재 AI 답변 생성 서비스가 일시적으로 제한되어 있어 기본 정보를 제공하고 있습니다.*`;
+*이 답변은 검색된 문서를 바탕으로 제공되었습니다. 더 정확한 답변을 원하시면 구체적인 질문을 해주세요.*`;
 }
 
 /**
