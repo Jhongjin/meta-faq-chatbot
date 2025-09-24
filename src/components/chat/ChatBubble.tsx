@@ -5,7 +5,6 @@ import { ThumbsUp, ThumbsDown, ExternalLink, Calendar, FileText, User, Download,
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -510,57 +509,13 @@ export default function ChatBubble({
                                         {source.sourceType === 'file' ? '📄 파일' : '🔗 링크'}
                                       </Badge>
                                             {source.similarity && (
-                                              <TooltipProvider>
-                                                <Tooltip>
-                                                  <TooltipTrigger asChild>
-                                                    <Badge 
-                                                      variant="outline" 
-                                                      className="text-xs bg-purple-600/30 text-purple-300 border-purple-500/50 cursor-help transition-all duration-200 hover:bg-purple-600/50 hover:border-purple-400 hover:scale-105 hover:shadow-lg"
-                                                    >
-                                                      유사도 {Math.round(source.similarity * 100)}%
-                                                    </Badge>
-                                                  </TooltipTrigger>
-                                                  <TooltipContent 
-                                                    side="bottom" 
-                                                    align="start"
-                                                    sideOffset={5}
-                                                    className="max-w-sm bg-gray-900 border border-purple-500/30 shadow-xl z-[9999]"
-                                                  >
-                                              <div className="p-3">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                                                  <p className="font-semibold text-purple-300 text-sm">유사도 점수</p>
-                                                </div>
-                                                <p className="text-xs text-gray-300 mb-3 leading-relaxed">
-                                                  이 문서가 질문과 얼마나 관련성이 높은지를 나타내는 점수입니다.
-                                                </p>
-                                                <div className="space-y-1 text-xs">
-                                                  <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                                                    <span className="text-green-300">90% 이상: 매우 관련성 높음</span>
-                                                  </div>
-                                                  <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                                                    <span className="text-blue-300">70-89%: 관련성 높음</span>
-                                                  </div>
-                                                  <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                                                    <span className="text-yellow-300">50-69%: 보통 관련성</span>
-                                                  </div>
-                                                  <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                                                    <span className="text-red-300">50% 미만: 낮은 관련성</span>
-                                                  </div>
-                                                </div>
-                                                <div className="mt-3 pt-2 border-t border-gray-700">
-                                                  <p className="text-xs text-gray-400">
-                                                    💡 코사인 유사도로 계산됩니다
-                                                  </p>
-                                                </div>
-                                                  </div>
-                                                </TooltipContent>
-                                              </Tooltip>
-                                            </TooltipProvider>
+                                              <Badge 
+                                                variant="outline" 
+                                                className="text-xs bg-purple-600/30 text-purple-300 border-purple-500/50 cursor-help transition-all duration-200 hover:bg-purple-600/50 hover:border-purple-400 hover:scale-105 hover:shadow-lg"
+                                                title="이 문서가 질문과 얼마나 관련성이 높은지를 나타내는 점수입니다. 90% 이상: 매우 관련성 높음, 70-89%: 관련성 높음, 50-69%: 보통 관련성, 50% 미만: 낮은 관련성. 코사인 유사도로 계산됩니다."
+                                              >
+                                                유사도 {Math.round(source.similarity * 100)}%
+                                              </Badge>
                                             )}
                                       <span className="text-xs text-gray-400">
                                         마지막 업데이트: {new Date(source.updatedAt).toLocaleDateString('ko-KR')}

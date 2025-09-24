@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   FileText, 
   Calendar, 
@@ -114,59 +113,13 @@ export default function AnswerSummary({
               <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
               주요 포인트
               {true && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge 
-                        variant="outline" 
-                        className="ml-2 text-xs bg-green-50 text-green-700 border-green-200 cursor-help transition-all duration-200 hover:bg-green-100 hover:border-green-300 hover:scale-105 hover:shadow-lg"
-                        onMouseEnter={() => console.log('신뢰도 배지 호버 시작')}
-                        onMouseLeave={() => console.log('신뢰도 배지 호버 종료')}
-                      >
-                        신뢰도 {Math.round((summaryData?.confidence || 0.85) * 100)}%
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent 
-                      side="bottom" 
-                      align="start"
-                      sideOffset={5}
-                      className="max-w-sm bg-white border border-green-200 shadow-xl z-[9999]"
-                    >
-                      <div className="p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <p className="font-semibold text-green-700 text-sm">신뢰도 점수</p>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                          AI가 생성한 답변의 정확성과 신뢰성을 나타내는 점수입니다.
-                        </p>
-                        <div className="space-y-1 text-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-green-700">90% 이상: 매우 신뢰할 수 있음</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span className="text-blue-700">70-89%: 신뢰할 수 있음</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                            <span className="text-yellow-700">50-69%: 보통 신뢰도</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                            <span className="text-red-700">50% 미만: 낮은 신뢰도</span>
-                          </div>
-                        </div>
-                        <div className="mt-3 pt-2 border-t border-gray-200">
-                          <p className="text-xs text-gray-500">
-                            💡 AI가 답변의 정확성을 자체 평가한 점수입니다
-                          </p>
-                        </div>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Badge 
+                  variant="outline" 
+                  className="ml-2 text-xs bg-green-50 text-green-700 border-green-200 cursor-help transition-all duration-200 hover:bg-green-100 hover:border-green-300 hover:scale-105 hover:shadow-lg"
+                  title="AI가 생성한 답변의 정확성과 신뢰성을 나타내는 점수입니다. 90% 이상: 매우 신뢰할 수 있음, 70-89%: 신뢰할 수 있음, 50-69%: 보통 신뢰도, 50% 미만: 낮은 신뢰도"
+                >
+                  신뢰도 {Math.round((summaryData?.confidence || 0.85) * 100)}%
+                </Badge>
               )}
             </h4>
             
@@ -290,57 +243,13 @@ export default function AnswerSummary({
                         </h5>
                         <div className="flex items-center space-x-1">
                           {source.similarity && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge 
-                                    variant="outline" 
-                                    className="text-xs bg-purple-50 text-purple-700 border-purple-200 cursor-help transition-all duration-200 hover:bg-purple-100 hover:border-purple-300 hover:scale-105 hover:shadow-lg"
-                                  >
-                                    유사도 {Math.round(source.similarity * 100)}%
-                                  </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent 
-                                  side="bottom" 
-                                  align="start"
-                                  sideOffset={5}
-                                  className="max-w-sm bg-white border border-purple-200 shadow-xl z-[9999]"
-                                >
-                                  <div className="p-3">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                      <p className="font-semibold text-purple-700 text-sm">유사도 점수</p>
-                                    </div>
-                                    <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                                      이 문서가 질문과 얼마나 관련성이 높은지를 나타내는 점수입니다.
-                                    </p>
-                                    <div className="space-y-1 text-xs">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                        <span className="text-green-700">90% 이상: 매우 관련성 높음</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                        <span className="text-blue-700">70-89%: 관련성 높음</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                        <span className="text-yellow-700">50-69%: 보통 관련성</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                        <span className="text-red-700">50% 미만: 낮은 관련성</span>
-                                      </div>
-                                    </div>
-                                    <div className="mt-3 pt-2 border-t border-gray-200">
-                                      <p className="text-xs text-gray-500">
-                                        💡 코사인 유사도로 계산됩니다
-                                      </p>
-                                    </div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs bg-purple-50 text-purple-700 border-purple-200 cursor-help transition-all duration-200 hover:bg-purple-100 hover:border-purple-300 hover:scale-105 hover:shadow-lg"
+                              title="이 문서가 질문과 얼마나 관련성이 높은지를 나타내는 점수입니다. 90% 이상: 매우 관련성 높음, 70-89%: 관련성 높음, 50-69%: 보통 관련성, 50% 미만: 낮은 관련성. 코사인 유사도로 계산됩니다."
+                            >
+                              유사도 {Math.round(source.similarity * 100)}%
+                            </Badge>
                           )}
                           <Badge 
                             variant="outline" 
