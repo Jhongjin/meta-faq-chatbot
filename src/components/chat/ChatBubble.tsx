@@ -5,7 +5,7 @@ import { ThumbsUp, ThumbsDown, ExternalLink, Calendar, FileText, User, Download,
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -509,23 +509,22 @@ export default function ChatBubble({
                                       >
                                         {source.sourceType === 'file' ? '📄 파일' : '🔗 링크'}
                                       </Badge>
-                                      {source.similarity && (
-                                        <TooltipProvider>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <Badge 
-                                                variant="outline" 
-                                                className="text-xs bg-purple-600/30 text-purple-300 border-purple-500/50 cursor-help transition-all duration-200 hover:bg-purple-600/50 hover:border-purple-400 hover:scale-105 hover:shadow-lg"
-                                              >
-                                                유사도 {Math.round(source.similarity * 100)}%
-                                              </Badge>
-                                            </TooltipTrigger>
-                                            <TooltipContent 
-                                              side="top" 
-                                              align="start"
-                                              sideOffset={200}
-                                              className="max-w-sm bg-gray-900 border border-purple-500/30 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200"
-                                            >
+                                            {source.similarity && (
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Badge 
+                                                    variant="outline" 
+                                                    className="text-xs bg-purple-600/30 text-purple-300 border-purple-500/50 cursor-help transition-all duration-200 hover:bg-purple-600/50 hover:border-purple-400 hover:scale-105 hover:shadow-lg"
+                                                  >
+                                                    유사도 {Math.round(source.similarity * 100)}%
+                                                  </Badge>
+                                                </TooltipTrigger>
+                                                <TooltipContent 
+                                                  side="top" 
+                                                  align="start"
+                                                  sideOffset={200}
+                                                  className="max-w-sm bg-gray-900 border border-purple-500/30 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200 z-50"
+                                                >
                                               <div className="p-3">
                                                 <div className="flex items-center gap-2 mb-2">
                                                   <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
@@ -557,11 +556,10 @@ export default function ChatBubble({
                                                     💡 코사인 유사도로 계산됩니다
                                                   </p>
                                                 </div>
-                                              </div>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      )}
+                                                  </div>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            )}
                                       <span className="text-xs text-gray-400">
                                         마지막 업데이트: {new Date(source.updatedAt).toLocaleDateString('ko-KR')}
                                       </span>
