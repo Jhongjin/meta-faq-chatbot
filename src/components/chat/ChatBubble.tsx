@@ -515,7 +515,7 @@ export default function ChatBubble({
                                             <TooltipTrigger asChild>
                                               <Badge 
                                                 variant="outline" 
-                                                className="text-xs bg-purple-600/30 text-purple-300 border-purple-500/50 cursor-help"
+                                                className="text-xs bg-purple-600/30 text-purple-300 border-purple-500/50 cursor-help transition-all duration-200 hover:bg-purple-600/50 hover:border-purple-400 hover:scale-105 hover:shadow-lg"
                                               >
                                                 유사도 {Math.round(source.similarity * 100)}%
                                               </Badge>
@@ -523,8 +523,8 @@ export default function ChatBubble({
                                             <TooltipContent 
                                               side="top" 
                                               align="start"
-                                              sideOffset={12}
-                                              className="max-w-sm bg-gray-900 border border-purple-500/30 shadow-xl"
+                                              sideOffset={20}
+                                              className="max-w-sm bg-gray-900 border border-purple-500/30 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200"
                                             >
                                               <div className="p-3">
                                                 <div className="flex items-center gap-2 mb-2">
