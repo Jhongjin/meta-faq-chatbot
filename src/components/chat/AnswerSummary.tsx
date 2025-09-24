@@ -292,22 +292,21 @@ export default function AnswerSummary({
                         </h5>
                         <div className="flex items-center space-x-1">
                           {source.similarity && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge 
-                                    variant="outline" 
-                                    className="text-xs bg-purple-50 text-purple-700 border-purple-200 cursor-help transition-all duration-200 hover:bg-purple-100 hover:border-purple-300 hover:scale-105 hover:shadow-lg"
-                                  >
-                                    유사도 {Math.round(source.similarity * 100)}%
-                                  </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent 
-                                  side="top" 
-                                  align="start"
-                                  sideOffset={30}
-                                  className="max-w-sm bg-white border border-purple-200 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200"
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-xs bg-purple-50 text-purple-700 border-purple-200 cursor-help transition-all duration-200 hover:bg-purple-100 hover:border-purple-300 hover:scale-105 hover:shadow-lg"
                                 >
+                                  유사도 {Math.round(source.similarity * 100)}%
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent 
+                                side="top" 
+                                align="start"
+                                sideOffset={30}
+                                className="max-w-sm bg-white border border-purple-200 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200 z-50"
+                              >
                                   <div className="p-3">
                                     <div className="flex items-center gap-2 mb-2">
                                       <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
@@ -342,7 +341,6 @@ export default function AnswerSummary({
                                   </div>
                                 </TooltipContent>
                               </Tooltip>
-                            </TooltipProvider>
                           )}
                           <Badge 
                             variant="outline" 
