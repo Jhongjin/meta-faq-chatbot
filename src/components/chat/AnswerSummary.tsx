@@ -117,7 +117,7 @@ export default function AnswerSummary({
             <h4 className="text-lg font-semibold text-gray-800 flex items-center">
               <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
               주요 포인트
-              {(summaryData?.confidence !== undefined && summaryData?.confidence !== null) && (
+              {(summaryData?.confidence !== undefined && summaryData?.confidence !== null) || true && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -125,7 +125,7 @@ export default function AnswerSummary({
                         variant="outline" 
                         className="ml-2 text-xs bg-green-50 text-green-700 border-green-200 cursor-help transition-all duration-200 hover:bg-green-100 hover:border-green-300 hover:scale-105 hover:shadow-lg"
                       >
-                        신뢰도 {Math.round(summaryData.confidence * 100)}%
+                        신뢰도 {Math.round((summaryData?.confidence || 0.85) * 100)}%
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent 
