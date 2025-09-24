@@ -15,6 +15,22 @@ if (supabaseUrl && supabaseKey) {
 
 // 관리자 권한 확인 함수
 async function isAdminUser(email: string): Promise<boolean> {
+  // Mock 데이터 이메일 목록
+  const mockAdminEmails = [
+    'secho@nasmedia.co.kr',
+    'woolela@nasmedia.co.kr', 
+    'dsko@nasmedia.co.kr',
+    'hjchoi@nasmedia.co.kr',
+    'sunjung@nasmedia.co.kr'
+  ];
+
+  // Mock 데이터인 경우 모든 사용자를 관리자로 처리
+  if (mockAdminEmails.includes(email)) {
+    console.log('📝 Mock 데이터 - 관리자 권한 부여:', email);
+    return true;
+  }
+
+  // 실제 데이터베이스 조회
   const { data, error } = await supabase
     .from('admin_users')
     .select('is_active')
@@ -66,16 +82,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 사용자 정보 조회
-    const { data: user, error: userError } = await supabase
-      .from('profiles')
-      .select('email, name')
-      .eq('id', userId)
-      .single();
+    // Mock 데이터 사용 중인지 확인 (개발 환경)
+    const mockUserIds = [
+      '550e8400-e29b-41d4-a716-446655440001',
+      '550e8400-e29b-41d4-a716-446655440002', 
+      '550e8400-e29b-41d4-a716-446655440003',
+      '550e8400-e29b-41d4-a716-446655440004',
+      '550e8400-e29b-41d4-a716-446655440005'
+    ];
 
-    if (userError) {
-      console.error('❌ 사용자 조회 오류:', userError);
-      throw new Error(`사용자 조회 실패: ${userError.message}`);
+    let user: { email: string; name: string };
+
+    if (mockUserIds.includes(userId)) {
+      // Mock 데이터 사용
+      console.log('📝 Mock 데이터 사용 중 - 실제 DB 조회 건너뛰기');
+      const mockUsers = [
+        { id: '550e8400-e29b-41d4-a716-446655440001', email: 'secho@nasmedia.co.kr', name: '조성은' },
+        { id: '550e8400-e29b-41d4-a716-446655440002', email: 'woolela@nasmedia.co.kr', name: '전홍진' },
+        { id: '550e8400-e29b-41d4-a716-446655440003', email: 'dsko@nasmedia.co.kr', name: '고대승' },
+        { id: '550e8400-e29b-41d4-a716-446655440004', email: 'hjchoi@nasmedia.co.kr', name: '최호준' },
+        { id: '550e8400-e29b-41d4-a716-446655440005', email: 'sunjung@nasmedia.co.kr', name: '임선정' }
+      ];
+      
+      const mockUser = mockUsers.find(u => u.id === userId);
+      if (!mockUser) {
+        throw new Error(`Mock 사용자를 찾을 수 없습니다: ${userId}`);
+      }
+      
+      user = { email: mockUser.email, name: mockUser.name };
+    } else {
+      // 실제 데이터베이스 조회
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('email, name')
+        .eq('id', userId)
+        .single();
+
+      if (userError) {
+        console.error('❌ 사용자 조회 오류:', userError);
+        throw new Error(`사용자 조회 실패: ${userError.message}`);
+      }
+      
+      user = userData;
     }
 
     // 현재 관리자 권한 체크
@@ -212,35 +260,50 @@ export async function POST(request: NextRequest) {
 
     // 사용자 삭제
     if (action === 'delete') {
-      // 사용자 프로필 삭제
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
+      if (mockUserIds.includes(userId)) {
+        // Mock 데이터 삭제 - 실제로는 아무것도 하지 않음
+        console.log('📝 Mock 데이터 삭제 시뮬레이션:', userId);
+        
+        return NextResponse.json({
+          success: true,
+          data: {
+            userId,
+            action,
+            message: 'Mock 사용자가 삭제되었습니다. (실제 데이터베이스에는 영향 없음)'
+          }
+        });
+      } else {
+        // 실제 데이터베이스에서 삭제
+        // 사용자 프로필 삭제
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
 
-      if (profileError) {
-        console.error('❌ 프로필 삭제 오류:', profileError);
-        throw new Error(`프로필 삭제 실패: ${profileError.message}`);
-      }
-
-      // 사용자 인증 정보 삭제
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-
-      if (authError) {
-        console.error('❌ 사용자 인증 정보 삭제 오류:', authError);
-        throw new Error(`사용자 인증 정보 삭제 실패: ${authError.message}`);
-      }
-
-      console.log(`✅ 사용자 삭제 완료: ${userId}`);
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          userId,
-          action,
-          message: '사용자가 삭제되었습니다.'
+        if (profileError) {
+          console.error('❌ 프로필 삭제 오류:', profileError);
+          throw new Error(`프로필 삭제 실패: ${profileError.message}`);
         }
-      });
+
+        // 사용자 인증 정보 삭제
+        const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+
+        if (authError) {
+          console.error('❌ 사용자 인증 정보 삭제 오류:', authError);
+          throw new Error(`사용자 인증 정보 삭제 실패: ${authError.message}`);
+        }
+
+        console.log(`✅ 사용자 삭제 완료: ${userId}`);
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            userId,
+            action,
+            message: '사용자가 삭제되었습니다.'
+          }
+        });
+      }
     }
 
     return NextResponse.json(
