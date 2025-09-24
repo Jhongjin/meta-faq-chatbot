@@ -512,7 +512,7 @@ export default function ChatBubble({
                                               <Badge 
                                                 variant="outline" 
                                                 className="text-xs bg-purple-600/30 text-purple-300 border-purple-500/50 cursor-help transition-all duration-200 hover:bg-purple-600/50 hover:border-purple-400 hover:scale-105 hover:shadow-lg"
-                                                title="문서와 질문의 관련성 점수. 90%+: 매우 높음, 70-89%: 높음, 50-69%: 보통, 50%-: 낮음. 코사인 유사도 계산"
+                                                title="문서와 질문의 관련성 점수입니다. 90% 이상: 매우 관련성 높음. 70-89%: 관련성 높음. 50-69%: 보통 관련성. 50% 미만: 낮은 관련성. 코사인 유사도로 계산됩니다"
                                               >
                                                 유사도 {Math.round(source.similarity * 100)}%
                                               </Badge>
