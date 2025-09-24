@@ -118,9 +118,57 @@ export default function AnswerSummary({
               <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
               주요 포인트
               {summaryData?.confidence && (
-                <Badge variant="outline" className="ml-2 text-xs bg-green-50 text-green-700 border-green-200">
-                  신뢰도 {Math.round(summaryData.confidence * 100)}%
-                </Badge>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge 
+                        variant="outline" 
+                        className="ml-2 text-xs bg-green-50 text-green-700 border-green-200 cursor-help"
+                      >
+                        신뢰도 {Math.round(summaryData.confidence * 100)}%
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="top" 
+                      align="start"
+                      sideOffset={12}
+                      className="max-w-sm bg-white border border-green-200 shadow-xl"
+                    >
+                      <div className="p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <p className="font-semibold text-green-700 text-sm">신뢰도 점수</p>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-3 leading-relaxed">
+                          AI가 생성한 답변의 정확성과 신뢰성을 나타내는 점수입니다.
+                        </p>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-green-700">90% 이상: 매우 신뢰할 수 있음</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span className="text-blue-700">70-89%: 신뢰할 수 있음</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <span className="text-yellow-700">50-69%: 보통 신뢰도</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <span className="text-red-700">50% 미만: 낮은 신뢰도</span>
+                          </div>
+                        </div>
+                        <div className="mt-3 pt-2 border-t border-gray-200">
+                          <p className="text-xs text-gray-500">
+                            💡 AI가 답변의 정확성을 자체 평가한 점수입니다
+                          </p>
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </h4>
             
@@ -256,8 +304,8 @@ export default function AnswerSummary({
                                 </TooltipTrigger>
                                 <TooltipContent 
                                   side="top" 
-                                  align="center"
-                                  sideOffset={8}
+                                  align="start"
+                                  sideOffset={12}
                                   className="max-w-sm bg-white border border-purple-200 shadow-xl"
                                 >
                                   <div className="p-3">

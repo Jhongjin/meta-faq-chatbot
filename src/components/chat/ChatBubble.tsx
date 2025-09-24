@@ -522,8 +522,8 @@ export default function ChatBubble({
                                             </TooltipTrigger>
                                             <TooltipContent 
                                               side="top" 
-                                              align="center"
-                                              sideOffset={8}
+                                              align="start"
+                                              sideOffset={12}
                                               className="max-w-sm bg-gray-900 border border-purple-500/30 shadow-xl"
                                             >
                                               <div className="p-3">
