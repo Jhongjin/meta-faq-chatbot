@@ -418,6 +418,8 @@ function ChatPageContent() {
       });
     } finally {
       setIsLoading(false);
+      // 입력창 비우기 (성공/실패 관계없이)
+      setInputValue("");
     }
   };
 
@@ -547,6 +549,8 @@ function ChatPageContent() {
       });
     } finally {
       setIsLoading(false);
+      // 입력창 비우기 (성공/실패 관계없이)
+      setInputValue("");
     }
   };
 
@@ -803,6 +807,8 @@ function ChatPageContent() {
       setError('대화를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
+      // 입력창 비우기 (성공/실패 관계없이)
+      setInputValue("");
     }
   };
 
