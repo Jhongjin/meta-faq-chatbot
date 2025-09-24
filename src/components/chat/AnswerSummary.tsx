@@ -113,7 +113,7 @@ export default function AnswerSummary({
             <h4 className="text-lg font-semibold text-gray-800 flex items-center">
               <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
               주요 포인트
-              {true && (
+              {summaryData && (
                 <CustomTooltip
                   content={`AI 답변의 정확성과 신뢰성을 나타내는 점수입니다.
 

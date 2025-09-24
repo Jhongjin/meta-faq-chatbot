@@ -87,14 +87,25 @@ export function CustomTooltip({
 
   useEffect(() => {
     if (isVisible) {
-      updatePosition();
-      const handleScroll = () => updatePosition();
-      const handleResize = () => updatePosition();
+      // 약간의 지연을 두어 DOM이 완전히 렌더링된 후 위치 계산
+      const timer = setTimeout(() => {
+        updatePosition();
+      }, 10);
       
-      window.addEventListener('scroll', handleScroll);
-      window.addEventListener('resize', handleResize);
+      const handleScroll = () => {
+        clearTimeout(timer);
+        updatePosition();
+      };
+      const handleResize = () => {
+        clearTimeout(timer);
+        updatePosition();
+      };
+      
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      window.addEventListener('resize', handleResize, { passive: true });
       
       return () => {
+        clearTimeout(timer);
         window.removeEventListener('scroll', handleScroll);
         window.removeEventListener('resize', handleResize);
       };
@@ -123,10 +134,11 @@ export function CustomTooltip({
       {isVisible && (
         <div
           ref={tooltipRef}
-          className={`fixed z-[9999] px-3 py-2 text-sm bg-gray-900 text-white rounded-lg shadow-lg border border-gray-700 max-w-xs ${className}`}
+          className={`fixed z-[9999] px-3 py-2 text-sm bg-gray-900 text-white rounded-lg shadow-lg border border-gray-700 max-w-xs pointer-events-none ${className}`}
           style={{
             top: position.top,
             left: position.left,
+            transform: 'translateZ(0)', // GPU 가속으로 부드러운 렌더링
           }}
         >
           <div className="whitespace-pre-line leading-relaxed">
