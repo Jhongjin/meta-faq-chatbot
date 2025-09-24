@@ -117,7 +117,7 @@ export default function AnswerSummary({
             <h4 className="text-lg font-semibold text-gray-800 flex items-center">
               <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
               주요 포인트
-              {summaryData?.confidence && (
+              {(summaryData?.confidence !== undefined && summaryData?.confidence !== null) && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -131,7 +131,7 @@ export default function AnswerSummary({
                     <TooltipContent 
                       side="top" 
                       align="start"
-                      sideOffset={20}
+                      sideOffset={30}
                       className="max-w-sm bg-white border border-green-200 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200"
                     >
                       <div className="p-3">
@@ -305,7 +305,7 @@ export default function AnswerSummary({
                                 <TooltipContent 
                                   side="top" 
                                   align="start"
-                                  sideOffset={20}
+                                  sideOffset={30}
                                   className="max-w-sm bg-white border border-purple-200 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200"
                                 >
                                   <div className="p-3">

@@ -523,7 +523,7 @@ export default function ChatBubble({
                                             <TooltipContent 
                                               side="top" 
                                               align="start"
-                                              sideOffset={20}
+                                              sideOffset={30}
                                               className="max-w-sm bg-gray-900 border border-purple-500/30 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200"
                                             >
                                               <div className="p-3">
