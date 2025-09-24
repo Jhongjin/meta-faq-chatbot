@@ -117,7 +117,7 @@ export default function AnswerSummary({
             <h4 className="text-lg font-semibold text-gray-800 flex items-center">
               <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
               주요 포인트
-              {(summaryData?.confidence !== undefined && summaryData?.confidence !== null) || true && (
+              {true && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

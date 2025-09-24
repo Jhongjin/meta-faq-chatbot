@@ -521,9 +521,9 @@ export default function ChatBubble({
                                               </Badge>
                                             </TooltipTrigger>
                                             <TooltipContent 
-                                              side="bottom" 
+                                              side="top" 
                                               align="start"
-                                              sideOffset={-100}
+                                              sideOffset={-150}
                                               className="max-w-sm bg-gray-900 border border-purple-500/30 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200"
                                             >
                                               <div className="p-3">
