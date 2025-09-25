@@ -135,11 +135,11 @@ export function CustomTooltip({
       hideTimeoutRef.current = null;
     }
     
-    // 200ms 후에 툴팁 표시
+    // 100ms 후에 툴팁 표시
     showTimeoutRef.current = setTimeout(() => {
       console.log('✅ 툴팁 표시:', content.substring(0, 20) + '...');
       setIsVisible(true);
-    }, 200);
+    }, 100);
   };
 
   const handleMouseLeave = () => {
@@ -151,11 +151,11 @@ export function CustomTooltip({
       showTimeoutRef.current = null;
     }
     
-    // 100ms 후에 툴팁 숨김
+    // 200ms 후에 툴팁 숨김
     hideTimeoutRef.current = setTimeout(() => {
       console.log('❌ 툴팁 숨김:', content.substring(0, 20) + '...');
       setIsVisible(false);
-    }, 100);
+    }, 200);
   };
 
   return (
@@ -177,8 +177,10 @@ export function CustomTooltip({
             top: position.top,
             left: position.left,
             transform: 'translateZ(0)', // GPU 가속으로 부드러운 렌더링
+            pointerEvents: 'auto', // 툴팁과의 상호작용 허용
           }}
           onMouseEnter={() => {
+            console.log('🖱️ 툴팁 내부 마우스 진입');
             // 툴팁에 마우스가 올라가면 숨김 타이머 취소
             if (hideTimeoutRef.current) {
               clearTimeout(hideTimeoutRef.current);
@@ -186,8 +188,11 @@ export function CustomTooltip({
             }
           }}
           onMouseLeave={() => {
-            // 툴팁에서 마우스가 벗어나면 즉시 숨김
-            setIsVisible(false);
+            console.log('🖱️ 툴팁 내부 마우스 이탈');
+            // 툴팁에서 마우스가 벗어나면 100ms 후 숨김
+            hideTimeoutRef.current = setTimeout(() => {
+              setIsVisible(false);
+            }, 100);
           }}
         >
           <div className="whitespace-pre-line leading-relaxed">
