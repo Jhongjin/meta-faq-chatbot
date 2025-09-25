@@ -15,22 +15,7 @@ if (supabaseUrl && supabaseKey) {
 
 // 관리자 권한 확인 함수
 async function isAdminUser(email: string): Promise<boolean> {
-  // Mock 데이터 이메일 목록
-  const mockAdminEmails = [
-    'secho@nasmedia.co.kr',
-    'woolela@nasmedia.co.kr', 
-    'dsko@nasmedia.co.kr',
-    'hjchoi@nasmedia.co.kr',
-    'sunjung@nasmedia.co.kr'
-  ];
-
-  // Mock 데이터인 경우 모든 사용자를 관리자로 처리
-  if (mockAdminEmails.includes(email)) {
-    console.log('📝 Mock 데이터 - 관리자 권한 부여:', email);
-    return true;
-  }
-
-  // 실제 데이터베이스 조회
+  // 데이터베이스에서 관리자 권한 확인
   const { data, error } = await supabase
     .from('admin_users')
     .select('is_active')
@@ -39,10 +24,11 @@ async function isAdminUser(email: string): Promise<boolean> {
     .single();
   
   if (error) {
-    console.error('관리자 권한 확인 오류:', error);
+    console.log('📝 관리자 권한 없음:', email, error.message);
     return false;
   }
   
+  console.log('✅ 관리자 권한 확인:', email);
   return !!data;
 }
 
