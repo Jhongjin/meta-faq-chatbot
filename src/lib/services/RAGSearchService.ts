@@ -302,9 +302,11 @@ ${context}
 🚨 **중요 지침:**
 - 오직 위에 제공된 문서 내용만을 바탕으로 답변하세요
 - 문서에 없는 정보는 절대 생성하거나 추측하지 마세요
-- "나스", "NAS", "나스미디어" 등 문서에 명시되지 않은 회사명은 언급하지 마세요
+- 제공된 문서에 명시되지 않은 모든 회사명, 정책, 절차, 정보는 언급하지 마세요
+- 일반적인 광고 지식이나 외부 정보는 절대 사용하지 마세요
 - 문서에 없는 내용은 "제공된 문서에서 찾을 수 없습니다"라고 답변하고 담당팀(fb@nasmedia.co.kr) 문의를 안내하세요
-- 답변 시 "제공된 문서에 따르면" 또는 "Meta 정책 문서에 의하면"이라고 출처를 명시하세요`;
+- 답변 시 "제공된 문서에 따르면" 또는 "Meta 정책 문서에 의하면"이라고 출처를 명시하세요
+- Meta 외의 다른 회사나 서비스에 대한 정보는 절대 제공하지 마세요`;
 
       const llmResponse = await geminiService.generateAnswer(enhancedPrompt);
 
@@ -355,18 +357,13 @@ ${searchResults.map((result, index) => `${index + 1}. ${result.content.substring
     if (lowerQuery.includes('facebook') || lowerQuery.includes('instagram')) {
       return `**Facebook/Instagram 광고 안내**
 
-Facebook이나 Instagram 관련 질문이군요. 검색된 문서를 바탕으로 기본 정보를 제공해드립니다.
-
-**주요 플랫폼 특징:**
-- Facebook: 광범위한 타겟팅 옵션과 다양한 광고 형식
-- Instagram: 시각적 콘텐츠 중심의 광고와 스토리 광고
-- 두 플랫폼 모두 Meta 광고 관리자에서 통합 관리 가능
+제공된 내부 문서를 바탕으로 답변드립니다.
 
 **검색된 관련 정보:**
 ${searchResults.map((result, index) => `${index + 1}. ${result.content.substring(0, 200)}...`).join('\n')}
 
-**더 자세한 정보:**
-- Meta 비즈니스 도움말 센터에서 최신 정보를 확인하시거나, 관리자에게 문의해주세요.`;
+📧 **더 자세한 정보가 필요하시면:**
+담당팀(fb@nasmedia.co.kr)에 문의해주시면 더 구체적인 답변을 받으실 수 있습니다.`;
     }
     
     // 기본 답변
