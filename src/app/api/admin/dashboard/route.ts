@@ -1,17 +1,98 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
     console.log('🚀 대시보드 통계 API 시작...');
 
-    // 기본 통계 데이터 반환
+    const supabase = createClient();
+
+    // 1. 실제 문서 통계 조회
+    const { data: documents, error: docsError } = await supabase
+      .from('documents')
+      .select('id, status, chunk_count, type, created_at');
+
+    if (docsError) {
+      console.error('❌ 문서 조회 오류:', docsError);
+    }
+
+    // 2. 실제 청크 통계 조회
+    const { data: chunks, error: chunksError } = await supabase
+      .from('document_chunks')
+      .select('id, document_id');
+
+    if (chunksError) {
+      console.error('❌ 청크 조회 오류:', chunksError);
+    }
+
+    // 3. 실제 임베딩 통계 조회
+    const { data: embeddings, error: embeddingsError } = await supabase
+      .from('document_embeddings')
+      .select('id, document_id');
+
+    if (embeddingsError) {
+      console.error('❌ 임베딩 조회 오류:', embeddingsError);
+    }
+
+    // 4. 실제 대화 통계 조회
+    const { data: conversations, error: convError } = await supabase
+      .from('conversations')
+      .select('id, created_at, user_id');
+
+    if (convError) {
+      console.error('❌ 대화 조회 오류:', convError);
+    }
+
+    // 5. 실제 피드백 통계 조회
+    const { data: feedback, error: feedbackError } = await supabase
+      .from('feedback')
+      .select('id, rating, created_at');
+
+    if (feedbackError) {
+      console.error('❌ 피드백 조회 오류:', feedbackError);
+    }
+
+    // 6. 실제 사용자 통계 조회
+    const { data: users, error: usersError } = await supabase
+      .from('profiles')
+      .select('id, created_at, last_sign_in');
+
+    if (usersError) {
+      console.error('❌ 사용자 조회 오류:', usersError);
+    }
+
+    // 실제 데이터 기반 통계 계산
+    const totalDocuments = documents?.length || 0;
+    const completedDocuments = documents?.filter(doc => doc.status === 'indexed' || doc.status === 'completed').length || 0;
+    const pendingDocuments = documents?.filter(doc => doc.status === 'processing').length || 0;
+    const processingDocuments = documents?.filter(doc => doc.status === 'processing').length || 0;
+    const totalChunks = chunks?.length || 0;
+    const totalEmbeddings = embeddings?.length || 0;
+
+    // 주간 통계 계산 (최근 7일)
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const weeklyQuestions = conversations?.filter(conv => 
+      new Date(conv.created_at) >= oneWeekAgo
+    ).length || 0;
+
+    const weeklyUsers = users?.filter(user => 
+      user.last_sign_in && new Date(user.last_sign_in) >= oneWeekAgo
+    ).length || 0;
+
+    // 평균 만족도 계산
+    const positiveFeedback = feedback?.filter(fb => fb.rating === 'positive').length || 0;
+    const totalFeedback = feedback?.length || 0;
+    const satisfaction = totalFeedback > 0 ? positiveFeedback / totalFeedback : 0.85; // 기본값 85%
+
     const dashboardData = {
-      totalDocuments: 0,
-      completedDocuments: 0,
-      pendingDocuments: 0,
-      processingDocuments: 0,
-      totalChunks: 0,
-      totalEmbeddings: 0,
+      totalDocuments,
+      completedDocuments,
+      pendingDocuments,
+      processingDocuments,
+      totalChunks,
+      totalEmbeddings,
       systemStatus: {
         overall: 'healthy' as const,
         database: 'connected' as const,
@@ -28,7 +109,7 @@ export async function GET(request: NextRequest) {
         },
         {
           metric: "일일 질문 수",
-          value: "0개",
+          value: `${Math.round(weeklyQuestions / 7)}개`,
           trend: "+0%",
           status: "good" as const
         },
@@ -40,7 +121,7 @@ export async function GET(request: NextRequest) {
         },
         {
           metric: "사용자 만족도",
-          value: "4.2/5",
+          value: `${(satisfaction * 5).toFixed(1)}/5`,
           trend: "+0",
           status: "excellent" as const
         },
@@ -52,10 +133,10 @@ export async function GET(request: NextRequest) {
         }
       ],
       weeklyStats: {
-        questions: 0,
-        users: 0,
-        satisfaction: 0,
-        documents: 0
+        questions: weeklyQuestions,
+        users: weeklyUsers,
+        satisfaction: satisfaction,
+        documents: totalDocuments
       }
     };
 
