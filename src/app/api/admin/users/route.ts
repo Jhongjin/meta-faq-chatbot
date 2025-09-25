@@ -91,11 +91,11 @@ export async function GET(request: NextRequest) {
 
     // 4. 사용자 데이터 조합
     const users: User[] = (profiles || []).map((profile: any) => {
-      const isAdmin = adminUsers?.some(admin => 
+      const isAdmin = adminUsers?.some((admin: any) => 
         admin.user_id === profile.id && admin.is_active
       ) || false;
       
-      const conversationCount = conversationCounts?.filter(conv => 
+      const conversationCount = conversationCounts?.filter((conv: any) => 
         conv.user_id === profile.id
       ).length || 0;
 
