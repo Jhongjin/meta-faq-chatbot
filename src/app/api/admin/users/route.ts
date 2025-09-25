@@ -55,74 +55,70 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    // 임시 하드코딩된 사용자 데이터 (개발 환경용)
-    const mockUsers: User[] = [
-      {
-        id: '550e8400-e29b-41d4-a716-446655440001',
-        email: 'secho@nasmedia.co.kr',
-        name: '조성은',
-        avatar_url: undefined,
-        is_admin: true,
-        is_active: true,
-        last_sign_in: new Date().toISOString(),
-        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30일 전
-        updated_at: new Date().toISOString(),
-        conversation_count: 15
-      },
-      {
-        id: '550e8400-e29b-41d4-a716-446655440002',
-        email: 'woolela@nasmedia.co.kr',
-        name: '전홍진',
-        avatar_url: undefined,
-        is_admin: true,
-        is_active: true,
-        last_sign_in: new Date().toISOString(),
-        created_at: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(), // 25일 전
-        updated_at: new Date().toISOString(),
-        conversation_count: 8
-      },
-      {
-        id: '550e8400-e29b-41d4-a716-446655440003',
-        email: 'dsko@nasmedia.co.kr',
-        name: '고대승',
-        avatar_url: undefined,
-        is_admin: true,
-        is_active: true,
-        last_sign_in: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2일 전
-        created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), // 20일 전
-        updated_at: new Date().toISOString(),
-        conversation_count: 12
-      },
-      {
-        id: '550e8400-e29b-41d4-a716-446655440004',
-        email: 'hjchoi@nasmedia.co.kr',
-        name: '최호준',
-        avatar_url: undefined,
-        is_admin: true,
-        is_active: true,
-        last_sign_in: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5일 전
-        created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15일 전
-        updated_at: new Date().toISOString(),
-        conversation_count: 6
-      },
-      {
-        id: '550e8400-e29b-41d4-a716-446655440005',
-        email: 'sunjung@nasmedia.co.kr',
-        name: '임선정',
-        avatar_url: undefined,
-        is_admin: true,
-        is_active: true,
-        last_sign_in: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1일 전
-        created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10일 전
-        updated_at: new Date().toISOString(),
-        conversation_count: 20
-      }
-    ];
+    // 실제 Supabase에서 사용자 데이터 조회
+    console.log('📊 실제 사용자 데이터 조회 중...');
+    
+    // 1. 프로필 정보 조회
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, email, name, avatar_url, created_at, updated_at');
+
+    if (profilesError) {
+      console.error('❌ 프로필 조회 오류:', profilesError);
+      throw new Error(`프로필 조회 실패: ${profilesError.message}`);
+    }
+
+    // 2. 관리자 권한 정보 조회
+    const { data: adminUsers, error: adminError } = await supabase
+      .from('admin_users')
+      .select('user_id, is_active');
+
+    if (adminError) {
+      console.error('❌ 관리자 정보 조회 오류:', adminError);
+      // 관리자 정보 조회 실패해도 계속 진행
+    }
+
+    // 3. 대화 수 조회
+    const { data: conversationCounts, error: convError } = await supabase
+      .from('conversations')
+      .select('user_id')
+      .not('user_id', 'is', null);
+
+    if (convError) {
+      console.error('❌ 대화 수 조회 오류:', convError);
+      // 대화 수 조회 실패해도 계속 진행
+    }
+
+    // 4. 사용자 데이터 조합
+    const users: User[] = (profiles || []).map(profile => {
+      const isAdmin = adminUsers?.some(admin => 
+        admin.user_id === profile.id && admin.is_active
+      ) || false;
+      
+      const conversationCount = conversationCounts?.filter(conv => 
+        conv.user_id === profile.id
+      ).length || 0;
+
+      return {
+        id: profile.id,
+        email: profile.email,
+        name: profile.name || '이름 없음',
+        avatar_url: profile.avatar_url,
+        is_admin: isAdmin,
+        is_active: true, // 기본적으로 활성 상태로 설정
+        last_sign_in: new Date().toISOString(), // 실제 last_sign_in은 auth.users에서 가져와야 함
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
+        conversation_count: conversationCount
+      };
+    });
+
+    console.log(`📊 실제 사용자 데이터 조회 완료: ${users.length}명`);
 
     // 검색 필터 적용
-    let filteredUsers = mockUsers;
+    let filteredUsers = users;
     if (search) {
-      filteredUsers = mockUsers.filter(user => 
+      filteredUsers = users.filter(user => 
         user.name.toLowerCase().includes(search.toLowerCase()) ||
         user.email.toLowerCase().includes(search.toLowerCase())
       );

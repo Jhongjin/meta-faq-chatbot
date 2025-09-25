@@ -260,21 +260,52 @@ export async function POST(request: NextRequest) {
 
     // 사용자 삭제
     if (action === 'delete') {
-      if (mockUserIds.includes(userId)) {
-        // Mock 데이터 삭제 - 실제로는 아무것도 하지 않음
-        console.log('📝 Mock 데이터 삭제 시뮬레이션:', userId);
+      // Mock 데이터든 실제 데이터든 모두 실제 삭제 수행
+      console.log(`🗑️ 사용자 삭제 시작: ${userId}`);
+      
+      // 1. 관련 데이터 먼저 삭제 (외래키 제약조건 고려)
+      try {
+        // 사용자의 대화 기록 삭제
+        const { error: conversationsError } = await supabase
+          .from('conversations')
+          .delete()
+          .eq('user_id', userId);
         
-        return NextResponse.json({
-          success: true,
-          data: {
-            userId,
-            action,
-            message: 'Mock 사용자가 삭제되었습니다. (실제 데이터베이스에는 영향 없음)'
-          }
-        });
-      } else {
-        // 실제 데이터베이스에서 삭제
-        // 사용자 프로필 삭제
+        if (conversationsError) {
+          console.warn('⚠️ 대화 기록 삭제 중 오류 (무시):', conversationsError);
+        }
+
+        // 사용자의 피드백 기록 삭제
+        const { error: feedbackError } = await supabase
+          .from('feedback')
+          .delete()
+          .eq('user_id', userId);
+        
+        if (feedbackError) {
+          console.warn('⚠️ 피드백 기록 삭제 중 오류 (무시):', feedbackError);
+        }
+
+        // 사용자의 메시지 기록 삭제
+        const { error: messagesError } = await supabase
+          .from('messages')
+          .delete()
+          .eq('user_id', userId);
+        
+        if (messagesError) {
+          console.warn('⚠️ 메시지 기록 삭제 중 오류 (무시):', messagesError);
+        }
+
+        // 관리자 권한 삭제
+        const { error: adminError } = await supabase
+          .from('admin_users')
+          .delete()
+          .eq('user_id', userId);
+        
+        if (adminError) {
+          console.warn('⚠️ 관리자 권한 삭제 중 오류 (무시):', adminError);
+        }
+
+        // 2. 사용자 프로필 삭제
         const { error: profileError } = await supabase
           .from('profiles')
           .delete()
@@ -285,7 +316,7 @@ export async function POST(request: NextRequest) {
           throw new Error(`프로필 삭제 실패: ${profileError.message}`);
         }
 
-        // 사용자 인증 정보 삭제
+        // 3. 사용자 인증 정보 삭제 (Supabase Auth)
         const { error: authError } = await supabase.auth.admin.deleteUser(userId);
 
         if (authError) {
@@ -293,16 +324,20 @@ export async function POST(request: NextRequest) {
           throw new Error(`사용자 인증 정보 삭제 실패: ${authError.message}`);
         }
 
-        console.log(`✅ 사용자 삭제 완료: ${userId}`);
+        console.log(`✅ 사용자 완전 삭제 완료: ${userId}`);
 
         return NextResponse.json({
           success: true,
           data: {
             userId,
             action,
-            message: '사용자가 삭제되었습니다.'
+            message: '사용자와 관련된 모든 데이터가 삭제되었습니다.'
           }
         });
+
+      } catch (error) {
+        console.error('❌ 사용자 삭제 중 오류:', error);
+        throw error;
       }
     }
 

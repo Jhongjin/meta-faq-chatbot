@@ -60,16 +60,20 @@ export async function GET(request: NextRequest) {
       console.error('❌ 피드백 조회 오류:', feedbackError);
     }
 
-    // 6. 실제 사용자 통계 조회 (mock 데이터 사용)
-    // 실제 사용자 데이터는 admin/users API에서 가져옴
-    const mockUsers = [
-      { id: '550e8400-e29b-41d4-a716-446655440001', last_sign_in: '2025-09-25T01:31:36.413Z' },
-      { id: '550e8400-e29b-41d4-a716-446655440002', last_sign_in: '2025-09-25T01:31:36.413Z' },
-      { id: '550e8400-e29b-41d4-a716-446655440003', last_sign_in: '2025-09-23T01:31:36.413Z' },
-      { id: '550e8400-e29b-41d4-a716-446655440004', last_sign_in: '2025-09-20T01:31:36.413Z' },
-      { id: '550e8400-e29b-41d4-a716-446655440005', last_sign_in: '2025-09-24T01:31:36.413Z' }
-    ];
-    const users = mockUsers;
+    // 6. 실제 사용자 통계 조회
+    const { data: userProfiles, error: usersError } = await supabase
+      .from('profiles')
+      .select('id, created_at');
+
+    if (usersError) {
+      console.error('❌ 사용자 조회 오류:', usersError);
+    }
+
+    // 사용자 데이터를 last_sign_in 형태로 변환 (created_at을 last_sign_in으로 사용)
+    const users = (userProfiles || []).map(profile => ({
+      id: profile.id,
+      last_sign_in: profile.created_at // 실제로는 auth.users에서 가져와야 함
+    }));
 
     // 실제 데이터 기반 통계 계산
     const totalDocuments = documents?.length || 0;
