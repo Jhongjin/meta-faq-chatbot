@@ -1058,17 +1058,17 @@ function ChatPageContent() {
             <div className="max-w-4xl mx-auto">
               <div className="flex space-x-2 sm:space-x-3">
                 <div className="flex-1 relative">
-                  <Textarea
-                    ref={textareaRef}
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder="메타 광고에 대해 궁금한 점을 질문해주세요..."
-                    className="pr-12 sm:pr-16 resize-none min-h-[24px] sm:min-h-[26px] max-h-[60px] sm:max-h-[72px] text-sm sm:text-base border-gray-600 text-white placeholder-gray-400 focus:border-gray-500"
-                    style={{ backgroundColor: '#1a1a1a', borderRadius: '8px' }}
-                    disabled={isLoading}
-                    rows={1}
-                  />
+        <Textarea
+          ref={textareaRef}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyPress}
+          placeholder="메타 광고에 대해 궁금한 점을 질문해주세요..."
+          className="pr-16 sm:pr-20 resize-none min-h-[24px] sm:min-h-[26px] max-h-[60px] sm:max-h-[72px] text-sm sm:text-base border-gray-600 text-white placeholder-gray-400 focus:border-gray-500"
+          style={{ backgroundColor: '#1a1a1a', borderRadius: '8px' }}
+          disabled={isLoading}
+          rows={1}
+        />
                   <Button
                     size="sm"
                     onClick={handleSendMessage}
