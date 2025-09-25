@@ -849,8 +849,8 @@ export async function POST(request: NextRequest) {
       console.log('⚠️ RAG 검색 결과가 없음. 관련 내용 없음 응답');
       return NextResponse.json({
         response: {
-          message: "죄송합니다. 현재 제공된 문서에서 관련 정보를 찾을 수 없습니다. 더 구체적인 질문을 해주시거나 다른 키워드로 시도해보세요.",
-          content: "죄송합니다. 현재 제공된 문서에서 관련 정보를 찾을 수 없습니다. 더 구체적인 질문을 해주시거나 다른 키워드로 시도해보세요.",
+          message: "죄송합니다. 제공된 내부 문서에서 관련 정보를 찾을 수 없습니다.\n\n📧 **더 정확한 답변을 원하시면:**\n담당팀(fb@nasmedia.co.kr)에 직접 문의해주시면 더 구체적인 답변을 받으실 수 있습니다.",
+          content: "죄송합니다. 제공된 내부 문서에서 관련 정보를 찾을 수 없습니다.\n\n📧 **더 정확한 답변을 원하시면:**\n담당팀(fb@nasmedia.co.kr)에 직접 문의해주시면 더 구체적인 답변을 받으실 수 있습니다.",
           sources: [],
           noDataFound: true,
           showContactOption: true
