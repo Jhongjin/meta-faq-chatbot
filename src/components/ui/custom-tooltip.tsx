@@ -23,6 +23,8 @@ export function CustomTooltip({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const updatePosition = () => {
     if (!triggerRef.current || !tooltipRef.current) return;
@@ -112,12 +114,42 @@ export function CustomTooltip({
     }
   }, [isVisible, side, align, sideOffset]);
 
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (showTimeoutRef.current) {
+        clearTimeout(showTimeoutRef.current);
+      }
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleMouseEnter = () => {
-    setIsVisible(true);
+    // 기존 타이머들 클리어
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    
+    // 300ms 후에 툴팁 표시
+    showTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+    }, 300);
   };
 
   const handleMouseLeave = () => {
-    setIsVisible(false);
+    // 기존 타이머들 클리어
+    if (showTimeoutRef.current) {
+      clearTimeout(showTimeoutRef.current);
+      showTimeoutRef.current = null;
+    }
+    
+    // 100ms 후에 툴팁 숨김
+    hideTimeoutRef.current = setTimeout(() => {
+      setIsVisible(false);
+    }, 100);
   };
 
   return (
@@ -134,11 +166,22 @@ export function CustomTooltip({
       {isVisible && (
         <div
           ref={tooltipRef}
-          className={`fixed z-[9999] px-3 py-2 text-sm bg-gray-900 text-white rounded-lg shadow-lg border border-gray-700 max-w-xs pointer-events-none ${className}`}
+          className={`fixed z-[9999] px-3 py-2 text-sm bg-gray-900 text-white rounded-lg shadow-lg border border-gray-700 max-w-xs ${className}`}
           style={{
             top: position.top,
             left: position.left,
             transform: 'translateZ(0)', // GPU 가속으로 부드러운 렌더링
+          }}
+          onMouseEnter={() => {
+            // 툴팁에 마우스가 올라가면 숨김 타이머 취소
+            if (hideTimeoutRef.current) {
+              clearTimeout(hideTimeoutRef.current);
+              hideTimeoutRef.current = null;
+            }
+          }}
+          onMouseLeave={() => {
+            // 툴팁에서 마우스가 벗어나면 즉시 숨김
+            setIsVisible(false);
           }}
         >
           <div className="whitespace-pre-line leading-relaxed">
