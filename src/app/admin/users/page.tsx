@@ -77,8 +77,18 @@ export default function UserManagementPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<{[key: string]: boolean}>({});
+  const [addUserLoading, setAddUserLoading] = useState(false);
   const { toast } = useToast();
+
+  // 사용자 추가 폼 상태
+  const [newUser, setNewUser] = useState({
+    email: '',
+    password: '',
+    name: '',
+    isAdmin: false
+  });
 
   // 사용자 목록 로드
   const loadUsers = async () => {
@@ -241,6 +251,52 @@ export default function UserManagementPage() {
     setEditDialogOpen(true);
   };
 
+  // 사용자 추가
+  const handleAddUser = async () => {
+    try {
+      setAddUserLoading(true);
+
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newUser)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "성공",
+          description: data.data.message
+        });
+        
+        // 폼 초기화
+        setNewUser({
+          email: '',
+          password: '',
+          name: '',
+          isAdmin: false
+        });
+        
+        setAddUserDialogOpen(false);
+        loadUsers(); // 목록 새로고침
+      } else {
+        throw new Error(data.error || '사용자 추가에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('사용자 추가 오류:', error);
+      toast({
+        title: "오류",
+        description: error instanceof Error ? error.message : "사용자 추가에 실패했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setAddUserLoading(false);
+    }
+  };
+
   // 상태 아이콘 반환
   const getStatusIcon = (user: User) => {
     if (user.is_admin) {
@@ -288,16 +344,25 @@ export default function UserManagementPage() {
             <h1 className="text-3xl font-bold text-white">사용자 관리</h1>
             <p className="text-gray-300 mt-2">사용자 계정을 관리하고 권한을 설정하세요.</p>
           </div>
-          <Button
-            onClick={loadUsers}
-            disabled={loading}
-            variant="outline"
-            size="sm"
-            className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            새로고침
-          </Button>
+          <div className="flex items-center space-x-3">
+            <Button
+              onClick={() => setAddUserDialogOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              사용자 추가
+            </Button>
+            <Button
+              onClick={loadUsers}
+              disabled={loading}
+              variant="outline"
+              size="sm"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              새로고침
+            </Button>
+          </div>
         </motion.div>
 
         {/* 통계 카드 */}
@@ -680,6 +745,92 @@ export default function UserManagementPage() {
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                 ) : null}
                 저장
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* 사용자 추가 다이얼로그 */}
+        <Dialog open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen}>
+          <DialogContent className="bg-gray-800 border-gray-700 text-white">
+            <DialogHeader>
+              <DialogTitle>새 사용자 추가</DialogTitle>
+              <DialogDescription>
+                새로운 사용자 계정을 생성하세요.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="new-email" className="text-gray-300">이메일 *</Label>
+                <Input
+                  id="new-email"
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                  placeholder="user@example.com"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-password" className="text-gray-300">비밀번호 *</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                  placeholder="최소 6자 이상"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-name" className="text-gray-300">이름 *</Label>
+                <Input
+                  id="new-name"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                  placeholder="홍길동"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="new-is-admin"
+                  checked={newUser.isAdmin}
+                  onCheckedChange={(checked) => setNewUser({...newUser, isAdmin: checked})}
+                  className="data-[state=checked]:bg-yellow-500"
+                />
+                <Label htmlFor="new-is-admin" className="text-gray-300">
+                  관리자 권한 부여
+                </Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAddUserDialogOpen(false);
+                  setNewUser({
+                    email: '',
+                    password: '',
+                    name: '',
+                    isAdmin: false
+                  });
+                }}
+                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleAddUser}
+                disabled={addUserLoading || !newUser.email || !newUser.password || !newUser.name}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {addUserLoading ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <UserPlus className="w-4 h-4 mr-2" />
+                )}
+                사용자 추가
               </Button>
             </DialogFooter>
           </DialogContent>

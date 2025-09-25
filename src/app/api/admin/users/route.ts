@@ -200,6 +200,147 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export async function POST(request: NextRequest) {
+  try {
+    console.log('🚀 사용자 추가 API 시작...');
+
+    const body = await request.json();
+    const { email, password, name, isAdmin = false } = body;
+
+    // 입력값 검증
+    if (!email || !email.trim()) {
+      return NextResponse.json(
+        { success: false, error: '이메일을 입력해주세요.' },
+        { status: 400 }
+      );
+    }
+
+    if (!password || !password.trim()) {
+      return NextResponse.json(
+        { success: false, error: '비밀번호를 입력해주세요.' },
+        { status: 400 }
+      );
+    }
+
+    if (!name || !name.trim()) {
+      return NextResponse.json(
+        { success: false, error: '이름을 입력해주세요.' },
+        { status: 400 }
+      );
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { success: false, error: '올바른 이메일 형식을 입력해주세요.' },
+        { status: 400 }
+      );
+    }
+
+    // 비밀번호 길이 검증
+    if (password.length < 6) {
+      return NextResponse.json(
+        { success: false, error: '비밀번호는 최소 6자 이상이어야 합니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 1. Supabase Auth에 사용자 생성
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: email.trim(),
+      password: password,
+      email_confirm: true, // 이메일 확인 자동 완료
+      user_metadata: {
+        name: name.trim()
+      }
+    });
+
+    if (authError) {
+      console.error('❌ 사용자 생성 오류:', authError);
+      
+      // 중복 이메일 오류 처리
+      if (authError.message.includes('already registered')) {
+        return NextResponse.json(
+          { success: false, error: '이미 등록된 이메일입니다.' },
+          { status: 400 }
+        );
+      }
+      
+      throw new Error(`사용자 생성 실패: ${authError.message}`);
+    }
+
+    const userId = authData.user.id;
+
+    // 2. 프로필 정보 생성
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: userId,
+        email: email.trim(),
+        name: name.trim(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      console.error('❌ 프로필 생성 오류:', profileError);
+      // 프로필 생성 실패 시 Auth 사용자도 삭제
+      await supabase.auth.admin.deleteUser(userId);
+      throw new Error(`프로필 생성 실패: ${profileError.message}`);
+    }
+
+    // 3. 관리자 권한 부여 (필요한 경우)
+    if (isAdmin) {
+      const { error: adminError } = await supabase
+        .from('admin_users')
+        .insert({
+          user_id: userId,
+          email: email.trim(),
+          is_active: true,
+          granted_at: new Date().toISOString()
+        });
+
+      if (adminError) {
+        console.error('❌ 관리자 권한 부여 오류:', adminError);
+        // 관리자 권한 부여 실패해도 사용자 생성은 성공으로 처리
+        console.warn('⚠️ 관리자 권한 부여 실패했지만 사용자는 생성됨');
+      }
+    }
+
+    console.log(`✅ 사용자 생성 완료: ${email}`);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        user: {
+          id: userId,
+          email: email.trim(),
+          name: name.trim(),
+          is_admin: isAdmin,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          conversation_count: 0
+        },
+        message: `${name} 사용자가 성공적으로 생성되었습니다.`
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ 사용자 추가 API 오류:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : '사용자 추가 중 오류가 발생했습니다.'
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(request: NextRequest) {
   try {
     console.log('🚀 사용자 정보 업데이트 API 시작...');
