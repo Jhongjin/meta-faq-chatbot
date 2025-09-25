@@ -1017,19 +1017,34 @@ function ChatPageContent() {
           <div className="h-4"></div>
 
           <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4 custom-scrollbar" style={{ backgroundColor: '#212121' }}>
-            {messages.map((message) => (
-              <ChatBubble
-                key={message.id}
-                type={message.type}
-                content={message.content}
-                timestamp={message.timestamp}
-                sources={message.sources}
-                feedback={message.feedback}
-                onFeedback={(helpful) => handleFeedback(message.id, helpful)}
-                noDataFound={message.noDataFound}
-                showContactOption={message.showContactOption}
-              />
-            ))}
+            {messages.map((message, index) => {
+              // 해당 메시지의 사용자 질문 찾기
+              let userQuestion = '';
+              if (message.type === 'assistant' && message.showContactOption) {
+                // 현재 메시지 이전의 사용자 메시지 찾기
+                for (let i = index - 1; i >= 0; i--) {
+                  if (messages[i].type === 'user') {
+                    userQuestion = messages[i].content;
+                    break;
+                  }
+                }
+              }
+              
+              return (
+                <ChatBubble
+                  key={message.id}
+                  type={message.type}
+                  content={message.content}
+                  timestamp={message.timestamp}
+                  sources={message.sources}
+                  feedback={message.feedback}
+                  onFeedback={(helpful) => handleFeedback(message.id, helpful)}
+                  noDataFound={message.noDataFound}
+                  showContactOption={message.showContactOption}
+                  userQuestion={userQuestion}
+                />
+              );
+            })}
             
             {isLoading && (
               <div className="flex justify-start">

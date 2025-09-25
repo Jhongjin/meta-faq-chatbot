@@ -166,6 +166,7 @@ interface ChatBubbleProps {
   onFeedback?: (helpful: boolean) => void;
   noDataFound?: boolean;
   showContactOption?: boolean;
+  userQuestion?: string; // 사용자의 실제 질문 추가
 }
 
 export default function ChatBubble({
@@ -177,6 +178,7 @@ export default function ChatBubble({
   onFeedback,
   noDataFound = false,
   showContactOption = false,
+  userQuestion,
 }: ChatBubbleProps) {
   const [showSources, setShowSources] = useState(false);
 
@@ -576,10 +578,12 @@ export default function ChatBubble({
                           </p>
                           <Button
                             onClick={() => {
-                              // 직접 메일 발송
+                              // 직접 메일 발송 - 사용자의 실제 질문 사용
                               if (typeof window !== 'undefined') {
+                                const actualQuestion = userQuestion || content;
+                                console.log('📧 메일 발송 요청:', actualQuestion);
                                 const event = new CustomEvent('sendContactEmail', { 
-                                  detail: { question: content } 
+                                  detail: { question: actualQuestion } 
                                 });
                                 window.dispatchEvent(event);
                               }
