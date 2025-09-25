@@ -254,7 +254,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Supabase Auth에 사용자 생성
+    // 1. 기존 사용자 확인 (Auth와 프로필 모두)
+    console.log('🔍 기존 사용자 확인 중...');
+    
+    // Auth 사용자 확인
+    const { data: existingAuthUsers, error: authListError } = await supabase.auth.admin.listUsers();
+    const existingAuthUser = existingAuthUsers?.users?.find(user => user.email === email.trim());
+    
+    // 프로필 확인
+    const { data: existingProfile, error: profileCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email.trim())
+      .single();
+
+    // 이미 완전히 등록된 사용자인 경우
+    if (existingAuthUser && existingProfile) {
+      return NextResponse.json(
+        { success: false, error: '이미 등록된 이메일입니다.' },
+        { status: 400 }
+      );
+    }
+
+    // Auth 사용자는 있지만 프로필이 없는 경우 (이전 실패한 시도)
+    if (existingAuthUser && !existingProfile) {
+      console.log('🧹 이전 실패한 Auth 사용자 정리 중...');
+      try {
+        await supabase.auth.admin.deleteUser(existingAuthUser.id);
+        console.log('✅ 이전 Auth 사용자 삭제 완료');
+      } catch (deleteError) {
+        console.error('⚠️ 이전 Auth 사용자 삭제 실패:', deleteError);
+        // 삭제 실패해도 계속 진행
+      }
+    }
+
+    // 2. Supabase Auth에 사용자 생성
+    console.log('👤 새 Auth 사용자 생성 중...');
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: email.trim(),
       password: password,
@@ -268,7 +303,7 @@ export async function POST(request: NextRequest) {
       console.error('❌ 사용자 생성 오류:', authError);
       
       // 중복 이메일 오류 처리
-      if (authError.message.includes('already registered')) {
+      if (authError.message.includes('already registered') || authError.message.includes('duplicate')) {
         return NextResponse.json(
           { success: false, error: '이미 등록된 이메일입니다.' },
           { status: 400 }
@@ -279,8 +314,10 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = authData.user.id;
+    console.log(`✅ Auth 사용자 생성 완료: ${userId}`);
 
-    // 2. 프로필 정보 생성
+    // 3. 프로필 정보 생성
+    console.log('📝 프로필 정보 생성 중...');
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .insert({
@@ -295,13 +332,29 @@ export async function POST(request: NextRequest) {
 
     if (profileError) {
       console.error('❌ 프로필 생성 오류:', profileError);
-      // 프로필 생성 실패 시 Auth 사용자도 삭제
-      await supabase.auth.admin.deleteUser(userId);
+      
+      // 프로필 생성 실패 시 Auth 사용자도 삭제 (롤백)
+      console.log('🔄 롤백: Auth 사용자 삭제 중...');
+      try {
+        await supabase.auth.admin.deleteUser(userId);
+        console.log('✅ 롤백 완료: Auth 사용자 삭제됨');
+      } catch (rollbackError) {
+        console.error('❌ 롤백 실패:', rollbackError);
+      }
+      
+      // 중복 키 오류인 경우 더 명확한 메시지
+      if (profileError.message.includes('duplicate key') || profileError.message.includes('profiles_pkey')) {
+        throw new Error('이미 등록된 사용자입니다. 잠시 후 다시 시도해주세요.');
+      }
+      
       throw new Error(`프로필 생성 실패: ${profileError.message}`);
     }
 
-    // 3. 관리자 권한 부여 (필요한 경우)
+    console.log(`✅ 프로필 생성 완료: ${userId}`);
+
+    // 4. 관리자 권한 부여 (필요한 경우)
     if (isAdmin) {
+      console.log('👑 관리자 권한 부여 중...');
       const { error: adminError } = await supabase
         .from('admin_users')
         .insert({
@@ -315,6 +368,8 @@ export async function POST(request: NextRequest) {
         console.error('❌ 관리자 권한 부여 오류:', adminError);
         // 관리자 권한 부여 실패해도 사용자 생성은 성공으로 처리
         console.warn('⚠️ 관리자 권한 부여 실패했지만 사용자는 생성됨');
+      } else {
+        console.log('✅ 관리자 권한 부여 완료');
       }
     }
 
