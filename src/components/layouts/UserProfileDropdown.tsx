@@ -152,13 +152,13 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
 
               {/* Menu Items */}
               <div className="py-2">
-                {/* 관리자 메뉴 */}
+                {/* 관리자 메뉴 - 관리자만 표시 */}
                 {adminLoading ? (
                   <div className="w-full flex items-center space-x-3 px-4 py-3 text-gray-400">
                     <Shield className="w-4 h-4" />
                     <span>권한 확인 중...</span>
                   </div>
-                ) : isAdmin ? (
+                ) : isAdmin && (
                   <>
                     <a
                       href="/admin"
@@ -171,11 +171,6 @@ export function UserProfileDropdown({ user, onSignOut }: UserProfileDropdownProp
                     {/* 구분선 */}
                     <div className="border-t border-gray-700 my-2"></div>
                   </>
-                ) : (
-                  <div className="w-full flex items-center space-x-3 px-4 py-3 text-gray-500 text-sm">
-                    <Shield className="w-4 h-4" />
-                    <span>관리자 권한 없음</span>
-                  </div>
                 )}
 
                 <button
