@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
     
     // Auth 사용자 확인
     const { data: existingAuthUsers, error: authListError } = await supabase.auth.admin.listUsers();
-    const existingAuthUser = existingAuthUsers?.users?.find(user => user.email === email.trim());
+    const existingAuthUser = existingAuthUsers?.users?.find((user: any) => user.email === email.trim());
     
     console.log(`🔍 Auth 사용자 검색 결과:`, {
       totalAuthUsers: existingAuthUsers?.users?.length || 0,
