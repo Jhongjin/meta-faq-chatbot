@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
     console.log('🚀 챗봇 통계 API 시작...');
 
-    const supabase = createClient();
+    // Supabase 클라이언트 직접 생성
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: { persistSession: false },
+        db: { schema: 'public' }
+      }
+    );
 
     // 1. 실제 대화 통계 조회
     const { data: conversations, error: convError } = await supabase
