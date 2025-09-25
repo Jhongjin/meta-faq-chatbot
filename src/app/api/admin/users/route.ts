@@ -229,11 +229,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 이메일 형식 검증
+    // 이메일 형식 및 도메인 검증
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { success: false, error: '올바른 이메일 형식을 입력해주세요.' },
+        { status: 400 }
+      );
+    }
+
+    // @nasmedia.co.kr 도메인만 허용
+    if (!email.endsWith('@nasmedia.co.kr')) {
+      return NextResponse.json(
+        { success: false, error: '@nasmedia.co.kr 도메인만 사용 가능합니다.' },
         { status: 400 }
       );
     }

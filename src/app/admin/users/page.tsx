@@ -256,12 +256,18 @@ export default function UserManagementPage() {
     try {
       setAddUserLoading(true);
 
+      // 이메일에 @nasmedia.co.kr 도메인 추가
+      const userData = {
+        ...newUser,
+        email: newUser.email.includes('@') ? newUser.email : `${newUser.email}@nasmedia.co.kr`
+      };
+
       const response = await fetch('/api/admin/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newUser)
+        body: JSON.stringify(userData)
       });
 
       const data = await response.json();
@@ -762,14 +768,20 @@ export default function UserManagementPage() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="new-email" className="text-gray-300">이메일 *</Label>
-                <Input
-                  id="new-email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                  placeholder="user@example.com"
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
+                <div className="flex items-center">
+                  <Input
+                    id="new-email"
+                    type="text"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                    placeholder="사용자명"
+                    className="bg-gray-700 border-gray-600 text-white rounded-r-none"
+                  />
+                  <div className="bg-gray-600 text-gray-300 px-3 py-2 border border-l-0 border-gray-600 rounded-r-md">
+                    @nasmedia.co.kr
+                  </div>
+                </div>
+                <p className="text-sm text-gray-400 mt-1">@nasmedia.co.kr 도메인만 사용 가능합니다.</p>
               </div>
               <div>
                 <Label htmlFor="new-password" className="text-gray-300">비밀번호 *</Label>
