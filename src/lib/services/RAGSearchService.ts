@@ -266,7 +266,11 @@ export class RAGSearchService {
    * 검색 결과를 바탕으로 답변 생성 (LLM 사용)
    */
   async generateAnswer(query: string, searchResults: SearchResult[]): Promise<string> {
-    if (searchResults.length === 0) {
+    // 검색 결과가 없거나 유사도가 낮으면 관련 내용 없음 응답
+    const hasRelevantResults = searchResults.length > 0 && 
+      searchResults.some(result => result.similarity > 0.3); // 유사도 30% 이상인 결과가 있는지 확인
+    
+    if (!hasRelevantResults) {
       return '죄송합니다. 제공된 내부 문서에서 질문과 관련된 정보를 찾을 수 없습니다.\n\n📧 **더 정확한 답변을 원하시면:**\n담당팀(fb@nasmedia.co.kr)에 직접 문의해주시면 더 구체적인 답변을 받으실 수 있습니다.';
     }
 

@@ -844,9 +844,12 @@ export async function POST(request: NextRequest) {
     const searchResults = await searchSimilarChunks(message, 3);
     console.log(`📊 검색 결과: ${searchResults.length}개`);
 
-    // 2. 검색 결과가 없으면 관련 내용 없음 응답
-    if (searchResults.length === 0) {
-      console.log('⚠️ RAG 검색 결과가 없음. 관련 내용 없음 응답');
+    // 2. 검색 결과가 없거나 유사도가 낮으면 관련 내용 없음 응답
+    const hasRelevantResults = searchResults.length > 0 && 
+      searchResults.some(result => result.similarity > 0.3); // 유사도 30% 이상인 결과가 있는지 확인
+    
+    if (!hasRelevantResults) {
+      console.log('⚠️ RAG 검색 결과가 없거나 유사도가 낮음. 관련 내용 없음 응답');
       return NextResponse.json({
         response: {
           message: "죄송합니다. 제공된 내부 문서에서 관련 정보를 찾을 수 없습니다.\n\n📧 **더 정확한 답변을 원하시면:**\n담당팀(fb@nasmedia.co.kr)에 직접 문의해주시면 더 구체적인 답변을 받으실 수 있습니다.",
@@ -914,13 +917,21 @@ export async function POST(request: NextRequest) {
     // Gemini 답변 생성
     const answer = await generateAnswerWithGemini(message, searchResults);
     
+    // 신뢰도가 낮으면 전담팀 연락 카드 표시
+    const shouldShowContactOption = confidence < 0.5 || 
+      answer.includes('문서에서 찾을 수 없습니다') ||
+      answer.includes('제공된 문서에서') ||
+      answer.includes('담당팀에 문의');
+    
+    console.log(`📊 답변 품질 평가: confidence=${confidence}, shouldShowContactOption=${shouldShowContactOption}`);
+    
     return NextResponse.json({
       response: {
         message: answer,
         content: answer,
         sources,
         noDataFound: false,
-        showContactOption: false
+        showContactOption: shouldShowContactOption
       },
       confidence,
       processingTime,
