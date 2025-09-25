@@ -113,9 +113,8 @@ export default function AnswerSummary({
             <h4 className="text-lg font-semibold text-gray-800 flex items-center">
               <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
               주요 포인트
-              {summaryData && (
-                <CustomTooltip
-                  content={`AI 답변의 정확성과 신뢰성을 나타내는 점수입니다.
+              <CustomTooltip
+                content={`AI 답변의 정확성과 신뢰성을 나타내는 점수입니다.
 
 📊 신뢰도 계산 방식:
 • 문서 검색 정확도 (40%)
@@ -131,18 +130,17 @@ export default function AnswerSummary({
 💡 실시간으로 계산되며, 
    더 많은 관련 문서가 있을수록 
    신뢰도가 높아집니다.`}
-                  side="top"
-                  align="start"
-                  sideOffset={8}
+                side="top"
+                align="start"
+                sideOffset={8}
+              >
+                <Badge 
+                  variant="outline" 
+                  className="ml-2 text-xs bg-green-50 text-green-700 border-green-200 cursor-help transition-all duration-200 hover:bg-green-100 hover:border-green-300 hover:scale-105 hover:shadow-lg"
                 >
-                  <Badge 
-                    variant="outline" 
-                    className="ml-2 text-xs bg-green-50 text-green-700 border-green-200 cursor-help transition-all duration-200 hover:bg-green-100 hover:border-green-300 hover:scale-105 hover:shadow-lg"
-                  >
-                    신뢰도 {Math.round((summaryData?.confidence || 0.85) * 100)}%
-                  </Badge>
-                </CustomTooltip>
-              )}
+                  신뢰도 {Math.round((summaryData?.confidence || 0.85) * 100)}%
+                </Badge>
+              </CustomTooltip>
             </h4>
             
             {isLoading ? (

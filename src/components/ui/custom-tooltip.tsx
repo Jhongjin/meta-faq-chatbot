@@ -127,19 +127,24 @@ export function CustomTooltip({
   }, []);
 
   const handleMouseEnter = () => {
+    console.log('🖱️ 툴팁 마우스 진입:', content.substring(0, 20) + '...');
+    
     // 기존 타이머들 클리어
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
     }
     
-    // 300ms 후에 툴팁 표시
+    // 200ms 후에 툴팁 표시
     showTimeoutRef.current = setTimeout(() => {
+      console.log('✅ 툴팁 표시:', content.substring(0, 20) + '...');
       setIsVisible(true);
-    }, 300);
+    }, 200);
   };
 
   const handleMouseLeave = () => {
+    console.log('🖱️ 툴팁 마우스 이탈:', content.substring(0, 20) + '...');
+    
     // 기존 타이머들 클리어
     if (showTimeoutRef.current) {
       clearTimeout(showTimeoutRef.current);
@@ -148,6 +153,7 @@ export function CustomTooltip({
     
     // 100ms 후에 툴팁 숨김
     hideTimeoutRef.current = setTimeout(() => {
+      console.log('❌ 툴팁 숨김:', content.substring(0, 20) + '...');
       setIsVisible(false);
     }, 100);
   };
