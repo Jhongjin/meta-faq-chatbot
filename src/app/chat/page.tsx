@@ -600,13 +600,21 @@ function ChatPageContent() {
       
       if (data.success && data.emailLink) {
         // 이메일 클라이언트 열기
-        window.location.href = data.emailLink;
+        console.log('📧 메일 링크:', data.emailLink);
+        try {
+          // 새 창에서 메일 클라이언트 열기
+          window.open(data.emailLink, '_blank');
+        } catch (error) {
+          console.error('❌ 메일 클라이언트 열기 실패:', error);
+          // 대안: 현재 창에서 열기
+          window.location.href = data.emailLink;
+        }
         
         // 성공 메시지로 교체
         const successMessage: Message = {
           id: `success-${Date.now()}`,
           type: "assistant",
-          content: "✅ 페이스북 담당팀에 문의사항이 메일로 정상 발송되었습니다.\n\n📧 **발송 정보:**\n- 수신자: fb@nasmedia.co.kr\n- 문의 내용: " + actualQuestion.substring(0, 50) + (actualQuestion.length > 50 ? "..." : "") + "\n- 발송 시간: " + new Date().toLocaleString('ko-KR') + "\n\n담당팀에서 검토 후 답변을 드릴 예정입니다.",
+          content: "✅ 페이스북 담당팀에 문의사항이 메일로 정상 발송되었습니다.\n\n📧 **발송 정보:**\n- 수신자: fb@nasmedia.co.kr\n- 문의 내용: " + actualQuestion.substring(0, 50) + (actualQuestion.length > 50 ? "..." : "") + "\n- 발송 시간: " + new Date().toLocaleString('ko-KR') + "\n\n💡 **메일 클라이언트가 열리지 않는다면:**\n직접 fb@nasmedia.co.kr로 메일을 보내주세요.\n\n담당팀에서 검토 후 답변을 드릴 예정입니다.",
           timestamp: new Date().toLocaleTimeString('ko-KR', { 
             hour: '2-digit', 
             minute: '2-digit' 

@@ -1,7 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * 구조화된 이메일 내용 생성
+ * 간소화된 이메일 내용 생성 (브라우저 호환성을 위해)
+ */
+function generateSimplifiedEmailContent(question: string): string {
+  const now = new Date();
+  const timestamp = now.toLocaleString('ko-KR');
+  
+  return `안녕하세요,
+
+Meta FAQ 챗봇을 통해 문의사항이 접수되었습니다.
+
+문의 시간: ${timestamp}
+문의 내용: ${question}
+
+위 문의사항에 대해 답변을 제공해 주시기 바랍니다.
+
+감사합니다.
+Meta FAQ 챗봇 시스템`;
+}
+
+/**
+ * 구조화된 이메일 내용 생성 (참고용)
  */
 function generateStructuredEmailContent(question: string): string {
   const now = new Date();
@@ -187,14 +207,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 이메일 내용 구성
+    // 이메일 내용 구성 (간소화된 버전)
     const emailSubject = `[Meta FAQ 챗봇] 문의사항: ${question.substring(0, 50)}...`;
-    const emailBody = generateStructuredEmailContent(question);
+    const emailBody = generateSimplifiedEmailContent(question);
 
     // 이메일 링크 생성 (mailto:)
     const emailLink = `mailto:fb@nasmedia.co.kr?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
 
     console.log(`📧 이메일 연락처 요청: ${question.substring(0, 100)}...`);
+    console.log(`📧 메일 링크 길이: ${emailLink.length}자`);
+    console.log(`📧 메일 제목: ${emailSubject}`);
+    console.log(`📧 메일 내용 길이: ${emailBody.length}자`);
 
     return NextResponse.json({
       success: true,
