@@ -256,25 +256,55 @@ export async function POST(request: NextRequest) {
 
     // 1. 기존 사용자 확인 (Auth와 프로필 모두)
     console.log('🔍 기존 사용자 확인 중...');
+    console.log(`📧 확인할 이메일: "${email.trim()}"`);
     
     // Auth 사용자 확인
     const { data: existingAuthUsers, error: authListError } = await supabase.auth.admin.listUsers();
     const existingAuthUser = existingAuthUsers?.users?.find(user => user.email === email.trim());
     
-    // 프로필 확인
-    const { data: existingProfile, error: profileCheckError } = await supabase
+    console.log(`🔍 Auth 사용자 검색 결과:`, {
+      totalAuthUsers: existingAuthUsers?.users?.length || 0,
+      foundAuthUser: existingAuthUser ? {
+        id: existingAuthUser.id,
+        email: existingAuthUser.email
+      } : null
+    });
+    
+    // 프로필 확인 (single() 대신 select() 사용하여 오류 방지)
+    const { data: existingProfiles, error: profileCheckError } = await supabase
       .from('profiles')
       .select('id')
-      .eq('email', email.trim())
-      .single();
+      .eq('email', email.trim());
 
-    // 이미 완전히 등록된 사용자인 경우
+    const existingProfile = existingProfiles && existingProfiles.length > 0 ? existingProfiles[0] : null;
+
+    console.log(`🔍 프로필 검색 결과:`, {
+      foundProfile: existingProfile ? {
+        id: existingProfile.id
+      } : null,
+      profileError: profileCheckError?.message || null,
+      totalProfiles: existingProfiles?.length || 0
+    });
+
+    // 이미 완전히 등록된 사용자인 경우 (Auth와 프로필 모두 존재)
     if (existingAuthUser && existingProfile) {
+      console.log('❌ 이미 완전히 등록된 사용자 발견:', {
+        authUser: existingAuthUser.email,
+        profile: existingProfile.id
+      });
       return NextResponse.json(
         { success: false, error: '이미 등록된 이메일입니다.' },
         { status: 400 }
       );
     }
+
+    console.log('✅ 사용자 검증 통과 - 새 사용자 생성 가능');
+    console.log('🔍 검증 결과 요약:', {
+      hasAuthUser: !!existingAuthUser,
+      hasProfile: !!existingProfile,
+      authUserEmail: existingAuthUser?.email,
+      profileId: existingProfile?.id
+    });
 
     // Auth 사용자는 있지만 프로필이 없는 경우 (이전 실패한 시도)
     if (existingAuthUser && !existingProfile) {
@@ -301,9 +331,15 @@ export async function POST(request: NextRequest) {
 
     if (authError) {
       console.error('❌ 사용자 생성 오류:', authError);
+      console.error('❌ Auth 오류 상세:', {
+        message: authError.message,
+        status: authError.status,
+        name: authError.name
+      });
       
       // 중복 이메일 오류 처리
-      if (authError.message.includes('already registered') || authError.message.includes('duplicate')) {
+      if (authError.message.includes('already registered') || authError.message.includes('duplicate') || authError.message.includes('User already registered')) {
+        console.log('❌ Supabase Auth에서 이미 등록된 사용자로 판단');
         return NextResponse.json(
           { success: false, error: '이미 등록된 이메일입니다.' },
           { status: 400 }
