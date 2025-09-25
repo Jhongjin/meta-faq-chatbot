@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. 사용자 데이터 조합
-    const users: User[] = (profiles || []).map(profile => {
+    const users: User[] = (profiles || []).map((profile: any) => {
       const isAdmin = adminUsers?.some(admin => 
         admin.user_id === profile.id && admin.is_active
       ) || false;
