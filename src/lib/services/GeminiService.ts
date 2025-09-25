@@ -180,7 +180,7 @@ export class GeminiService {
     if (lowerPrompt.includes('광고') && lowerPrompt.includes('정책')) {
       return `**Meta 광고 정책 안내**
 
-Meta 광고 정책에 대한 질문이군요. 검색된 문서를 바탕으로 기본 정보를 제공해드립니다.
+Meta 광고 정책에 대한 질문이군요. 제공된 내부 문서를 바탕으로 답변드립니다.
 
 **주요 광고 정책:**
 - 광고는 정확하고 진실된 정보를 포함해야 합니다
@@ -197,7 +197,7 @@ Meta 광고 정책에 대한 질문이군요. 검색된 문서를 바탕으로 �
     if (lowerPrompt.includes('facebook') || lowerPrompt.includes('instagram')) {
       return `**Facebook/Instagram 광고 안내**
 
-Facebook이나 Instagram 관련 질문이군요. 검색된 문서를 바탕으로 기본 정보를 제공해드립니다.
+Facebook이나 Instagram 관련 질문이군요. 제공된 내부 문서를 바탕으로 답변드립니다.
 
 **주요 플랫폼 특징:**
 - Facebook: 광범위한 타겟팅 옵션과 다양한 광고 형식

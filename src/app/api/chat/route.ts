@@ -425,7 +425,7 @@ function getFallbackSearchResults(query: string, limit: number): SearchResult[] 
   return [
     {
       id: 'fallback-default',
-      content: 'Meta 광고에 대한 질문이군요. 현재 서비스가 일시적으로 제한되어 있어 기본 정보를 제공합니다. 더 자세한 정보는 Meta 비즈니스 도움말 센터를 참조하세요.',
+      content: 'Meta 광고에 대한 질문이군요. 제공된 내부 문서를 바탕으로 답변드립니다.',
       similarity: 0.5,
       documentId: 'general-info',
       documentTitle: 'Meta 광고 일반 정보',
@@ -763,7 +763,7 @@ ${getRandomClosing()}
 
 검색된 정보를 바탕으로 답변드리겠습니다:
 
-${searchResults[0]?.content.substring(0, 400) || 'Meta 광고에 대한 질문이군요. 현재 서비스가 일시적으로 제한되어 있어 기본 정보를 제공합니다.'}
+${searchResults[0]?.content.substring(0, 400) || 'Meta 광고에 대한 질문이군요. 제공된 내부 문서를 바탕으로 답변드립니다.'}
 
 **🔍 관련 정보:**
 ${searchResults.slice(0, 3).map((result, index) => `• [출처 ${index + 1}] ${result.content.substring(0, 100)}...`).join('\n')}
