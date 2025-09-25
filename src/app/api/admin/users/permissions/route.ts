@@ -68,49 +68,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mock 데이터 사용 중인지 확인 (개발 환경)
-    const mockUserIds = [
-      '550e8400-e29b-41d4-a716-446655440001',
-      '550e8400-e29b-41d4-a716-446655440002', 
-      '550e8400-e29b-41d4-a716-446655440003',
-      '550e8400-e29b-41d4-a716-446655440004',
-      '550e8400-e29b-41d4-a716-446655440005'
-    ];
+    // 실제 데이터베이스에서 사용자 정보 조회
+    console.log('🔍 실제 Supabase에서 사용자 정보 조회:', userId);
+    
+    const { data: userData, error: userError } = await supabase
+      .from('profiles')
+      .select('email, name')
+      .eq('id', userId)
+      .single();
 
-    let user: { email: string; name: string };
-
-    if (mockUserIds.includes(userId)) {
-      // Mock 데이터 사용
-      console.log('📝 Mock 데이터 사용 중 - 실제 DB 조회 건너뛰기');
-      const mockUsers = [
-        { id: '550e8400-e29b-41d4-a716-446655440001', email: 'secho@nasmedia.co.kr', name: '조성은' },
-        { id: '550e8400-e29b-41d4-a716-446655440002', email: 'woolela@nasmedia.co.kr', name: '전홍진' },
-        { id: '550e8400-e29b-41d4-a716-446655440003', email: 'dsko@nasmedia.co.kr', name: '고대승' },
-        { id: '550e8400-e29b-41d4-a716-446655440004', email: 'hjchoi@nasmedia.co.kr', name: '최호준' },
-        { id: '550e8400-e29b-41d4-a716-446655440005', email: 'sunjung@nasmedia.co.kr', name: '임선정' }
-      ];
-      
-      const mockUser = mockUsers.find(u => u.id === userId);
-      if (!mockUser) {
-        throw new Error(`Mock 사용자를 찾을 수 없습니다: ${userId}`);
-      }
-      
-      user = { email: mockUser.email, name: mockUser.name };
-    } else {
-      // 실제 데이터베이스 조회
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('email, name')
-        .eq('id', userId)
-        .single();
-
-      if (userError) {
-        console.error('❌ 사용자 조회 오류:', userError);
-        throw new Error(`사용자 조회 실패: ${userError.message}`);
-      }
-      
-      user = userData;
+    if (userError) {
+      console.error('❌ 사용자 조회 오류:', userError);
+      throw new Error(`사용자 조회 실패: ${userError.message}`);
     }
+    
+    const user = userData;
 
     // 현재 관리자 권한 체크
     const isCurrentlyAdmin = await isAdminUser(user.email);
