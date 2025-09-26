@@ -40,11 +40,26 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// 팀 목록 (숫자 -> ㄱㄴㄷ 순)
+const TEAM_OPTIONS = [
+  "1실",
+  "2실", 
+  "3실",
+  "4실",
+  "5실",
+  "6실",
+  "3본부",
+  "미디어본부",
+  "플랫폼본부",
+  "경영본부"
+];
+
 interface User {
   id: string;
   email: string;
   name: string;
   avatar_url?: string;
+  team: string;
   is_admin: boolean;
   is_active: boolean;
   last_sign_in?: string;
@@ -87,6 +102,7 @@ export default function UserManagementPage() {
     email: '',
     password: '',
     name: '',
+    team: '미디어본부',
     isAdmin: false
   });
 
@@ -283,6 +299,7 @@ export default function UserManagementPage() {
           email: '',
           password: '',
           name: '',
+          team: '미디어본부',
           isAdmin: false
         });
         
@@ -317,12 +334,12 @@ export default function UserManagementPage() {
   // 상태 배지 반환
   const getStatusBadge = (user: User) => {
     if (user.is_admin) {
-      return <Badge className="bg-yellow-100 text-yellow-800">관리자</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-800 text-xs whitespace-nowrap">관리자</Badge>;
     }
     if (user.is_active) {
-      return <Badge className="bg-green-100 text-green-800">활성</Badge>;
+      return <Badge className="bg-green-100 text-green-800 text-xs whitespace-nowrap">활성</Badge>;
     }
-    return <Badge className="bg-gray-100 text-gray-800">비활성</Badge>;
+    return <Badge className="bg-gray-100 text-gray-800 text-xs whitespace-nowrap">비활성</Badge>;
   };
 
   // 날짜 포맷팅
@@ -451,10 +468,10 @@ export default function UserManagementPage() {
               <SelectValue placeholder="필터 선택" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-700">
-              <SelectItem value="all">전체 사용자</SelectItem>
-              <SelectItem value="admin">관리자</SelectItem>
-              <SelectItem value="active">활성 사용자</SelectItem>
-              <SelectItem value="inactive">비활성 사용자</SelectItem>
+              <SelectItem value="all" className="text-white hover:bg-gray-700">전체 사용자</SelectItem>
+              <SelectItem value="admin" className="text-white hover:bg-gray-700">관리자</SelectItem>
+              <SelectItem value="active" className="text-white hover:bg-gray-700">활성 사용자</SelectItem>
+              <SelectItem value="inactive" className="text-white hover:bg-gray-700">비활성 사용자</SelectItem>
             </SelectContent>
           </Select>
 
@@ -463,10 +480,11 @@ export default function UserManagementPage() {
               <SelectValue placeholder="정렬 기준" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-700">
-              <SelectItem value="created_at">가입일</SelectItem>
-              <SelectItem value="name">이름</SelectItem>
-              <SelectItem value="email">이메일</SelectItem>
-              <SelectItem value="last_sign_in">최근 로그인</SelectItem>
+              <SelectItem value="created_at" className="text-white hover:bg-gray-700">가입일</SelectItem>
+              <SelectItem value="name" className="text-white hover:bg-gray-700">이름</SelectItem>
+              <SelectItem value="email" className="text-white hover:bg-gray-700">이메일</SelectItem>
+              <SelectItem value="team" className="text-white hover:bg-gray-700">소속</SelectItem>
+              <SelectItem value="last_sign_in" className="text-white hover:bg-gray-700">최근 로그인</SelectItem>
             </SelectContent>
           </Select>
 
@@ -515,7 +533,8 @@ export default function UserManagementPage() {
                     <TableHeader>
                       <TableRow className="border-gray-700">
                         <TableHead className="text-gray-300">사용자</TableHead>
-                        <TableHead className="text-gray-300">상태</TableHead>
+                        <TableHead className="text-gray-300 min-w-[100px]">소속</TableHead>
+                        <TableHead className="text-gray-300 min-w-[80px]">상태</TableHead>
                         <TableHead className="text-gray-300">대화 수</TableHead>
                         <TableHead className="text-gray-300">가입일</TableHead>
                         <TableHead className="text-gray-300">최근 로그인</TableHead>
@@ -546,7 +565,10 @@ export default function UserManagementPage() {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-gray-300 text-sm whitespace-nowrap min-w-[100px]">
+                            {user.team}
+                          </TableCell>
+                          <TableCell className="min-w-[80px]">
                             <div className="flex items-center space-x-2">
                               {getStatusIcon(user)}
                               {getStatusBadge(user)}
@@ -804,6 +826,28 @@ export default function UserManagementPage() {
                   className="bg-gray-700 border-gray-600 text-white"
                 />
               </div>
+              <div>
+                <Label htmlFor="new-team" className="text-gray-300">소속 *</Label>
+                <Select
+                  value={newUser.team}
+                  onValueChange={(value) => setNewUser({...newUser, team: value})}
+                >
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectValue placeholder="소속을 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    {TEAM_OPTIONS.map((team) => (
+                      <SelectItem 
+                        key={team} 
+                        value={team}
+                        className="text-white hover:bg-gray-700 focus:bg-gray-700"
+                      >
+                        {team}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center space-x-2">
                 <Switch
                   id="new-is-admin"
@@ -825,6 +869,7 @@ export default function UserManagementPage() {
                     email: '',
                     password: '',
                     name: '',
+                    team: '미디어본부',
                     isAdmin: false
                   });
                 }}

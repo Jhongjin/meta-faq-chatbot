@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
+    console.log('📊 데이터베이스에서 조회한 대화 데이터:', conversations);
+
     if (error) {
       console.error('대화 히스토리 조회 오류:', error);
       

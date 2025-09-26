@@ -33,6 +33,21 @@ export interface DashboardStats {
     satisfaction: number;
     documents: number;
   };
+  teamStats: Array<{
+    team: string;
+    user_count: number;
+    new_users_30d: number;
+    new_users_7d: number;
+    first_user_created: string;
+    last_user_created: string;
+  }>;
+  teamQuestionStats: Array<{
+    team: string;
+    question_count: number;
+    questions_30d: number;
+    questions_7d: number;
+    avg_response_time: number | null;
+  }>;
 }
 
 export class DashboardDataService {

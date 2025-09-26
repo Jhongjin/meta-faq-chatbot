@@ -4,10 +4,25 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { X, Eye, EyeOff, Mail, Lock, User, Building2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+
+// 팀 목록 (숫자 -> ㄱㄴㄷ 순)
+const TEAM_OPTIONS = [
+  "1실",
+  "2실", 
+  "3실",
+  "4실",
+  "5실",
+  "6실",
+  "3본부",
+  "미디어본부",
+  "플랫폼본부",
+  "경영본부"
+];
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -23,7 +38,8 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
     email: "@nasmedia.co.kr",
     password: "",
     confirmPassword: "",
-    name: ""
+    name: "",
+    team: "미디어본부"
   });
   const [emailValidation, setEmailValidation] = useState({
     isValid: true,
@@ -119,7 +135,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
 
     try {
       if (isSignUp) {
-        const { data, error } = await signUp(formData.email, formData.password, formData.name);
+        const { data, error } = await signUp(formData.email, formData.password, formData.name, formData.team);
         
         if (error) {
           toast({
@@ -133,7 +149,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
             description: "회원가입이 완료되었습니다! 이메일을 확인하여 계정을 활성화해주세요.",
           });
           onClose();
-          setFormData({ email: "@nasmedia.co.kr", password: "", confirmPassword: "", name: "" });
+          setFormData({ email: "@nasmedia.co.kr", password: "", confirmPassword: "", name: "", team: "미디어본부" });
         }
       } else {
         const { data, error } = await signIn(formData.email.trim(), formData.password);
@@ -150,7 +166,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
             description: "로그인이 완료되었습니다!",
           });
           onClose();
-          setFormData({ email: "@nasmedia.co.kr", password: "", confirmPassword: "", name: "" });
+          setFormData({ email: "@nasmedia.co.kr", password: "", confirmPassword: "", name: "", team: "미디어본부" });
         }
       }
     } catch (error) {
@@ -263,23 +279,53 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium text-gray-300">
-                  이름
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="이름을 입력하세요"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
-                    required={isSignUp}
-                  />
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-sm font-medium text-gray-300">
+                    이름
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="이름을 입력하세요"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                      required={isSignUp}
+                    />
+                  </div>
                 </div>
-              </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="team" className="text-sm font-medium text-gray-300">
+                    소속
+                  </Label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
+                    <Select
+                      value={formData.team}
+                      onValueChange={(value) => handleInputChange("team", value)}
+                    >
+                      <SelectTrigger className="pl-10 bg-gray-800 border-gray-700 text-white focus:border-blue-500 focus:ring-blue-500">
+                        <SelectValue placeholder="소속을 선택하세요" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700">
+                        {TEAM_OPTIONS.map((team) => (
+                          <SelectItem 
+                            key={team} 
+                            value={team}
+                            className="text-white hover:bg-gray-700 focus:bg-gray-700"
+                          >
+                            {team}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </>
             )}
 
             <div className="space-y-2">

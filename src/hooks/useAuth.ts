@@ -89,9 +89,9 @@ export function useAuth() {
     }
   };
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, team: string = '미디어본부') => {
     try {
-      console.log('회원가입 시작:', { email, name });
+      console.log('회원가입 시작:', { email, name, team });
       
       // 1단계: 이메일 중복 확인
       const emailExists = await checkEmailExists(email);
@@ -111,6 +111,7 @@ export function useAuth() {
         options: {
           data: {
             name: name,
+            team: team,
           }
         }
       });

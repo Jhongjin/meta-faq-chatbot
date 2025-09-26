@@ -34,6 +34,7 @@ export interface User {
   email: string;
   name: string;
   avatar_url?: string;
+  team: string;
   is_admin: boolean;
   is_active: boolean;
   last_sign_in?: string;
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
     // 1. 프로필 정보 조회
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, email, name, avatar_url, created_at, updated_at');
+      .select('id, email, name, avatar_url, team, created_at, updated_at');
 
     if (profilesError) {
       console.error('❌ 프로필 조회 오류:', profilesError);
@@ -104,6 +105,7 @@ export async function GET(request: NextRequest) {
         email: profile.email,
         name: profile.name || '이름 없음',
         avatar_url: profile.avatar_url,
+        team: profile.team || '미디어본부',
         is_admin: isAdmin,
         is_active: true, // 기본적으로 활성 상태로 설정
         last_sign_in: new Date().toISOString(), // 실제 last_sign_in은 auth.users에서 가져와야 함
@@ -145,6 +147,10 @@ export async function GET(request: NextRequest) {
         case 'email':
           aValue = a.email;
           bValue = b.email;
+          break;
+        case 'team':
+          aValue = a.team || '';
+          bValue = b.team || '';
           break;
         case 'last_sign_in':
           aValue = new Date(a.last_sign_in || 0).getTime();
@@ -205,7 +211,7 @@ export async function POST(request: NextRequest) {
     console.log('🚀 사용자 추가 API 시작...');
 
     const body = await request.json();
-    const { email, password, name, isAdmin = false } = body;
+    const { email, password, name, team = '미디어본부', isAdmin = false } = body;
 
     // 입력값 검증
     if (!email || !email.trim()) {
@@ -360,6 +366,7 @@ export async function POST(request: NextRequest) {
         id: userId,
         email: email.trim(),
         name: name.trim(),
+        team: team,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })

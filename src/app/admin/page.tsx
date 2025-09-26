@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { dashboardDataService, DashboardStats } from "@/lib/services/DashboardDataService";
+import TeamStats from "@/components/admin/TeamStats";
 
 export default function AdminDashboardPage() {
   const { user, loading } = useAuth();
@@ -834,6 +835,19 @@ export default function AdminDashboardPage() {
             </div>
           </CardContent>
         </Card>
+      </motion.div>
+
+      {/* Team Statistics */}
+      <motion.div 
+        className="mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
+        <TeamStats 
+          teamStats={dashboardStats?.teamStats || []} 
+          teamQuestionStats={dashboardStats?.teamQuestionStats || []} 
+        />
       </motion.div>
     </AdminLayout>
   );

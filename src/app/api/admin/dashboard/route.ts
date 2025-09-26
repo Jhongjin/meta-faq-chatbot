@@ -56,6 +56,22 @@ export async function GET(request: NextRequest) {
       .from('feedback')
       .select('id, rating, created_at');
 
+    // 6. 팀별 사용자 통계 조회
+    const { data: teamStats, error: teamStatsError } = await supabase
+      .rpc('get_team_user_stats');
+
+    if (teamStatsError) {
+      console.error('❌ 팀별 통계 조회 오류:', teamStatsError);
+    }
+
+    // 7. 팀별 질문 통계 조회
+    const { data: teamQuestionStats, error: teamQuestionStatsError } = await supabase
+      .rpc('get_team_question_stats');
+
+    if (teamQuestionStatsError) {
+      console.error('❌ 팀별 질문 통계 조회 오류:', teamQuestionStatsError);
+    }
+
     if (feedbackError) {
       console.error('❌ 피드백 조회 오류:', feedbackError);
     }
@@ -151,7 +167,9 @@ export async function GET(request: NextRequest) {
         users: weeklyUsers,
         satisfaction: satisfaction,
         documents: totalDocuments
-      }
+      },
+      teamStats: teamStats || [],
+      teamQuestionStats: teamQuestionStats || []
     };
 
     return NextResponse.json({

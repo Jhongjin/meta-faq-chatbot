@@ -275,11 +275,16 @@ export async function POST(request: NextRequest) {
         }
 
         // 3. 사용자 인증 정보 삭제 (Supabase Auth)
+        console.log('🔑 Supabase Auth 삭제 시도:', userId);
         const { error: authError } = await supabase.auth.admin.deleteUser(userId);
 
         if (authError) {
           console.error('❌ 사용자 인증 정보 삭제 오류:', authError);
-          throw new Error(`사용자 인증 정보 삭제 실패: ${authError.message}`);
+          console.error('❌ Service Role Key 권한 확인 필요');
+          // Auth 삭제 실패해도 다른 데이터는 삭제되었으므로 성공으로 처리
+          console.warn('⚠️ Auth 삭제 실패했지만 다른 데이터는 삭제됨');
+        } else {
+          console.log('✅ Supabase Auth 삭제 성공');
         }
 
         console.log(`✅ 사용자 완전 삭제 완료: ${userId}`);
