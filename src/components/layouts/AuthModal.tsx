@@ -232,7 +232,7 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
-    setFormData({ email: "@nasmedia.co.kr", password: "", confirmPassword: "", name: "" });
+    setFormData({ email: "@nasmedia.co.kr", password: "", confirmPassword: "", name: "", team: "미디어본부" });
     setEmailValidation({ isValid: true, message: "" });
   };
 
