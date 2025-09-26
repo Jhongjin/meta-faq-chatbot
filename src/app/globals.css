@@ -645,32 +645,238 @@
   animation: enhanced-pulse 4s ease-in-out infinite !important;
 }
 
-/* Custom Scrollbar Styles */
+/* Custom Scrollbar Styles - Modern Design */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #4b5563 transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #4b5563;
-  border-radius: 3px;
-  transition: background-color 0.2s ease;
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.3) 0%, 
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.2) 100%);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #6b7280;
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.3) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.5) 0%, 
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.4) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .custom-scrollbar::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Chat-specific scrollbar styles - Enhanced */
+.chat-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  margin: 2px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.3) 0%, 
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.2) 100%);
+  border-radius: 6px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.5) 0%, 
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.4) 100%);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.6) 0%, 
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.5) 100%);
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  transform: scale(0.98);
+}
+
+.chat-scrollbar::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+}
+
+/* Force scrollbar styling for all elements */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  margin: 2px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.3) 0%, 
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.2) 100%);
+  border-radius: 6px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.5) 0%, 
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.4) 100%);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+*::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+}
+
+/* Additional scrollbar enhancements */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+/* Ensure all scrollable elements use custom scrollbar */
+div, section, article, main, aside, nav, header, footer {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+div::-webkit-scrollbar,
+section::-webkit-scrollbar,
+article::-webkit-scrollbar,
+main::-webkit-scrollbar,
+aside::-webkit-scrollbar,
+nav::-webkit-scrollbar,
+header::-webkit-scrollbar,
+footer::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+div::-webkit-scrollbar-track,
+section::-webkit-scrollbar-track,
+article::-webkit-scrollbar-track,
+main::-webkit-scrollbar-track,
+aside::-webkit-scrollbar-track,
+nav::-webkit-scrollbar-track,
+header::-webkit-scrollbar-track,
+footer::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  margin: 2px;
+}
+
+div::-webkit-scrollbar-thumb,
+section::-webkit-scrollbar-thumb,
+article::-webkit-scrollbar-thumb,
+main::-webkit-scrollbar-thumb,
+aside::-webkit-scrollbar-thumb,
+nav::-webkit-scrollbar-thumb,
+header::-webkit-scrollbar-thumb,
+footer::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.3) 100%);
+  border-radius: 6px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+div::-webkit-scrollbar-thumb:hover,
+section::-webkit-scrollbar-thumb:hover,
+article::-webkit-scrollbar-thumb:hover,
+main::-webkit-scrollbar-thumb:hover,
+aside::-webkit-scrollbar-thumb:hover,
+nav::-webkit-scrollbar-thumb:hover,
+header::-webkit-scrollbar-thumb:hover,
+footer::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.6) 0%, 
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.5) 100%);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 

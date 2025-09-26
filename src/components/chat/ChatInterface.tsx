@@ -218,7 +218,7 @@ export function ChatInterface({ className, initialQuestion }: ChatInterfaceProps
   return (
     <div className={`h-full flex flex-col bg-gray-900 ${className}`}>
       {/* 메시지 영역 */}
-      <ScrollArea className="flex-1 px-6 py-4">
+      <ScrollArea className="flex-1 px-6 py-4 chat-scrollbar">
         <div className="space-y-4">
           {messages.map((message) => (
             <div

@@ -176,7 +176,7 @@ export default function ConversationHistory({
             </div>
           </div>
         ) : (
-          <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+          <div className="space-y-2 max-h-96 overflow-y-auto chat-scrollbar">
             {conversations.map((conversation) => (
               <Card
                 key={conversation.id}
