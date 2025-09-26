@@ -114,7 +114,9 @@ export class DashboardDataService {
           users: 0,
           satisfaction: 0,
           documents: 0
-        }
+        },
+        teamStats: [],
+        teamQuestionStats: []
       };
     }
   }
