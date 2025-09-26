@@ -16,6 +16,7 @@ import { TrendingUp, TrendingDown, Users, MessageSquare, Clock, Star, Download, 
 import { useState, useEffect } from "react";
 import { useFeedbackStats } from "@/hooks/useFeedbackStats";
 import { useAuth } from "@/hooks/useAuth";
+import { downloadCSV, createStatsCSVData, createFeedbackCSVData } from "@/lib/utils/csvExport";
 
 export default function StatisticsPage() {
   const { user, loading } = useAuth();
@@ -118,39 +119,275 @@ export default function StatisticsPage() {
     { type: "TXT", count: 5, size: "2.1 MB", indexed: 5 },
   ];
 
-  // 간단한 CSV 내보내기 함수
+  // 개선된 CSV 내보내기 함수 (유틸리티 사용)
   const exportToCSV = () => {
-    const csvData = [
-      ['항목', '값', '변화율'],
-      ['총 질문 수', overviewStats.totalQuestions, `${overviewStats.weeklyChange.questions}%`],
-      ['활성 사용자', overviewStats.activeUsers, `${overviewStats.weeklyChange.users}%`],
-      ['평균 응답 시간', overviewStats.avgResponseTime, `${overviewStats.weeklyChange.responseTime}%`],
-      ['만족도', `${overviewStats.satisfactionRate}%`, `${overviewStats.weeklyChange.satisfaction}%`],
-    ];
-
-    const csvContent = csvData.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `통계_데이터_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      // 기본 통계 데이터 생성
+      const statsData = createStatsCSVData(overviewStats);
+      
+      // 피드백 통계가 있는 경우 추가
+      let allData = [...statsData];
+      
+      if (feedbackStats) {
+        allData.push(['', '', '', '']); // 빈 행
+        allData.push(['=== 피드백 통계 ===', '', '', '']); // 섹션 헤더
+        const feedbackData = createFeedbackCSVData(feedbackStats);
+        allData = [...allData, ...feedbackData];
+      }
+      
+      // 사용자 활동 데이터 추가
+      allData.push(['', '', '', '']); // 빈 행
+      allData.push(['=== 주간 활동 현황 ===', '', '', '']); // 섹션 헤더
+      allData.push(['요일', '질문 수', '사용자 수', '설명']);
+      userActivity.forEach(day => {
+        allData.push([day.date, day.questions, day.users, `${day.date} 활동량`]);
+      });
+      
+      // 인기 질문 데이터 추가
+      allData.push(['', '', '', '']); // 빈 행
+      allData.push(['=== 인기 질문 TOP 5 ===', '', '', '']); // 섹션 헤더
+      allData.push(['순위', '질문', '질문 수', '변화율']);
+      topQuestions.forEach((question, index) => {
+        allData.push([index + 1, question.question, question.count, `${question.change}%`]);
+      });
+      
+      // CSV 다운로드
+      const filename = `통계_데이터_${new Date().toISOString().split('T')[0]}.csv`;
+      downloadCSV(allData, filename, { includeBOM: true });
+      
+    } catch (error) {
+      console.error('CSV 내보내기 오류:', error);
+      // 폴백: 기본 CSV 내보내기
+      const basicData = createStatsCSVData(overviewStats);
+      downloadCSV(basicData, `통계_데이터_${new Date().toISOString().split('T')[0]}.csv`);
+    }
   };
 
-  // 간단한 PDF 내보내기 함수
-  const exportToPDF = () => {
-    window.print();
+  // 개선된 PDF 내보내기 함수 (한글 지원)
+  const exportToPDF = async () => {
+    try {
+      // 동적 import로 라이브러리 로드
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas')
+      ]);
+
+      // PDF 문서 생성 (A4 크기, 세로 방향)
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let yPosition = 20;
+
+
+      // 제목 추가 (영어로 대체)
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Statistics Dashboard Report', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
+
+      // 생성 날짜
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Generated: ${new Date().toLocaleString('en-US')}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 20;
+
+      // 개요 통계 섹션 (영어로 대체)
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Key Performance Indicators', 20, yPosition);
+      yPosition += 10;
+
+      // 통계 데이터 테이블 (영어로 대체)
+      const statsData = [
+        ['Metric', 'Value', 'Change'],
+        ['Total Questions', overviewStats.totalQuestions.toLocaleString(), `${overviewStats.weeklyChange.questions}%`],
+        ['Active Users', overviewStats.activeUsers.toString(), `${overviewStats.weeklyChange.users}%`],
+        ['Avg Response Time', overviewStats.avgResponseTime, `${overviewStats.weeklyChange.responseTime}%`],
+        ['Satisfaction Rate', `${overviewStats.satisfactionRate}%`, `${overviewStats.weeklyChange.satisfaction}%`],
+        ['Total Documents', overviewStats.totalDocuments.toString(), '0%'],
+        ['Indexed Documents', overviewStats.indexedDocuments.toString(), '0%'],
+      ];
+
+      // 테이블 그리기
+      const tableTop = yPosition;
+      const cellHeight = 8;
+      const colWidths = [60, 40, 30];
+      const tableLeft = 20;
+
+      // 헤더 배경
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(tableLeft, tableTop, colWidths.reduce((a, b) => a + b, 0), cellHeight, 'F');
+
+      // 테이블 헤더
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      let xPos = tableLeft;
+      statsData[0].forEach((header, index) => {
+        pdf.text(header, xPos + 2, tableTop + 6);
+        xPos += colWidths[index];
+      });
+
+      // 테이블 데이터
+      pdf.setFont('helvetica', 'normal');
+      statsData.slice(1).forEach((row, rowIndex) => {
+        const rowY = tableTop + cellHeight + (rowIndex * cellHeight);
+        
+        // 짝수 행 배경색
+        if (rowIndex % 2 === 0) {
+          pdf.setFillColor(250, 250, 250);
+          pdf.rect(tableLeft, rowY, colWidths.reduce((a, b) => a + b, 0), cellHeight, 'F');
+        }
+
+        xPos = tableLeft;
+        row.forEach((cell, colIndex) => {
+          pdf.text(cell.toString(), xPos + 2, rowY + 6);
+          xPos += colWidths[colIndex];
+        });
+      });
+
+      yPosition = tableTop + (statsData.length * cellHeight) + 20;
+
+      // 피드백 통계 섹션 (영어로 대체)
+      if (feedbackStats) {
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Feedback Statistics', 20, yPosition);
+        yPosition += 10;
+
+        const feedbackData = [
+          ['Category', 'Count', 'Ratio'],
+          ['Total Feedback', feedbackStats.total?.toString() || '0', '100%'],
+          ['Positive Feedback', feedbackStats.positive?.toString() || '0', `${feedbackStats.positivePercentage || 0}%`],
+          ['Negative Feedback', feedbackStats.negative?.toString() || '0', `${100 - (feedbackStats.positivePercentage || 0)}%`],
+        ];
+
+        // 피드백 테이블 그리기
+        const feedbackTableTop = yPosition;
+        const feedbackColWidths = [50, 30, 30];
+
+        // 헤더 배경
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(tableLeft, feedbackTableTop, feedbackColWidths.reduce((a, b) => a + b, 0), cellHeight, 'F');
+
+        // 피드백 테이블 헤더
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        xPos = tableLeft;
+        feedbackData[0].forEach((header, index) => {
+          pdf.text(header, xPos + 2, feedbackTableTop + 6);
+          xPos += feedbackColWidths[index];
+        });
+
+        // 피드백 테이블 데이터
+        pdf.setFont('helvetica', 'normal');
+        feedbackData.slice(1).forEach((row, rowIndex) => {
+          const rowY = feedbackTableTop + cellHeight + (rowIndex * cellHeight);
+          
+          // 짝수 행 배경색
+          if (rowIndex % 2 === 0) {
+            pdf.setFillColor(250, 250, 250);
+            pdf.rect(tableLeft, rowY, feedbackColWidths.reduce((a, b) => a + b, 0), cellHeight, 'F');
+          }
+
+          xPos = tableLeft;
+          row.forEach((cell, colIndex) => {
+            pdf.text(cell.toString(), xPos + 2, rowY + 6);
+            xPos += feedbackColWidths[colIndex];
+          });
+        });
+
+        yPosition = feedbackTableTop + (feedbackData.length * cellHeight) + 20;
+      }
+
+      // 문서 통계 섹션 (영어로 대체)
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Document Statistics', 20, yPosition);
+      yPosition += 10;
+
+      const docData = [
+        ['Document Type', 'Count', 'Size', 'Indexed'],
+        ...documentStats.map(doc => [doc.type, doc.count.toString(), doc.size, doc.indexed.toString()])
+      ];
+
+      // 문서 테이블 그리기
+      const docTableTop = yPosition;
+      const docColWidths = [40, 25, 35, 30];
+
+      // 헤더 배경
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(tableLeft, docTableTop, docColWidths.reduce((a, b) => a + b, 0), cellHeight, 'F');
+
+      // 문서 테이블 헤더
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      xPos = tableLeft;
+      docData[0].forEach((header, index) => {
+        pdf.text(header, xPos + 2, docTableTop + 6);
+        xPos += docColWidths[index];
+      });
+
+      // 문서 테이블 데이터
+      pdf.setFont('helvetica', 'normal');
+      docData.slice(1).forEach((row, rowIndex) => {
+        const rowY = docTableTop + cellHeight + (rowIndex * cellHeight);
+        
+        // 짝수 행 배경색
+        if (rowIndex % 2 === 0) {
+          pdf.setFillColor(250, 250, 250);
+          pdf.rect(tableLeft, rowY, docColWidths.reduce((a, b) => a + b, 0), cellHeight, 'F');
+        }
+
+        xPos = tableLeft;
+        row.forEach((cell, colIndex) => {
+          pdf.text(cell.toString(), xPos + 2, rowY + 6);
+          xPos += docColWidths[colIndex];
+        });
+      });
+
+      yPosition = docTableTop + (docData.length * cellHeight) + 20;
+
+      // 페이지 하단에 푸터 추가 (영어로 대체)
+      const footerY = pageHeight - 20;
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Meta FAQ AI Chatbot - Admin Statistics Report', pageWidth / 2, footerY, { align: 'center' });
+
+      // PDF 다운로드
+      const fileName = `Statistics_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+
+    } catch (error) {
+      console.error('PDF 생성 오류:', error);
+      // 폴백: 기본 인쇄 기능 사용
+      window.print();
+    }
   };
 
-  // 간단한 JSON 내보내기 함수
+  // 개선된 JSON 내보내기 함수
   const exportToJSON = () => {
     const jsonData = {
       exportDate: new Date().toISOString(),
+      exportInfo: {
+        version: '1.0',
+        generatedBy: 'Meta FAQ AI 챗봇 관리자 대시보드',
+        timeRange: selectedTimeRange,
+        lastUpdated: lastUpdated?.toISOString()
+      },
       overviewStats,
-      feedbackStats
+      feedbackStats,
+      userActivity,
+      topQuestions,
+      userSegments,
+      documentStats,
+      systemInfo: {
+        totalQuestions: overviewStats.totalQuestions,
+        activeUsers: overviewStats.activeUsers,
+        avgResponseTime: overviewStats.avgResponseTime,
+        satisfactionRate: overviewStats.satisfactionRate,
+        totalDocuments: overviewStats.totalDocuments,
+        indexedDocuments: overviewStats.indexedDocuments
+      }
     };
 
     const jsonContent = JSON.stringify(jsonData, null, 2);

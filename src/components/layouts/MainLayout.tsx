@@ -18,6 +18,7 @@ export default function MainLayout({ children, chatHeader }: MainLayoutProps) {
   const [envError, setEnvError] = useState<string | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<"signin" | "signup">("signin");
+  const [customBackground, setCustomBackground] = useState<string | null>(null);
 
   // 환경 변수 검증
   useEffect(() => {
@@ -26,6 +27,21 @@ export default function MainLayout({ children, chatHeader }: MainLayoutProps) {
     
     if (!supabaseUrl || !supabaseAnonKey) {
       console.warn('Supabase 환경 변수가 설정되지 않았습니다. 더미 클라이언트를 사용합니다.');
+    }
+  }, []);
+
+  // 커스텀 배경색 불러오기
+  useEffect(() => {
+    const savedBackground = localStorage.getItem('custom-background');
+    if (savedBackground) {
+      setCustomBackground(savedBackground);
+      document.documentElement.style.setProperty('--main-background', savedBackground);
+    } else {
+      // 기본값으로 현재 테스트 페이지 설정 적용
+      const defaultBackground = 'linear-gradient(180deg, #23262b 0%, #635488 50%, #9d6256 100%)';
+      setCustomBackground(defaultBackground);
+      document.documentElement.style.setProperty('--main-background', defaultBackground);
+      localStorage.setItem('custom-background', defaultBackground);
     }
   }, []);
 
@@ -73,9 +89,9 @@ export default function MainLayout({ children, chatHeader }: MainLayoutProps) {
 
 
   return (
-    <div className="min-h-screen" style={{
-      background: 'linear-gradient(180deg, #0d1421 0%, #512da8 50%, #cc4125 100%)'
-    }}>
+             <div className="min-h-screen" style={{
+               background: customBackground || 'var(--main-background, linear-gradient(180deg, #23262b 0%, #635488 50%, #9d6256 100%))'
+             }}>
       {/* 헤더 - Lovable.dev 스타일, 스크롤 시에도 고정 */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

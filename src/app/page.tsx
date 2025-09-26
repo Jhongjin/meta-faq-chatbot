@@ -356,7 +356,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-xl font-bold text-enhanced font-nanum">최신 업데이트</h3>
+                        <h3 className="text-xl font-bold font-nanum" style={{color: '#1d1f24'}}>최신 업데이트</h3>
                         <Badge className="bg-gradient-to-r from-blue-500/30 to-indigo-500/30 text-blue-200 border-blue-400/50 font-nanum shadow-lg text-xs">
                           중요
                         </Badge>
@@ -460,17 +460,17 @@ export default function HomePage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-white/20">
-                      <TableHead className="text-enhanced font-semibold">지표</TableHead>
-                      <TableHead className="text-enhanced font-semibold">현재 값</TableHead>
-                      <TableHead className="text-enhanced font-semibold">변화율</TableHead>
-                      <TableHead className="text-enhanced font-semibold">상태</TableHead>
+                      <TableHead className="font-semibold" style={{color: '#1d1f24'}}>지표</TableHead>
+                      <TableHead className="font-semibold" style={{color: '#1d1f24'}}>현재 값</TableHead>
+                      <TableHead className="font-semibold" style={{color: '#1d1f24'}}>변화율</TableHead>
+                      <TableHead className="font-semibold" style={{color: '#1d1f24'}}>상태</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {performanceData.map((item, index) => (
                       <TableRow key={index} className="border-white/10 hover:bg-white/5">
-                        <TableCell className="text-muted-enhanced font-medium">{item.metric}</TableCell>
-                        <TableCell className="text-enhanced font-semibold">{item.value}</TableCell>
+                        <TableCell className="font-medium" style={{color: '#1d1f24'}}>{item.metric}</TableCell>
+                        <TableCell className="font-semibold" style={{color: '#1d1f24'}}>{item.value}</TableCell>
                         <TableCell className="text-green-300">{item.trend}</TableCell>
                         <TableCell>
                           <Badge 
@@ -531,8 +531,8 @@ export default function HomePage() {
                     <div className="w-16 h-16 flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-300 icon-enhanced">
                       <div className="text-4xl">{feature.icon}</div>
                     </div>
-                    <h3 className="text-xl font-bold text-gradient mb-4 font-nanum group-hover:text-gradient-premium transition-all duration-300">{feature.title}</h3>
-                    <p className="text-muted-enhanced leading-relaxed text-sm mb-6 flex-grow font-nanum group-hover:text-white/90 transition-colors duration-300">{feature.description}</p>
+                    <h3 className="text-xl font-bold mb-4 font-nanum transition-all duration-300" style={{color: '#1d1f24'}}>{feature.title}</h3>
+                    <p className="leading-relaxed text-sm mb-6 flex-grow font-nanum transition-colors duration-300" style={{color: '#1d1f24'}}>{feature.description}</p>
                     <div className="flex flex-wrap gap-2">
                       {feature.badges.map((badge, badgeIndex) => (
                         <Badge 
@@ -593,9 +593,9 @@ export default function HomePage() {
                         <div className="w-16 h-16 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-300 icon-enhanced">
                           <div className="text-4xl">{stat.icon}</div>
                         </div>
-                        <h3 className="text-3xl font-bold text-gradient-premium mb-3 font-nanum group-hover:scale-110 transition-transform duration-300">{stat.value}</h3>
-                        <p className="text-muted-enhanced font-semibold mb-3 font-nanum group-hover:text-white/90 transition-colors duration-300">{stat.label}</p>
-                        <p className="text-sm text-gray-400 font-nanum group-hover:text-gray-300 transition-colors duration-300">{stat.description}</p>
+                        <h3 className="text-3xl font-bold mb-3 font-nanum group-hover:scale-110 transition-transform duration-300" style={{color: '#1d1f24'}}>{stat.value}</h3>
+                        <p className="font-semibold mb-3 font-nanum transition-colors duration-300" style={{color: '#1d1f24'}}>{stat.label}</p>
+                        <p className="text-sm font-nanum transition-colors duration-300" style={{color: '#1d1f24'}}>{stat.description}</p>
                       </CardContent>
                     </Card>
                   </motion.div>
@@ -623,10 +623,10 @@ export default function HomePage() {
             viewport={{ once: true }}
           >
             <div className="card-content-animated">
-              <h2 className="text-3xl md:text-4xl font-bold text-gradient-premium mb-6 font-nanum group-hover:scale-105 transition-transform duration-300">
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 font-nanum group-hover:scale-105 transition-transform duration-300" style={{color: '#1d1f24'}}>
                 지금 바로 시작해보세요
               </h2>
-              <p className="text-lg text-muted-enhanced mb-8 max-w-3xl mx-auto font-nanum group-hover:text-white/90 transition-colors duration-300">
+              <p className="text-lg mb-8 max-w-3xl mx-auto font-nanum transition-colors duration-300" style={{color: '#1d1f24'}}>
                 Meta 광고 정책에 대한 궁금증을 AI 챗봇에게 물어보고, 업무 효율성을 극대화하세요
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
