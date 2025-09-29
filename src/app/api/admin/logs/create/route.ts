@@ -16,20 +16,23 @@ export async function POST(request: NextRequest) {
     // 로그 데이터 저장 (실제로는 데이터베이스에 저장)
     console.log('새 로그 생성:', logData);
 
-    // 경고 또는 오류 로그인 경우 알림 생성
-    if (EmailAlertService.shouldSendAlert(logData.log_level)) {
-      await EmailAlertService.createOrUpdateAlert({
-        log_id: logData.log_id,
-        log_level: logData.log_level,
-        log_type: logData.log_type || 'system',
-        log_message: logData.log_message,
-        log_timestamp: logData.log_timestamp || new Date().toISOString(),
-        user_id: logData.user_id,
-        ip_address: logData.ip_address
-      });
+    // 이메일 알람 서비스 비활성화 - 기능은 유지하되 실제 알림 생성 안함
+    // if (EmailAlertService.shouldSendAlert(logData.log_level)) {
+    //   await EmailAlertService.createOrUpdateAlert({
+    //     log_id: logData.log_id,
+    //     log_level: logData.log_level,
+    //     log_type: logData.log_type || 'system',
+    //     log_message: logData.log_message,
+    //     log_timestamp: logData.log_timestamp || new Date().toISOString(),
+    //     user_id: logData.user_id,
+    //     ip_address: logData.ip_address
+    //   });
 
-      console.log(`📧 ${logData.log_level} 로그 알림이 생성되었습니다: ${logData.log_id}`);
-    }
+    //   console.log(`📧 ${logData.log_level} 로그 알림이 생성되었습니다: ${logData.log_id}`);
+    // }
+    
+    // 로그만 생성하고 이메일 알림은 비활성화
+    console.log(`📝 로그 생성됨 (이메일 알림 비활성화): ${logData.log_id} - ${logData.log_level}`);
 
     return NextResponse.json({
       success: true,

@@ -665,8 +665,10 @@ export default function AdminDashboardPage() {
         </div>
       </motion.div>
 
-      {/* Recent Alerts */}
-      <motion.div 
+      {/* Recent Alerts - 비활성화됨 */}
+      {/* 이메일 알람 서비스가 비활성화되어 활성 알림 섹션을 숨김 처리합니다 */}
+      {false && (
+      <motion.div
         className="mb-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -752,6 +754,7 @@ export default function AdminDashboardPage() {
           )}
         </div>
       </motion.div>
+      )}
 
       {/* Statistics */}
       <motion.div 

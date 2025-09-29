@@ -423,8 +423,9 @@ export default function LogsPage() {
         </div>
       </div>
 
-      {/* Active Alerts */}
-      {alerts.length > 0 && (
+      {/* Active Alerts - 비활성화됨 */}
+      {/* 이메일 알람 서비스가 비활성화되어 활성 알림 섹션을 숨김 처리합니다 */}
+      {false && alerts.length > 0 && (
         <div className="mb-6">
           <Card className="bg-gradient-to-r from-red-900/20 to-orange-900/20 border-red-500/30 backdrop-blur-sm">
             <CardHeader>
