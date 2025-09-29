@@ -117,7 +117,7 @@ export class EmailService {
   private static async sendViaNodemailer(emailData: EmailData): Promise<boolean> {
     try {
       // SMTP 설정 (회사 Outlook)
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'mail.nasmedia.co.kr',
         port: parseInt(process.env.SMTP_PORT || '25'),
         secure: false, // Port 25는 STARTTLS 사용
