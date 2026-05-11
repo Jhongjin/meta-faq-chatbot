@@ -353,7 +353,7 @@ function normalizeTablesToMarkdown(text: string): string {
  */
 export async function processQueue() {
   const processQueueStartMs = Date.now();
-  console.error('[CRITICAL] 🚀 processQueue 함수 진입:', {
+  console.log('🚀 processQueue 함수 진입:', {
     timestamp: new Date().toISOString(),
     startTime: processQueueStartMs
   });
@@ -361,7 +361,7 @@ export async function processQueue() {
   // ⚠️ 작업 조회를 위해 Supabase 클라이언트 생성
   // check-crawl-status와 동일한 방식으로 생성
   const supabase = await createPureClient();
-  console.error('[CRITICAL] ✅ Supabase 클라이언트 생성 완료');
+  console.log('✅ Supabase 클라이언트 생성 완료');
 
   // 🔥 job 변수를 try/catch 블록 외부로 이동하여 catch 블록에서 접근 가능하게 함
   let job: any = null;
@@ -372,17 +372,17 @@ export async function processQueue() {
   // 기본값: false (타임아웃 체크가 쿼리 성능 문제를 일으킬 수 있으므로 비활성화)
   const ENABLE_TIMEOUT_CHECK = process.env.ENABLE_TIMEOUT_CHECK === 'true'; // 기본값: false
   if (ENABLE_TIMEOUT_CHECK) {
-    console.error('[CRITICAL] ⚙️ 타임아웃 작업 감지 활성화됨');
+    console.log('⚙️ 타임아웃 작업 감지 활성화됨');
     try {
       // 🔥 무한대기 방지: 타임아웃된 작업 감지 및 처리 (30분 이상 processing 상태)
       // 기존 2시간에서 30분으로 단축하여 무한대기 문제 해결
-      console.error('[CRITICAL] 🔍 타임아웃된 작업 감지 시작...');
+      console.log('🔍 타임아웃된 작업 감지 시작...');
       const TIMEOUT_MS = 30 * 60 * 1000; // 30분
       const timeoutThreshold = new Date(Date.now() - TIMEOUT_MS).toISOString();
       const createdTimeoutThreshold = new Date(Date.now() - TIMEOUT_MS).toISOString();
 
       // started_at이 있는 경우: started_at 기준으로 타임아웃 체크
-      console.error('[CRITICAL] 🔍 started_at 기준 타임아웃 작업 조회 중...');
+      console.log('🔍 started_at 기준 타임아웃 작업 조회 중...');
       const stuckJobsByStartedStartMs = Date.now();
       let stuckJobsByStarted: any[] | null = null;
       let stuckError1: any = null;
@@ -390,7 +390,7 @@ export async function processQueue() {
         // 쿼리 타임아웃: 2초로 더 단축 (빠른 실패)
         const QUERY_TIMEOUT_MS = 2000;
 
-        console.error('[CRITICAL] 🔍 started_at 쿼리 시작 (타임아웃: ' + QUERY_TIMEOUT_MS + 'ms)...');
+        console.log('🔍 started_at 쿼리 시작 (타임아웃: ' + QUERY_TIMEOUT_MS + 'ms)...');
 
         // AbortController를 사용한 명시적 타임아웃
         const abortController = new AbortController();
@@ -461,7 +461,7 @@ export async function processQueue() {
         // 쿼리 타임아웃: 2초로 더 단축 (빠른 실패)
         const QUERY_TIMEOUT_MS = 2000;
 
-        console.error('[CRITICAL] 🔍 created_at 쿼리 시작 (타임아웃: ' + QUERY_TIMEOUT_MS + 'ms)...');
+        console.log('🔍 created_at 쿼리 시작 (타임아웃: ' + QUERY_TIMEOUT_MS + 'ms)...');
 
         // AbortController를 사용한 명시적 타임아웃
         const abortController = new AbortController();
@@ -588,17 +588,17 @@ export async function processQueue() {
       });
     }
   } else {
-    console.error('[CRITICAL] ⚙️ 타임아웃 작업 감지 비활성화됨 (ENABLE_TIMEOUT_CHECK=false 또는 미설정)');
+    console.log('⚙️ 타임아웃 작업 감지 비활성화됨');
   }
 
   const queueStartMs = Date.now();
-  console.error('[CRITICAL] 🚀 큐 처리 시작: ' + new Date().toISOString());
+  console.log('🚀 큐 처리 시작');
 
   try {
     const jobStartMs = Date.now();
     // 1) 픽업할 잡 조회 (우선순위 높은 순, 예약시각 이른 순)
     // retrying 상태도 포함하여 재시도 작업 처리
-    console.error('[CRITICAL] 🔍 큐에서 작업 조회 중...');
+    console.log('🔍 큐에서 작업 조회 중...');
 
     let pickErr: any = null;
 
@@ -609,7 +609,7 @@ export async function processQueue() {
 
     if (SKIP_JOB_QUERY) {
       console.error('[CRITICAL] ⚠️ 작업 조회 쿼리 우회 모드 활성화 (SKIP_JOB_QUERY=true)');
-      console.error('[CRITICAL] 📋 작업 조회 완료 (쿼리 우회 모드): { found: false, reason: "SKIP_JOB_QUERY=true" }');
+      console.log('📋 작업 조회 완료 (쿼리 우회 모드): { found: false, reason: "SKIP_JOB_QUERY=true" }');
       job = null;
       pickErr = null;
     } else {
@@ -664,7 +664,7 @@ export async function processQueue() {
 
       // check-crawl-status와 완전히 동일한 패턴 사용 (정상 작동하는 패턴)
       // Promise.race나 타임아웃 없이 직접 await 사용
-      console.error('[CRITICAL] 🔍 작업 조회 쿼리 시작 (check-crawl-status 패턴, 타임아웃 없음)...');
+      console.log('🔍 작업 조회 쿼리 시작 (check-crawl-status 패턴)...');
 
       const queryStartMs = Date.now();
 
@@ -686,7 +686,7 @@ export async function processQueue() {
         const queryElapsedMs = Date.now() - queryStartMs;
         const totalElapsedMs = Date.now() - jobStartMs;
 
-        console.error('[CRITICAL] 📋 작업 조회 완료: ' + totalElapsedMs + 'ms (쿼리: ' + queryElapsedMs + 'ms)', {
+        console.log('📋 작업 조회 완료: ' + totalElapsedMs + 'ms (쿼리: ' + queryElapsedMs + 'ms)', {
           found: !!job,
           jobId: job?.id,
           jobType: job?.job_type,
@@ -728,7 +728,7 @@ export async function processQueue() {
       return NextResponse.json({ success: true, message: '대기 중인 잡이 없습니다.' }, { status: 200 });
     }
 
-    console.error('[CRITICAL] ✅ 작업 선택됨:', {
+    console.log('✅ 작업 선택됨:', {
       jobId: job.id,
       documentId: job.document_id,
       jobType: job.job_type,
@@ -5549,13 +5549,12 @@ export async function processQueue() {
  */
 export async function GET(request: NextRequest) {
   // 🔥 즉시 로깅 (Vercel 로그에 반드시 나타나도록)
-  console.log('[CRITICAL] 🔔 GET 핸들러 호출됨 (Cron Job 또는 수동 호출)');
-  console.error('[CRITICAL] 🔔 GET 핸들러 호출됨 (Cron Job 또는 수동 호출)');
+  console.log('🔔 GET 핸들러 호출됨');
 
   // 요청 정보 로깅
   const url = request.url;
   const headers = Object.fromEntries(request.headers.entries());
-  console.log('[CRITICAL] 요청 정보:', {
+  console.log('요청 정보:', {
     url,
     method: request.method,
     headers: {
@@ -5568,19 +5567,17 @@ export async function GET(request: NextRequest) {
 
   // CRON_SECRET 검증
   const isAuthorized = verifyCronSecret(request);
-  console.log('[CRITICAL] CRON_SECRET 검증 결과:', isAuthorized);
+  console.log('CRON_SECRET 검증 결과:', isAuthorized);
 
   if (!isAuthorized) {
-    console.error('[CRITICAL] ❌ CRON_SECRET 검증 실패');
-    console.log('[CRITICAL] ❌ CRON_SECRET 검증 실패');
+    console.error('❌ CRON_SECRET 검증 실패');
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
     );
   }
 
-  console.log('[CRITICAL] ✅ CRON_SECRET 검증 성공, processQueue 실행 시작');
-  console.error('[CRITICAL] ✅ CRON_SECRET 검증 성공, processQueue 실행 시작');
+  console.log('✅ CRON_SECRET 검증 성공, processQueue 실행 시작');
 
   // 큐 처리 실행
   return processQueue();
@@ -5590,7 +5587,7 @@ export async function GET(request: NextRequest) {
  * POST 핸들러 (수동 호출 또는 외부 서비스용)
  */
 export async function POST(request: NextRequest) {
-  console.error('[CRITICAL] 🔔 POST 핸들러 호출됨 (수동 호출)');
+  console.log('🔔 POST 핸들러 호출됨');
 
   // CRON_SECRET 검증 (POST 요청의 경우 선택적 - 수동 호출 허용)
   // Authorization 헤더가 있는 경우에만 검증
@@ -5603,7 +5600,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  console.error('[CRITICAL] ✅ POST 요청 허용 (Authorization 헤더 없음 또는 검증 통과), processQueue 실행 시작');
+  console.log('✅ POST 요청 허용, processQueue 실행 시작');
   // 큐 처리 실행
   return processQueue();
 }
