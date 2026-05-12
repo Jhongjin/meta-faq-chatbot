@@ -127,19 +127,19 @@ export function crossEncoderRerank(
     query,
     queryKeywords = [],
     weights = {},
-    minRelevanceScore = 0.1,
+    minRelevanceScore = 0.05, // 최소 관련성 점수 (더 많은 후보 확보를 위해 하향 조정)
   } = options;
 
-  // 기본 가중치
+  // 기본 가중치 최적화
   const {
-    vectorSimilarity = 0.5,
-    keywordMatch = 0.2,
+    vectorSimilarity = 0.35,
+    keywordMatch = 0.35,
     sectionTitle = 0.15,
     documentTitle = 0.1,
     keywordDensity = 0.05,
   } = weights;
 
-  // 키워드 추출 (제공되지 않은 경우)
+  // 키워드 추출
   const keywords = queryKeywords.length > 0
     ? queryKeywords
     : query
@@ -148,13 +148,16 @@ export function crossEncoderRerank(
         .filter(word => word.length > 1)
         .filter(word => !['에', '를', '을', '의', '와', '과', '은', '는', '이', '가', '에 대해', '알려주세요', '어떻게', '무엇', '왜', '언제', '어디'].includes(word));
 
+  const queryLower = query.toLowerCase();
+  const importantKeywords = ['광고', '정책', '계정', '생성', '등록', '절차', '방법', '설정', '관리', '인증', '차단', '비활성화', '해제'];
+
   // 각 청크에 관련성 점수 계산
   const scoredChunks = chunks.map(chunk => {
-    const content = chunk.content || '';
-    const docTitle = chunk.metadata?.document_title || '';
-    const sectionTitleText = chunk.metadata?.section_title || '';
+    const content = (chunk.content || '').toLowerCase();
+    const docTitle = (chunk.metadata?.document_title || chunk.metadata?.source || '').toLowerCase();
+    const sectionTitleText = (chunk.metadata?.section_title || '').toLowerCase();
     
-    // 1. 벡터 유사도 점수 (기존 similarity 사용)
+    // 1. 벡터 유사도 점수
     const vectorScore = Math.max(0, Math.min(1, chunk.similarity || 0));
 
     // 2. TF-IDF 기반 키워드 매칭 점수
@@ -163,9 +166,8 @@ export function crossEncoderRerank(
     // 3. 섹션 제목 일치 점수
     let sectionTitleScore = 0;
     if (sectionTitleText) {
-      const sectionTitleLower = sectionTitleText.toLowerCase();
       const matchedKeywords = keywords.filter(keyword =>
-        sectionTitleLower.includes(keyword.toLowerCase())
+        sectionTitleText.includes(keyword.toLowerCase())
       ).length;
       sectionTitleScore = keywords.length > 0 ? matchedKeywords / keywords.length : 0;
     }
@@ -173,49 +175,75 @@ export function crossEncoderRerank(
     // 4. 문서 제목 일치 점수
     let docTitleScore = 0;
     if (docTitle) {
-      const docTitleLower = docTitle.toLowerCase();
       const matchedKeywords = keywords.filter(keyword =>
-        docTitleLower.includes(keyword.toLowerCase())
+        docTitle.includes(keyword.toLowerCase())
       ).length;
       docTitleScore = keywords.length > 0 ? matchedKeywords / keywords.length : 0;
     }
 
-    // 5. 키워드 밀도 점수
+    // 5. 키워드 밀도 및 문장 유사도
     const densityScore = calculateKeywordDensity(keywords, content);
-
-    // 6. 문장 유사도 점수 (추가 신호)
     const sentenceSimilarity = calculateSentenceSimilarity(query, content);
 
-    // 최종 관련성 점수 계산 (가중 평균)
-    const relevanceScore =
+    // [추가] 수동 부스팅 로직 통합 (RAGProcessor에서 마이그레이션)
+    let boost = 0;
+    
+    // 키워드 기반 부스팅
+    for (const keyword of keywords) {
+      const kw = keyword.toLowerCase();
+      
+      // 정확한 단어 매칭 (Word Boundary)
+      const exactMatch = new RegExp(`\\b${kw}\\b`, 'i');
+      if (exactMatch.test(content)) {
+        boost += 0.15; // 정확한 매칭
+        
+        // 중요 키워드인 경우 추가 부스팅
+        if (importantKeywords.some(ik => kw.includes(ik))) {
+          boost += 0.1;
+        }
+      } else if (content.includes(kw)) {
+        boost += 0.08; // 부분 매칭
+      }
+
+      // 제목 매칭 부스팅
+      if (docTitle.includes(kw)) boost += 0.1;
+      if (sectionTitleText.includes(kw)) boost += 0.15;
+    }
+
+    // 전체 쿼리 포함 부스팅
+    if (content.includes(queryLower)) {
+      boost += 0.25;
+    }
+
+    // 최종 관련성 점수 계산 (가중 평균 + 부스트)
+    const baseRelevanceScore =
       vectorScore * vectorSimilarity +
       tfidfScore * keywordMatch +
       sectionTitleScore * sectionTitle +
       docTitleScore * documentTitle +
       densityScore * keywordDensity +
-      sentenceSimilarity * 0.1; // 문장 유사도는 작은 가중치
+      sentenceSimilarity * 0.1;
+
+    const finalScore = Math.min(1.0, baseRelevanceScore + boost);
 
     // 최소 관련성 점수 필터링
-    if (relevanceScore < minRelevanceScore) {
+    if (finalScore < minRelevanceScore) {
       return null;
     }
 
-    const finalSimilarity = Math.min(1.0, relevanceScore);
     return {
       ...chunk,
-      similarity: finalSimilarity, // 최종 점수를 similarity로 업데이트
-      _crossEncoderScore: relevanceScore, // 디버깅용 (내부 사용)
+      similarity: finalScore,
+      _crossEncoderScore: finalScore,
     } as ChunkData & { _crossEncoderScore: number };
   }).filter((chunk): chunk is ChunkData & { _crossEncoderScore: number } => chunk !== null);
 
   // 관련성 점수 기준으로 정렬
   const reranked = scoredChunks.sort((a, b) => {
-    const scoreA = a._crossEncoderScore || a.similarity || 0;
-    const scoreB = b._crossEncoderScore || b.similarity || 0;
-    return scoreB - scoreA;
+    return b._crossEncoderScore - a._crossEncoderScore;
   });
 
-  // 내부 점수 제거
+  // 내부 점수 제거 및 결과 반환
   return reranked.map(({ _crossEncoderScore, ...chunk }) => chunk);
 }
 

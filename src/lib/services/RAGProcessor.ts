@@ -2800,93 +2800,33 @@ export class RAGProcessor {
           query: searchQuery,
           queryKeywords,
           weights: {
-            vectorSimilarity: 0.35, // 벡터 유사도 가중치
-            keywordMatch: 0.35, // 키워드 매칭 가중치 (0.3 -> 0.35로 증가)
-            sectionTitle: 0.2, // 섹션 제목 일치 가중치
-            documentTitle: 0.05, // 문서 제목 일치 가중치
-            keywordDensity: 0.05, // 키워드 밀도 가중치
+            vectorSimilarity: 0.35,
+            keywordMatch: 0.35,
+            sectionTitle: 0.15,
+            documentTitle: 0.1,
+            keywordDensity: 0.05,
           },
-          minRelevanceScore: 0.12, // 최소 관련성 점수 (0.2 -> 0.12로 하향 지원)
+          minRelevanceScore: 0.05, // 더 많은 결과 허용
         });
 
-        // 잘린 텍스트 필터링 적용 (더 엄격한 필터링)
+        // 잘린 텍스트 필터링 적용
         const { filterTruncatedSearchResults } = await import('./search/TruncatedTextFilter');
         const { valid: filteredChunks, filtered: truncatedFiltered } = filterTruncatedSearchResults(
           chunks,
           {
-            filterHighSeverityOnly: false, // 모든 severity 필터링 (high + medium)
+            filterHighSeverityOnly: false,
             keepIfHasKeywords: queryKeywords,
           }
         );
 
         if (truncatedFiltered.length > 0) {
           console.log(`⚠️ 잘린 텍스트 패턴으로 ${truncatedFiltered.length}개 결과 필터링됨`);
-          // 필터링된 결과의 이유 로깅
-          truncatedFiltered.forEach(({ result, reason }) => {
-            console.log(`  - 필터링됨: ${reason.substring(0, 50)}... (유사도: ${result.similarity?.toFixed(3)})`);
-          });
         }
 
         chunks = filteredChunks;
 
-        // 평균 유사도 향상을 위한 추가 부스팅
-        // 키워드 매칭이 있는 결과에 추가 점수 부여
-        const boostedChunks = chunks.map(chunk => {
-          const content = chunk.content.toLowerCase();
-          const docTitle = (chunk.metadata?.document_title || '').toLowerCase();
-          const sectionTitle = (chunk.metadata?.section_title || '').toLowerCase();
-
-          let boost = 0;
-
-          // 쿼리 키워드가 콘텐츠에 포함된 경우 (더 강력한 부스팅)
-          for (const keyword of queryKeywords) {
-            const keywordLower = keyword.toLowerCase();
-
-            // 정확한 단어 매칭 (공백으로 구분) - 최우선
-            const exactMatch = new RegExp(`\\b${keywordLower}\\b`, 'i');
-            if (exactMatch.test(chunk.content)) {
-              boost += 0.15; // 정확한 매칭 15% 부스팅 (기존 10%에서 증가)
-
-              // 중요한 키워드인 경우 추가 부스팅
-              const importantKeywords = ['광고', '정책', '계정', '생성', '등록', '절차', '방법', '설정', '관리'];
-              if (importantKeywords.some(ik => keywordLower.includes(ik.toLowerCase()))) {
-                boost += 0.1; // 중요 키워드 추가 10% 부스팅
-              }
-            } else if (content.includes(keywordLower)) {
-              boost += 0.08; // 부분 매칭 8% 부스팅 (기존 5%에서 증가)
-            }
-
-            // 문서 제목에 키워드가 포함된 경우 (더 높은 가중치)
-            if (docTitle.includes(keywordLower)) {
-              boost += 0.15; // 문서 제목 매칭 15% 부스팅 (기존 10%에서 증가)
-            }
-
-            // 섹션 제목에 키워드가 포함된 경우 (더 높은 가중치)
-            if (sectionTitle.includes(keywordLower)) {
-              boost += 0.2; // 섹션 제목 매칭 20% 부스팅 (기존 15%에서 증가)
-            }
-          }
-
-          // 쿼리 전체가 콘텐츠에 포함된 경우 (매우 높은 부스팅)
-          const queryLower = searchQuery.toLowerCase();
-          if (content.includes(queryLower)) {
-            boost += 0.25; // 전체 쿼리 매칭 25% 부스팅
-          }
-
-          // 부스팅된 유사도 계산 (최대 1.0으로 제한)
-          const boostedSimilarity = Math.min(1.0, (chunk.similarity || 0) + boost);
-
-          return {
-            ...chunk,
-            similarity: boostedSimilarity,
-          };
-        });
-
-        // 부스팅된 유사도 기준으로 재정렬
-        boostedChunks.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
-
-        // 최종 결과 수 제한
-        chunks = boostedChunks.slice(0, limit);
+        // 최종 결과 수 제한 (Cross-Encoder가 이미 재정렬함)
+        chunks = chunks.slice(0, limit);
 
         const finalAvgSimilarity = chunks.length > 0
           ? chunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / chunks.length
@@ -2894,99 +2834,95 @@ export class RAGProcessor {
         console.log(`✅ Cross-Encoder 재랭킹 완료: ${chunks.length}개 결과 (최종, 평균 유사도: ${finalAvgSimilarity.toFixed(3)})`);
       }
 
-      // 4단계: 하이브리드 검색 결과가 부족하면 Fallback 전략 실행 (더 공격적인 전략)
-      // 결과가 3개 미만이거나 평균 유사도가 0.5 미만이면 Fallback 실행
+      // 4단계: 하이브리드 검색 결과가 부족하면 Fallback 전략 실행
       const avgSimilarity = chunks.length > 0
         ? chunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / chunks.length
         : 0;
-      const needsFallback = chunks.length < 3 || avgSimilarity < 0.5;
+      const needsFallback = chunks.length < 3 || avgSimilarity < 0.4; // 임계값 소폭 하향 조정
 
       if (needsFallback) {
-        console.log(`⚠️ 하이브리드 검색 결과 부족 (${chunks.length}개, 평균 유사도: ${avgSimilarity.toFixed(3)}) - Fallback 전략 실행`);
+        console.log(`⚠️ 검색 결과 부족 (${chunks.length}개, 평균 유사도: ${avgSimilarity.toFixed(3)}) - Fallback 전략 실행`);
 
-        // 4-1단계: 벡터 검색 임계값을 낮춰서 재검색 (0.35)
+        // 4-1단계: 벡터 검색 임계값을 낮춰서 재검색
         const lowerThresholdChunks = await this.performVectorSearch(
           supabase,
           queryEmbedding,
-          limit * 2, // 더 많은 결과 가져오기
+          limit * 3,
           normalizedVendorFilter,
-          SEARCH_THRESHOLDS.secondary,
+          SEARCH_THRESHOLDS.secondary, // 0.3
           useWeightedSearch
         );
 
-        // 더 나은 결과가 있으면 사용 (결과가 더 많거나 평균 유사도가 더 높으면)
-        const lowerAvgSimilarity = lowerThresholdChunks.length > 0
-          ? lowerThresholdChunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / lowerThresholdChunks.length
-          : 0;
+        if (lowerThresholdChunks.length > 0) {
+          // Fallback 결과에도 Cross-Encoder 적용
+          const { crossEncoderRerank } = await import('./search/CrossEncoderReranker');
+          const rerankedFallback = crossEncoderRerank(lowerThresholdChunks, {
+            query: searchQuery,
+            queryKeywords,
+            minRelevanceScore: 0.05
+          });
 
-        if (lowerThresholdChunks.length > chunks.length ||
-          (lowerThresholdChunks.length > 0 && lowerAvgSimilarity > avgSimilarity)) {
-          console.log(`✅ Fallback 1단계 검색 성공: ${lowerThresholdChunks.length}개 결과 발견 (평균 유사도: ${lowerAvgSimilarity.toFixed(3)})`);
-          chunks = lowerThresholdChunks;
+          if (rerankedFallback.length > chunks.length) {
+            console.log(`✅ Fallback 1단계 검색 성공: ${rerankedFallback.length}개 결과 발견`);
+            chunks = rerankedFallback.slice(0, limit);
+          }
         }
       }
 
-      // 4-2단계: 여전히 결과가 부족하면 임계값을 더 낮춰서 재검색 (0.15)
+      // 4-2단계: 여전히 결과가 부족하면 임계값을 더 낮춤
       const currentAvgSimilarity = chunks.length > 0
         ? chunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / chunks.length
         : 0;
-      if (chunks.length < 3 || currentAvgSimilarity < 0.4) {
-        console.log(`⚠️ Fallback 1단계 검색 결과 부족 (${chunks.length}개, 평균 유사도: ${currentAvgSimilarity.toFixed(3)}) - 임계값을 ${SEARCH_THRESHOLDS.tertiary}로 낮춰서 재검색`);
+      if (chunks.length < 2 || currentAvgSimilarity < 0.3) {
+        console.log(`⚠️ Fallback 1단계 결과 부족 - 임계값을 ${SEARCH_THRESHOLDS.tertiary}로 낮춰서 재검색`);
         const veryLowThresholdChunks = await this.performVectorSearch(
           supabase,
           queryEmbedding,
-          limit * 3, // 더 많은 결과 가져오기
+          limit * 4,
           normalizedVendorFilter,
-          SEARCH_THRESHOLDS.tertiary,
+          SEARCH_THRESHOLDS.tertiary, // 0.15
           useWeightedSearch
         );
 
-        const veryLowAvgSimilarity = veryLowThresholdChunks.length > 0
-          ? veryLowThresholdChunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / veryLowThresholdChunks.length
-          : 0;
+        if (veryLowThresholdChunks.length > 0) {
+          const { crossEncoderRerank } = await import('./search/CrossEncoderReranker');
+          const rerankedVeryLow = crossEncoderRerank(veryLowThresholdChunks, {
+            query: searchQuery,
+            queryKeywords,
+            minRelevanceScore: 0.05
+          });
 
-        if (veryLowThresholdChunks.length > chunks.length ||
-          (veryLowThresholdChunks.length > 0 && veryLowAvgSimilarity > currentAvgSimilarity)) {
-          console.log(`✅ Fallback 2단계 검색 성공: ${veryLowThresholdChunks.length}개 결과 발견 (평균 유사도: ${veryLowAvgSimilarity.toFixed(3)})`);
-          chunks = veryLowThresholdChunks;
+          if (rerankedVeryLow.length > chunks.length) {
+            console.log(`✅ Fallback 2단계 검색 성공: ${rerankedVeryLow.length}개 결과 발견`);
+            chunks = rerankedVeryLow.slice(0, limit);
+          }
         }
       }
 
-      // 4-3단계: 최소 임계값으로 재검색 (0.05)
-      if (chunks.length === 0) {
-        console.log(`⚠️ Fallback 2단계 검색 결과 부족 - 최소 임계값 ${SEARCH_THRESHOLDS.minimum}로 재검색`);
-        const minimumThresholdChunks = await this.performVectorSearch(
-          supabase,
-          queryEmbedding,
-          limit * 4, // 최대한 많은 결과 가져오기
-          normalizedVendorFilter,
-          SEARCH_THRESHOLDS.minimum,
-          useWeightedSearch
-        );
-
-        if (minimumThresholdChunks.length > 0) {
-          const minAvgSimilarity = minimumThresholdChunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / minimumThresholdChunks.length;
-          console.log(`✅ Fallback 3단계 검색 성공: ${minimumThresholdChunks.length}개 결과 발견 (평균 유사도: ${minAvgSimilarity.toFixed(3)})`);
-          chunks = minimumThresholdChunks;
-        }
-      }
-
-      // 4-4단계: 벤더 필터가 적용된 상태에서 결과가 부족하면 필터를 제거하고 재검색
-      if (chunks.length < 3 && normalizedVendorFilter) {
+      // 4-3단계: 벤더 필터가 적용된 상태에서 결과가 부족하면 필터를 제거
+      if (chunks.length < 2 && normalizedVendorFilter) {
         console.log(`⚠️ 벤더 필터 적용 시 결과 부족 (${chunks.length}개) - 벤더 필터를 제거하고 재검색`);
         const noFilterChunks = await this.performVectorSearch(
           supabase,
           queryEmbedding,
-          limit * 3, // 더 많은 결과 가져오기
-          null, // 벤더 필터 제거
-          SEARCH_THRESHOLDS.secondary, // 0.35 임계값 사용
+          limit * 3,
+          null,
+          SEARCH_THRESHOLDS.secondary,
           useWeightedSearch
         );
 
-        if (noFilterChunks.length > chunks.length) {
-          const noFilterAvgSimilarity = noFilterChunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / noFilterChunks.length;
-          console.log(`✅ 벤더 필터 제거 후 검색 성공: ${noFilterChunks.length}개 결과 발견 (평균 유사도: ${noFilterAvgSimilarity.toFixed(3)})`);
-          chunks = noFilterChunks;
+        if (noFilterChunks.length > 0) {
+          const { crossEncoderRerank } = await import('./search/CrossEncoderReranker');
+          const rerankedNoFilter = crossEncoderRerank(noFilterChunks, {
+            query: searchQuery,
+            queryKeywords,
+            minRelevanceScore: 0.05
+          });
+
+          if (rerankedNoFilter.length > chunks.length) {
+            console.log(`✅ 벤더 필터 제거 후 검색 성공: ${rerankedNoFilter.length}개 결과 발견`);
+            chunks = rerankedNoFilter.slice(0, limit);
+          }
         }
       }
 
