@@ -2684,6 +2684,9 @@ export class RAGProcessor {
         searchQuery = query;
       }
 
+      // 키워드 추출 (재랭킹 및 하이브리드 검색용)
+      const queryKeywords = this.extractQueryKeywords(searchQuery);
+
       console.log(`🔍 [RAGProcessor] 벡터 검색 시작: "${searchQuery}" (Provider: ${this.embeddingProvider})`);
       if (vendorFilter && vendorFilter.length > 0) {
         console.log('🏷️ [RAGProcessor] 벤더 필터 적용:', vendorFilter);
