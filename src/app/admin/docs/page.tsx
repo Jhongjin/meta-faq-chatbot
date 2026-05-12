@@ -91,11 +91,22 @@ const DB_TO_VENDOR_MAP: Record<string, string> = {
     "KAKAO": "Kakao",
     "GOOGLE": "Google",
     "OTHER": "X(Twitter)",
+    "X(TWITTER)": "X(Twitter)",
 };
 
 // UI 벤더 배열을 DB 값 배열로 변환
 function convertVendorsToDB(vendors: string[]): string[] {
-    return vendors.map(v => VENDOR_TO_DB_MAP[v] || "META").filter(Boolean);
+    const dbVendors: string[] = [];
+    vendors.forEach(v => {
+        if (v === "X(Twitter)") {
+            dbVendors.push("OTHER", "X(TWITTER)");
+        } else {
+            const dbVal = VENDOR_TO_DB_MAP[v];
+            if (dbVal) dbVendors.push(dbVal);
+            else dbVendors.push(v.toUpperCase());
+        }
+    });
+    return [...new Set(dbVendors)];
 }
 
 interface Document {
@@ -232,14 +243,6 @@ function AdminDocsPageContent() {
             }
 
             const { data: documents, error } = await q;
-
-            if (selectedVendors.includes("X(Twitter)")) {
-                console.log("[AdminDocs] X(Twitter) Fetch Results:", {
-                    dbVendors,
-                    count: documents?.length,
-                    sample: documents?.slice(0, 2)
-                });
-            }
 
             if (error) {
                 console.error('문서 조회 오류:', error);
@@ -506,9 +509,15 @@ function AdminDocsPageContent() {
                 (selectedType === "docx" && doc.type === "docx") ||
                 (selectedType === "txt" && doc.type === "txt") ||
                 (selectedType === "url" && doc.type === "url");
-            return matchesSearch && matchesTab && matchesType;
+            
+            // 추가: 벤더 필터링 (DB 쿼리에서 이미 처리되지만 메모이제이션 안정성을 위해 체크)
+            const dbVendors = convertVendorsToDB(selectedVendors);
+            const matchesVendor = dbVendors.length === 0 || 
+                (doc.source_vendor && dbVendors.includes(doc.source_vendor.toUpperCase()));
+
+            return matchesSearch && matchesTab && matchesType && matchesVendor;
         });
-    }, [documents, searchQuery, activeTab, selectedType]);
+    }, [documents, searchQuery, activeTab, selectedType, selectedVendors]);
     useEffect(() => {
         setSelectedDocs((prev) => {
             const validIds = new Set(filteredDocs.map((doc: Document) => doc.id));

@@ -84,6 +84,7 @@ const DB_TO_VENDOR_MAP: Record<string, string> = {
   "KAKAO": "Kakao",
   "GOOGLE": "Google",
   "OTHER": "X(Twitter)",
+  "X(TWITTER)": "X(Twitter)",
 };
 
 // 에러 메시지를 사용자 친화적인 한글로 변환
@@ -251,9 +252,18 @@ export function AdminUrlCrawler({ onSuccess, defaultVendor, onVendorChange }: Ad
   const fetchExistingUrls = async (vendorFilter?: string[]): Promise<Map<string, string>> => {
     try {
       // 벤더 필터를 DB ENUM 값으로 변환
-      const dbVendorFilter = vendorFilter && vendorFilter.length > 0
-        ? vendorFilter.map(v => VENDOR_TO_DB_MAP[v] || v.toUpperCase())
-        : undefined;
+      const dbVendorFilter: string[] = [];
+      if (vendorFilter && vendorFilter.length > 0) {
+        vendorFilter.forEach(v => {
+          if (v === "X(Twitter)") {
+            dbVendorFilter.push("OTHER", "X(TWITTER)");
+          } else {
+            const dbVal = VENDOR_TO_DB_MAP[v];
+            if (dbVal) dbVendorFilter.push(dbVal);
+            else dbVendorFilter.push(v.toUpperCase());
+          }
+        });
+      }
 
       // API 파라미터 구성
       const params = new URLSearchParams();
@@ -275,9 +285,9 @@ export function AdminUrlCrawler({ onSuccess, defaultVendor, onVendorChange }: Ad
         const map = new Map<string, string>();
         if (data.documents && Array.isArray(data.documents)) {
           // 벤더 필터 적용 (프론트엔드에서)
-          const filteredDocs = dbVendorFilter && dbVendorFilter.length > 0
+          const filteredDocs = dbVendorFilter.length > 0
             ? data.documents.filter((doc: any) => {
-              const docVendor = doc.source_vendor || 'META';
+              const docVendor = (doc.source_vendor || 'META').toUpperCase();
               return dbVendorFilter.includes(docVendor);
             })
             : data.documents;
