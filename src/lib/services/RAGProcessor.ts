@@ -2733,8 +2733,15 @@ export class RAGProcessor {
       }
 
       // 벤더 필터를 대문자로 변환 (ENUM과 매칭)
+      // X(Twitter)는 OTHER와 X(TWITTER) 모두 포함하여 검색
       const normalizedVendorFilter = vendorFilter && vendorFilter.length > 0
-        ? vendorFilter.map(v => v.toUpperCase())
+        ? vendorFilter.flatMap(v => {
+            const upper = v.toUpperCase();
+            if (upper === 'X(TWITTER)' || upper === 'TWITTER') {
+              return ['OTHER', 'X(TWITTER)'];
+            }
+            return [upper];
+          })
         : null;
 
       // 가중치 기반 검색 사용 (performVectorSearch 내부에서 폴백 처리됨)

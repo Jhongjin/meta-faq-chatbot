@@ -1,40 +1,41 @@
 const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = 'https://renjseslaqgfoxslxlyu.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlbmpzZXNsYXFnZm94c2x4bHl1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Njc4ODQ0MCwiZXhwIjoyMDcyMzY0NDQwfQ.ZP-psPigdwWdWQxUbiCeJo9C2Gb5j9fALtQOcIrmaWI';
+require('dotenv').config({ path: '.env.local' });
 
 async function checkVendors() {
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
+  console.log('Checking vendors in documents table...');
 
   const { data, error } = await supabase
     .from('documents')
     .select('source_vendor');
 
   if (error) {
-    console.error('Error fetching documents:', error);
+    console.error('Error:', error);
     return;
   }
 
-  const counts = data.reduce((acc, doc) => {
+  const counts = {};
+  data.forEach(doc => {
     const v = doc.source_vendor || 'NULL';
-    acc[v] = (acc[v] || 0) + 1;
-    return acc;
-  }, {});
+    counts[v] = (counts[v] || 0) + 1;
+  });
 
-  console.log('Documents per vendor:');
-  console.table(counts);
+  console.log('Vendor Counts:', counts);
 
-  // X/Twitter 관련 샘플 확인
-  const xDocs = data.filter(doc => 
-    String(doc.source_vendor).toUpperCase() === 'OTHER' || 
-    String(doc.source_vendor).includes('X') || 
-    String(doc.source_vendor).includes('Twitter')
-  );
-  
-  if (xDocs.length > 0) {
-    console.log('Sample X(Twitter) docs:', xDocs.slice(0, 5));
+  const { data: twitterDocs, error: tError } = await supabase
+    .from('documents')
+    .select('id, title, url, source_vendor, type')
+    .or('source_vendor.eq.OTHER,source_vendor.eq.X(TWITTER)')
+    .limit(5);
+
+  if (tError) {
+      console.error('Twitter Query Error:', tError);
   } else {
-    console.log('No X(Twitter) related docs found.');
+      console.log('Sample Twitter/Other Docs:', twitterDocs);
   }
 }
 

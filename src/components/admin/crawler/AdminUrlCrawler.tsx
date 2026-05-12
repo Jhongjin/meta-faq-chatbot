@@ -75,6 +75,7 @@ const VENDOR_TO_DB_MAP: Record<string, string> = {
   "Kakao": "KAKAO",
   "Google": "GOOGLE",
   "X(Twitter)": "OTHER",
+  "X(TWITTER)": "X(TWITTER)",
 };
 
 // DB ENUM 값을 UI 벤더 이름으로 변환하는 역매핑
@@ -255,7 +256,7 @@ export function AdminUrlCrawler({ onSuccess, defaultVendor, onVendorChange }: Ad
       const dbVendorFilter: string[] = [];
       if (vendorFilter && vendorFilter.length > 0) {
         vendorFilter.forEach(v => {
-          if (v === "X(Twitter)") {
+          if (v === "X(Twitter)" || v === "X(TWITTER)") {
             dbVendorFilter.push("OTHER", "X(TWITTER)");
           } else {
             const dbVal = VENDOR_TO_DB_MAP[v];
@@ -273,15 +274,23 @@ export function AdminUrlCrawler({ onSuccess, defaultVendor, onVendorChange }: Ad
         // 일단 모든 문서를 가져온 후 프론트엔드에서 필터링
       }
 
-      const response = await fetch(`/api/admin/documents/list?${params.toString()}`, {
+      const fetchUrl = `/api/admin/documents/list?${params.toString()}`;
+      console.log(`[fetchExistingUrls] API 호출 시작: ${fetchUrl}`);
+      
+      const response = await fetch(fetchUrl, {
         cache: 'no-store',
         headers: {
           'Pragma': 'no-cache',
           'Cache-Control': 'no-cache'
         }
       });
+
       if (response.ok) {
         const data = await response.json();
+        console.log(`[fetchExistingUrls] API 응답 데이터:`, { 
+          documentCount: data.documents?.length || 0,
+          firstFew: data.documents?.slice(0, 3) 
+        });
         const map = new Map<string, string>();
         if (data.documents && Array.isArray(data.documents)) {
           // 벤더 필터 적용 (프론트엔드에서)

@@ -18,24 +18,33 @@ export async function GET(request: NextRequest) {
             }
         );
 
+        console.log(`🔍 [API/documents/list] Fetching documents: type=${type}`);
+        
         let query = supabase
             .from('documents')
-            .select('id, title, url, type, created_at, source_vendor')
+            .select('id, title, url, type, status, file_size, chunk_count, metadata, main_document_id, created_at, updated_at, source_vendor')
             .order('created_at', { ascending: false });
 
         if (type) {
             query = query.eq('type', type);
         }
 
-        // 삭제된 문서는 조회하지 않음 (hard delete이므로 실제로 삭제된 문서는 조회되지 않음)
-        // 하지만 혹시 모를 경우를 대비해 명시적으로 필터링하지 않음
-        // 삭제가 제대로 되었다면 자동으로 조회되지 않음
-        
         const { data: documents, error } = await query;
 
         if (error) {
-            console.error('Error fetching documents:', error);
+            console.error('❌ [API/documents/list] Error fetching documents:', error);
             return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
+        console.log(`✅ [API/documents/list] Successfully fetched ${documents?.length || 0} documents`);
+        
+        // URL 문서인 경우 첫 5개 샘플 로깅
+        if (type === 'url' && documents && documents.length > 0) {
+            console.log('📄 [API/documents/list] Sample URL documents:', documents.slice(0, 5).map(d =\u003e ({
+                id: d.id,
+                vendor: d.source_vendor,
+                url: d.url
+            })));
         }
 
         return NextResponse.json({ documents });

@@ -40,8 +40,11 @@ export class ClarificationService {
         const activeVendors = new Set(
             searchResults
                 .filter(r => r.similarity > 0.2)
-                .map(r => r.metadata?.source_vendor)
-                .filter(v => v && v !== 'OTHER')
+                .map(r => {
+                    const v = r.metadata?.source_vendor;
+                    return (v === 'OTHER') ? 'X(TWITTER)' : v;
+                })
+                .filter(v => v)
         );
 
         if (activeVendors.size <= 1 || (currentVendorFilter && currentVendorFilter.length === 1)) {
@@ -259,7 +262,10 @@ export class ClarificationService {
 
             // [추가] 상위 N개 벤더 편향 체크 (Top 3 Bias)
             // 상위 3개 결과가 모두 동일한 벤더에서 왔다면 하향 임계값에 걸린 다른 벤더 노이즈 무시
-            const top3Vendors = new Set(searchResults.slice(0, 3).map(r => r.metadata?.source_vendor).filter(v => v && v !== 'OTHER'));
+            const top3Vendors = new Set(searchResults.slice(0, 3).map(r => {
+                const v = r.metadata?.source_vendor;
+                return (v === 'OTHER') ? 'X(TWITTER)' : v;
+            }).filter(v => v));
             if (top3Vendors.size === 1 && vendors.size > 1) {
                 const dominantVendor = Array.from(top3Vendors)[0];
                 console.log(`[Clarification] Dominant vendor detected (${dominantVendor}) in top 3, skipping vendor clarification.`);

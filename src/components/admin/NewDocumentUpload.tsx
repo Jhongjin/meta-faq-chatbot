@@ -28,7 +28,8 @@ const VENDOR_TO_DB_MAP: Record<string, string> = {
   "Naver": "NAVER",
   "Kakao": "KAKAO",
   "Google": "GOOGLE",
-  "X(Twitter)": "OTHER", // X/Twitter는 OTHER로 매핑
+  "X(Twitter)": "OTHER",
+  "X(TWITTER)": "X(TWITTER)",
 };
 
 // 벤더 정규화 함수

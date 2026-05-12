@@ -82,6 +82,7 @@ const VENDOR_TO_DB_MAP: Record<string, string> = {
     "Kakao": "KAKAO",
     "Google": "GOOGLE",
     "X(Twitter)": "OTHER",
+    "X(TWITTER)": "X(TWITTER)",
 };
 
 // DB ENUM 값을 UI 벤더 이름으로 변환하는 역매핑
@@ -98,7 +99,7 @@ const DB_TO_VENDOR_MAP: Record<string, string> = {
 function convertVendorsToDB(vendors: string[]): string[] {
     const dbVendors: string[] = [];
     vendors.forEach(v => {
-        if (v === "X(Twitter)") {
+        if (v === "X(Twitter)" || v === "X(TWITTER)") {
             dbVendors.push("OTHER", "X(TWITTER)");
         } else {
             const dbVal = VENDOR_TO_DB_MAP[v];

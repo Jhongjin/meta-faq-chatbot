@@ -15,15 +15,25 @@ async function checkVendors() {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const { data, error } = await supabase
+  const { data: allDocs, error } = await supabase
     .from('documents')
-    .select('source_vendor, count()', { count: 'exact', head: false })
-    .group('source_vendor');
+    .select('source_vendor');
 
   if (error) {
     console.error('Error fetching vendors:', error);
     return;
   }
+
+  const counts: Record<string, number> = {};
+  allDocs.forEach(doc => {
+    const vendor = doc.source_vendor || 'UNKNOWN';
+    counts[vendor] = (counts[vendor] || 0) + 1;
+  });
+
+  const data = Object.entries(counts).map(([vendor, count]) => ({
+    source_vendor: vendor,
+    count
+  }));
 
   console.log('Documents per vendor:');
   console.table(data);
