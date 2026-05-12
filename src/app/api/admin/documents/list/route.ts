@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         
         // URL 문서인 경우 첫 5개 샘플 로깅
         if (type === 'url' && documents && documents.length > 0) {
-            console.log('📄 [API/documents/list] Sample URL documents:', documents.slice(0, 5).map(d =\u003e ({
+            console.log('📄 [API/documents/list] Sample URL documents:', documents.slice(0, 5).map(d => ({
                 id: d.id,
                 vendor: d.source_vendor,
                 url: d.url
