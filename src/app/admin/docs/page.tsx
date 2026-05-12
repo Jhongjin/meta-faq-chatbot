@@ -233,6 +233,14 @@ function AdminDocsPageContent() {
 
             const { data: documents, error } = await q;
 
+            if (selectedVendors.includes("X(Twitter)")) {
+                console.log("[AdminDocs] X(Twitter) Fetch Results:", {
+                    dbVendors,
+                    count: documents?.length,
+                    sample: documents?.slice(0, 2)
+                });
+            }
+
             if (error) {
                 console.error('문서 조회 오류:', error);
                 throw new Error('문서 조회 실패');
@@ -514,6 +522,8 @@ function AdminDocsPageContent() {
 
     const documentGroups = useMemo(() => {
         if (deferredActiveTab !== "crawling") return [];
+
+        console.log(`[DocumentGrouping] Processing ${filteredDocs.length} docs for tab: ${deferredActiveTab}`);
 
         // URL 정규화 함수 (trailing slash 제거, 소문자 변환)
         const normalizeUrlForGrouping = (url: string | null | undefined): string | null => {

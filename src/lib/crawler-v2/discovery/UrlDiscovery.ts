@@ -779,7 +779,6 @@ export class UrlDiscovery {
                     const lowQualityPaths = [
                       '/rules/', '/rule/', '/legal/', '/terms/', '/privacy/', '/policy/',
                       '/disclaimer/', '/service/', '/agreement/', '/tos/',
-                      '/help/', '/support/', '/contact/', '/faq/',
                       '/login/', '/signin/', '/signup/', '/register/',
                       '/logout/', '/account/', '/profile/', '/settings/',
                       '/chat/', '/customer/', '/member/', '/membership/'

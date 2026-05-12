@@ -109,6 +109,7 @@ ${questionKeywords.length > 0 ? `**질문 핵심 키워드:** ${questionKeywords
       NAVER: '- Naver: 네이버 광고 플랫폼의 특정 기능과 정책을 정확히 반영하세요.',
       KAKAO: '- Kakao: 카카오 비즈보드의 특정 기능과 정책을 정확히 반영하세요.',
       GOOGLE: '- Google: Google Ads의 특정 기능과 정책을 정확히 반영하세요.',
+      OTHER: '- X(Twitter): X(Twitter) 광고 정책 및 운영 가이드를 정확히 반영하세요.',
     };
 
     const guidelines = vendors
