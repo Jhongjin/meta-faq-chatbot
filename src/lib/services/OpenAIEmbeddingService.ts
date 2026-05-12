@@ -20,10 +20,9 @@ export interface OpenAIEmbeddingOptions {
 export class OpenAIEmbeddingService {
   private client: OpenAI | null = null;
   private apiKey: string | null = null;
-  private defaultModel: string = 'text-embedding-3-large';
-  // DB chunks 테이블의 embedding 컬럼이 1024 차원으로 정의되어 있으므로 1024 사용
-  // OpenAI text-embedding-3-large는 최대 3072차원이지만, 1024로 고정하여 호환성 유지
-  private defaultDimension: number = 1024;
+  private defaultModel: string = 'text-embedding-3-small';
+  // DB chunks 테이블의 embedding 컬럼이 1536 차원으로 정의되어 있으므로 1536 사용
+  private defaultDimension: number = 1536;
 
   constructor() {
     this.apiKey =
@@ -92,7 +91,6 @@ export class OpenAIEmbeddingService {
       const response = await this.client.embeddings.create({
         model: model,
         input: processedText,
-        dimensions: this.defaultDimension, // text-embedding-3-small의 기본 차원
       });
 
       if (!response.data || response.data.length === 0) {
