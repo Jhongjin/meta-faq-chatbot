@@ -2725,10 +2725,10 @@ export class RAGProcessor {
       };
 
       // 1단계: 벡터 검색 (임베딩 생성 포함, 비동기 래퍼)
+      let queryEmbedding: number[] = [];
       const vectorSearchPromise = (async () => {
         // 쿼리 임베딩 생성
         console.log('🧠 쿼리 임베딩 생성 중...');
-        let queryEmbedding: number[];
 
         if (this.embeddingProvider === 'openai') {
           if (!this.openAIEmbeddingService || !this.openAIEmbeddingService.initialized) {
