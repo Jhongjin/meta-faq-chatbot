@@ -2698,43 +2698,6 @@ export class RAGProcessor {
         return [];
       }
 
-      // 쿼리 임베딩 생성 (BGE-M3 또는 OpenAI만 사용)
-      console.log('🧠 쿼리 임베딩 생성 중...');
-      let queryEmbedding: number[];
-
-      // OpenAI Embeddings API 사용
-      if (this.embeddingProvider === 'openai') {
-        if (!this.openAIEmbeddingService || !this.openAIEmbeddingService.initialized) {
-          throw new Error('OpenAI Embeddings API가 초기화되지 않았습니다. OPENAI_API_KEY 환경 변수를 확인하세요.');
-        }
-
-        console.log('🔄 OpenAI로 쿼리 임베딩 생성 중...');
-        const result = await this.openAIEmbeddingService.generateEmbedding(searchQuery);
-        queryEmbedding = result.embedding;
-        console.log('✅ OpenAI 쿼리 임베딩 생성 완료:', queryEmbedding.length, '차원');
-      } else {
-        // BGE-M3 사용
-        const embeddingService = await this.initializeEmbeddingService();
-
-        if (!embeddingService) {
-          throw new Error('BGE-M3 임베딩 서비스 초기화 실패');
-        }
-
-        console.log('🔄 BGE-M3로 쿼리 임베딩 생성 중...');
-        const result = await embeddingService.generateEmbedding(searchQuery, {
-          model: 'bge-m3',
-          normalize: true
-        });
-        queryEmbedding = result.embedding;
-
-        // 차원 확인
-        const embeddingDim = parseInt(process.env.EMBEDDING_DIM || '1024');
-        if (queryEmbedding.length !== embeddingDim) {
-          console.warn(`⚠️ 쿼리 임베딩 차원 불일치: ${queryEmbedding.length} (예상: ${embeddingDim})`);
-        }
-        console.log('✅ BGE-M3 쿼리 임베딩 생성 완료:', queryEmbedding.length, '차원');
-      }
-
       // 벤더 필터를 대문자로 변환 (ENUM과 매칭)
       // X(Twitter)는 OTHER와 X(TWITTER) 모두 포함하여 검색
       const normalizedVendorFilter = vendorFilter && vendorFilter.length > 0
@@ -2750,8 +2713,8 @@ export class RAGProcessor {
       // 가중치 기반 검색 사용 (performVectorSearch 내부에서 폴백 처리됨)
       const useWeightedSearch = true;
 
-      // 하이브리드 검색: 벡터 검색과 키워드 검색을 동시에 수행
-      console.log('🔀 하이브리드 검색 시작: 벡터 + 키워드 검색 결합');
+      // 하이브리드 검색: 벡터 검색과 키워드 검색을 병렬(Promise.all) 수행
+      console.log('🔀 하이브리드 검색 시작: 임베딩 생성/벡터 검색과 키워드 검색 병렬 실행');
 
       // 검색 임계값 상수 정의 (더 공격적인 Fallback 전략)
       const SEARCH_THRESHOLDS = {
@@ -2761,23 +2724,59 @@ export class RAGProcessor {
         minimum: 0.05      // 최소 임계값
       };
 
-      // 1단계: 벡터 검색 (기본 임계값 0.6)
-      const vectorChunks = await this.performVectorSearch(
-        supabase,
-        queryEmbedding,
-        limit * 3, // 더 많은 결과 가져오기 (2 → 3)
-        normalizedVendorFilter,
-        SEARCH_THRESHOLDS.primary,
-        useWeightedSearch
-      );
+      // 1단계: 벡터 검색 (임베딩 생성 포함, 비동기 래퍼)
+      const vectorSearchPromise = (async () => {
+        // 쿼리 임베딩 생성
+        console.log('🧠 쿼리 임베딩 생성 중...');
+        let queryEmbedding: number[];
 
-      // 2단계: 키워드 검색 (동시 수행, 확장된 쿼리 사용)
-      const keywordChunks = await this.performKeywordSearch(
+        if (this.embeddingProvider === 'openai') {
+          if (!this.openAIEmbeddingService || !this.openAIEmbeddingService.initialized) {
+            throw new Error('OpenAI Embeddings API가 초기화되지 않았습니다. OPENAI_API_KEY 환경 변수를 확인하세요.');
+          }
+          console.log('🔄 OpenAI로 쿼리 임베딩 생성 중...');
+          const result = await this.openAIEmbeddingService.generateEmbedding(searchQuery);
+          queryEmbedding = result.embedding;
+          console.log('✅ OpenAI 쿼리 임베딩 생성 완료:', queryEmbedding.length, '차원');
+        } else {
+          const embeddingService = await this.initializeEmbeddingService();
+          if (!embeddingService) {
+            throw new Error('BGE-M3 임베딩 서비스 초기화 실패');
+          }
+          console.log('🔄 BGE-M3로 쿼리 임베딩 생성 중...');
+          const result = await embeddingService.generateEmbedding(searchQuery, {
+            model: 'bge-m3',
+            normalize: true
+          });
+          queryEmbedding = result.embedding;
+
+          const embeddingDim = parseInt(process.env.EMBEDDING_DIM || '1024');
+          if (queryEmbedding.length !== embeddingDim) {
+            console.warn(`⚠️ 쿼리 임베딩 차원 불일치: ${queryEmbedding.length} (예상: ${embeddingDim})`);
+          }
+          console.log('✅ BGE-M3 쿼리 임베딩 생성 완료:', queryEmbedding.length, '차원');
+        }
+
+        return this.performVectorSearch(
+          supabase,
+          queryEmbedding,
+          limit * 3, // 더 많은 결과 가져오기 (2 → 3)
+          normalizedVendorFilter,
+          SEARCH_THRESHOLDS.primary,
+          useWeightedSearch
+        );
+      })();
+
+      // 2단계: 키워드 검색
+      const keywordSearchPromise = this.performKeywordSearch(
         searchQuery, // 확장된 쿼리 사용
         limit * 3, // 더 많은 결과 가져오기 (2 → 3)
         supabase,
         normalizedVendorFilter
       );
+
+      // 병렬 대기
+      const [vectorChunks, keywordChunks] = await Promise.all([vectorSearchPromise, keywordSearchPromise]);
 
       // 3단계: 하이브리드 검색 결과 결합 및 재랭킹
       const { combineHybridSearchResults } = await import('./search/HybridSearchService');
