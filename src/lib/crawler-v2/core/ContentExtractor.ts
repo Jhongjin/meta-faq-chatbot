@@ -48,7 +48,7 @@ export class ContentExtractor {
       const title = await this.extractTitle(page, html, config.titleStrategy || 'auto', url);
 
       // 콘텐츠 추출 (HTML 정리 포함)
-      const rawContent = await this.extractContent(page, html, config);
+      const rawContent = await this.extractContent(page, html, config, url);
 
       // 마크다운 변환 적용
       const markdownContent = htmlToMarkdown(rawContent);
@@ -1433,9 +1433,32 @@ export class ContentExtractor {
   private async extractContent(
     page: Page,
     html: string,
-    config: ContentExtractionOptions
+    config: ContentExtractionOptions,
+    url?: string
   ): Promise<string> {
     try {
+      const isNaver = url ? url.toLowerCase().includes('naver.com') : false;
+
+      if (isNaver) {
+        const naverContent = await page.evaluate((removeSelectors) => {
+          // 불필요한 요소 제거
+          const elementsToRemove = document.querySelectorAll(removeSelectors.join(','));
+          elementsToRemove.forEach(el => el.remove());
+
+          const postWrap = document.querySelector('.post_wrap');
+          if (postWrap) {
+            return postWrap.innerHTML || '';
+          }
+          return null;
+        }, config.removeSelectors || []);
+
+        if (naverContent !== null) {
+          console.log(`✅ [ContentExtractor] 네이버 특화 본문 추출 성공 (.post_wrap): ${naverContent.length}자`);
+          return naverContent.replace(/\s+/g, ' ').trim();
+        } else {
+          console.warn(`⚠️ post_wrap 요소 없음, fallback 적용: ${url}`);
+        }
+      }
       // 페이지에서 콘텐츠 영역 찾기
       const content = await page.evaluate((selectors, removeSelectors) => {
         // 불필요한 요소 제거
