@@ -11,80 +11,83 @@ import { useToast } from "@/hooks/use-toast";
 
 // 커스텀 마크다운 컴포넌트
 const customMarkdownComponents = {
-  // 제목 스타일링
   h1: ({ children }: { children?: React.ReactNode }) => (
-    <h1 className="text-xl font-extrabold text-[#7DD3FC] mb-4 mt-6 border-b border-blue-500/30 pb-2 tracking-tight">
+    <h1 className="text-base font-bold text-white mb-3 mt-6 pb-2 border-b border-white/10 tracking-tight">
       {children}
     </h1>
   ),
   h2: ({ children }: { children?: React.ReactNode }) => (
-    <h2 className="text-lg font-bold text-[#38BDF8] mb-3 mt-5 border-l-4 border-blue-400 pl-4 py-1 bg-blue-500/5 rounded-r-md">
+    <h2 className="text-[13px] font-semibold text-sky-300 mb-2 mt-5 uppercase tracking-widest opacity-80">
       {children}
     </h2>
   ),
   h3: ({ children }: { children?: React.ReactNode }) => (
-    <h3 className="text-[15px] sm:text-[16px] font-bold text-[#bae6fd] mb-2.5 mt-5 flex items-center bg-white/5 px-3 py-1.5 rounded-sm border-l-4 border-[#38BDF8] shadow-sm tracking-tight">
+    <h3 className="text-[14px] font-semibold text-white/90 mb-2 mt-4">
       {children}
     </h3>
   ),
   h4: ({ children }: { children?: React.ReactNode }) => (
-    <h4 className="text-[14px] sm:text-[15px] font-semibold text-blue-50 mb-2 mt-4 underline underline-offset-4 decoration-blue-500/30">
+    <h4 className="text-[13px] font-medium text-gray-300 mb-1.5 mt-3">
       {children}
     </h4>
   ),
-  // 강조 텍스트
   strong: ({ children }: { children?: React.ReactNode }) => (
-    <strong className="font-bold text-yellow-300">
+    <strong className="font-semibold text-white">
       {children}
     </strong>
   ),
   em: ({ children }: { children?: React.ReactNode }) => (
-    <em className="italic text-green-300">
+    <em className="not-italic text-sky-300/90">
       {children}
     </em>
   ),
-  // 코드 블록
   code: ({ children, className }: { children?: React.ReactNode; className?: string }) => {
     const isInline = !className;
     if (isInline) {
       return (
-        <code className="bg-gray-700 text-yellow-200 px-1.5 py-0.5 rounded text-xs font-mono">
+        <code className="bg-white/10 text-sky-200 px-1.5 py-0.5 rounded text-[12px] font-mono">
           {children}
         </code>
       );
     }
-    return (
-      <code className={className}>
-        {children}
-      </code>
-    );
+    return <code className={className}>{children}</code>;
   },
   pre: ({ children }: { children?: React.ReactNode }) => (
-    <pre className="bg-gray-800 border border-gray-600 rounded-lg p-4 overflow-x-auto">
+    <pre className="bg-black/30 border border-white/10 rounded-lg p-4 overflow-x-auto my-3">
       {children}
     </pre>
   ),
-  // 리스트
   ul: ({ children }: { children?: React.ReactNode }) => (
-    <ul className="space-y-2 my-4 pl-6 list-disc marker:text-blue-400">
+    <ul className="my-2.5 pl-4 space-y-1.5">
       {children}
     </ul>
   ),
   ol: ({ children }: { children?: React.ReactNode }) => (
-    <ol className="space-y-2 my-4 pl-6 list-decimal marker:text-blue-400 marker:font-bold text-gray-200">
+    <ol className="my-2.5 pl-5 space-y-1.5 list-decimal marker:text-gray-400 marker:text-[13px] marker:font-medium">
       {children}
     </ol>
   ),
-  li: ({ children }: { children?: React.ReactNode }) => (
-    <li className="text-[14px] text-gray-200 leading-relaxed mb-1 last:mb-0 pl-1">
-      {children}
-    </li>
-  ),
-  // 링크
+  li: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => {
+    // ol 안의 li는 list-item 그대로 (번호 유지), ul 안은 커스텀 dot
+    const isOrdered = (props as any)?.node?.parent?.tagName === 'ol';
+    if (isOrdered) {
+      return (
+        <li className="text-[14px] text-gray-200 leading-relaxed pl-1">
+          {children}
+        </li>
+      );
+    }
+    return (
+      <li className="text-[14px] text-gray-200 leading-relaxed flex gap-2 items-start list-none">
+        <span className="mt-[7px] w-1.5 h-1.5 rounded-full bg-sky-400/70 flex-shrink-0" />
+        <span>{children}</span>
+      </li>
+    );
+  },
   a: ({ href, children, ...props }: { href?: string; children?: React.ReactNode;[key: string]: any }) => {
     if (href?.startsWith('citation:')) {
       return (
-        <span className="inline-flex items-center bg-blue-500/10 text-[#38BDF8] border border-blue-500/20 font-bold text-[9px] sm:text-[10px] mx-0.5 px-1.5 py-0 rounded-full opacity-90 cursor-default shadow-sm hover:bg-blue-500/20 transition-all">
+        <span className="inline-flex items-center bg-sky-500/15 text-sky-300 border border-sky-500/25 font-medium text-[10px] mx-0.5 px-1.5 py-0 rounded-full cursor-default">
           {children}
         </span>
       );
@@ -94,67 +97,48 @@ const customMarkdownComponents = {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-400 hover:text-blue-300 underline decoration-blue-400/50 hover:decoration-blue-300 transition-colors"
+        className="text-sky-400 hover:text-sky-300 underline underline-offset-2 decoration-sky-400/40 transition-colors"
         {...props}
       >
         {children}
       </a>
     );
   },
-  // 인용문
   blockquote: ({ children }: { children?: React.ReactNode }) => (
-    <blockquote className="border-l-2 border-[#38BDF8] pl-4 py-2 my-4 bg-blue-900/20 rounded-r-md">
-      <div className="text-[#E0F2FE] italic text-sm leading-relaxed">
-        {children}
-      </div>
+    <blockquote className="border-l-2 border-sky-400/50 pl-4 py-1 my-3 text-gray-300/80 italic text-[14px] leading-relaxed">
+      {children}
     </blockquote>
   ),
-  // 구분선
   hr: () => (
-    <hr className="my-6 border-gray-600" />
+    <hr className="my-5 border-white/10" />
   ),
-  // 테이블
   table: ({ children }: { children?: React.ReactNode }) => (
-    <div className="overflow-x-auto my-4">
-      <table className="min-w-full border border-gray-600 rounded-lg">
-        {children}
-      </table>
+    <div className="overflow-x-auto my-4 rounded-lg border border-white/10">
+      <table className="min-w-full">{children}</table>
     </div>
   ),
   thead: ({ children }: { children?: React.ReactNode }) => (
-    <thead className="bg-gray-700">
-      {children}
-    </thead>
+    <thead className="bg-white/5">{children}</thead>
   ),
   tbody: ({ children }: { children?: React.ReactNode }) => (
-    <tbody className="divide-y divide-gray-600">
-      {children}
-    </tbody>
+    <tbody className="divide-y divide-white/5">{children}</tbody>
   ),
   tr: ({ children }: { children?: React.ReactNode }) => (
-    <tr className="hover:bg-gray-700/50">
-      {children}
-    </tr>
+    <tr className="hover:bg-white/5 transition-colors">{children}</tr>
   ),
   th: ({ children }: { children?: React.ReactNode }) => (
-    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-200 uppercase tracking-wider">
+    <th className="px-4 py-2.5 text-left text-[12px] font-semibold text-gray-300 uppercase tracking-wider">
       {children}
     </th>
   ),
   td: ({ children }: { children?: React.ReactNode }) => (
-    <td className="px-4 py-2 text-sm text-gray-300">
-      {children}
-    </td>
+    <td className="px-4 py-2.5 text-[13px] text-gray-300">{children}</td>
   ),
-  // 단락
-  p: ({ children }: { children?: React.ReactNode }) => {
-    // 특정 키워드로 시작하는 단락(핵심 답변 등)에 대해 특별 스타일 적용 검토 가능
-    return (
-      <p className="mb-4 text-[14px] text-gray-200 leading-[1.75] tracking-tight last:mb-0">
-        {children}
-      </p>
-    );
-  },
+  p: ({ children }: { children?: React.ReactNode }) => (
+    <p className="mb-3 text-[14px] text-gray-200 leading-[1.8] last:mb-0">
+      {children}
+    </p>
+  ),
 };
 
 interface Source {
