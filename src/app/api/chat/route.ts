@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 import { ragProcessor, ChunkData } from '@/lib/services/RAGProcessor';
-import { crossEncoderRerank } from '@/lib/services/search/CrossEncoderReranker';
+import { crossEncoderRerankAsync } from '@/lib/services/search/CrossEncoderReranker';
 import { promptBuilder, SearchResult as PromptSearchResult } from '@/lib/services/prompting/PromptBuilder';
 import { clarificationService, ClarificationResult } from '@/lib/services/search/ClarificationService';
 
