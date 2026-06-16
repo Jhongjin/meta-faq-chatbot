@@ -28,45 +28,36 @@ export interface CrossEncoderRerankingOptions {
 let rerankerPipeline: any = null;
 let rerankerLoading: Promise<any> | null = null;
 
+/** Vercel/서버리스 환경 여부 */
+const IS_SERVERLESS = process.env.VERCEL === '1' || process.env.VERCEL !== undefined;
+
 /**
- * Cross-Encoder 파이프라인 로드 (싱글톤)
+ * Cross-Encoder 파이프라인 로드 (싱글톤, 로컬 개발 전용)
  */
 async function getRerankerPipeline(): Promise<any> {
   if (rerankerPipeline) return rerankerPipeline;
-
-  // 동시 다중 호출 방지
   if (rerankerLoading) return rerankerLoading;
 
   rerankerLoading = (async () => {
     console.log('📦 Cross-Encoder 모델 로딩 중: Xenova/bge-reranker-base');
-
-    const isVercel = process.env.VERCEL === '1';
-    if (isVercel) {
-      process.env.HF_HOME = '/tmp/.cache';
-      process.env.TRANSFORMERS_CACHE = '/tmp/.cache/transformers';
-    }
-
     const { pipeline } = await import('@xenova/transformers');
-    rerankerPipeline = await pipeline('text-classification', 'Xenova/bge-reranker-base', {
-      cache_dir: isVercel ? '/tmp/.cache/transformers' : undefined,
-    });
-
+    rerankerPipeline = await pipeline('text-classification', 'Xenova/bge-reranker-base');
     console.log('✅ Cross-Encoder 모델 로딩 완료');
     return rerankerPipeline;
   })();
 
   try {
-    const result = await rerankerLoading;
-    return result;
+    return await rerankerLoading;
   } catch (err) {
-    rerankerLoading = null; // 실패 시 재시도 허용
+    rerankerLoading = null;
     throw err;
   }
 }
 
 /**
- * 실제 ML Cross-Encoder 재랭킹 (비동기)
- * 실패 시 규칙 기반 fallback 자동 적용
+ * Cross-Encoder 재랭킹 (비동기)
+ * - 로컬 개발: Xenova/bge-reranker-base ML 모델 사용
+ * - Vercel/서버리스: 규칙 기반 fallback 즉시 사용 (모델 다운로드 타임아웃 방지)
  */
 export async function crossEncoderRerankAsync(
   chunks: ChunkData[],
@@ -74,23 +65,22 @@ export async function crossEncoderRerankAsync(
 ): Promise<ChunkData[]> {
   if (chunks.length === 0) return chunks;
 
-  const { query } = options;
+  // Vercel 서버리스 환경에서는 모델 로드 생략 (25초 타임아웃 방지)
+  if (IS_SERVERLESS) {
+    console.log('🎯 Cross-Encoder 재랭킹 (규칙 기반 - 서버리스 환경)');
+    return crossEncoderRerank(chunks, options);
+  }
 
   try {
     const reranker = await getRerankerPipeline();
 
-    // 쿼리-문서 쌍 생성 (내용 512자 제한)
     const inputs = chunks.map(chunk => ({
-      text: query,
+      text: options.query,
       text_pair: (chunk.content || '').substring(0, 512),
     }));
 
-    const scores = await reranker(inputs, {
-      function_to_apply: 'sigmoid',
-      batch_size: 8,
-    });
+    const scores = await reranker(inputs, { function_to_apply: 'sigmoid', batch_size: 8 });
 
-    // 점수 부착 후 내림차순 정렬
     const scored = chunks.map((chunk, i) => ({
       ...chunk,
       similarity: Array.isArray(scores) ? (scores[i]?.score ?? 0) : (scores?.score ?? 0),
