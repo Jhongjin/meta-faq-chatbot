@@ -261,6 +261,7 @@ ${questionKeywords.length > 0 ? `**질문 핵심 키워드:** ${questionKeywords
   private isSimpleQuery(query: string): boolean {
     const complexKeywords = [
       '방법', '절차', '가이드', '차이', '비교', '설명', '특징', '이유', '어떻게',
+      '목록', '종류', '유형', '무엇', '어떤', '어떻게', '알려', '정리',
     ];
     if (complexKeywords.some((k) => query.includes(k))) return false;
 
