@@ -1,9 +1,12 @@
 /**
- * Cross-Encoder 스타일 재랭킹 서비스
- * 쿼리와 문서 간의 관련성을 더 정교하게 계산하여 검색 결과를 재정렬
- * 
- * Cross-Encoder는 쿼리와 문서를 동시에 입력받아 관련성을 평가하는 모델입니다.
- * 실제 Cross-Encoder 모델을 사용하지 않고도, 다양한 신호를 결합하여 관련성을 평가합니다.
+ * Cross-Encoder 재랭킹 서비스
+ *
+ * crossEncoderRerankAsync: @xenova/transformers 기반 실제 ML 모델 사용
+ *   - 모델: Xenova/bge-reranker-base (다국어 지원, ~22MB ONNX)
+ *   - 쿼리-문서 쌍을 신경망이 직접 스코어링
+ *   - 실패 시 crossEncoderRerank(rule-based)로 자동 fallback
+ *
+ * crossEncoderRerank: 규칙 기반 fallback (동기, 항상 사용 가능)
  */
 
 import type { ChunkData } from '../RAGProcessor';
@@ -11,25 +14,90 @@ import type { ChunkData } from '../RAGProcessor';
 export interface CrossEncoderRerankingOptions {
   query: string;
   queryKeywords?: string[];
-  /**
-   * 가중치 설정
-   */
   weights?: {
-    vectorSimilarity?: number; // 벡터 유사도 가중치 (기본: 0.5)
-    keywordMatch?: number; // 키워드 매칭 가중치 (기본: 0.2)
-    sectionTitle?: number; // 섹션 제목 일치 가중치 (기본: 0.15)
-    documentTitle?: number; // 문서 제목 일치 가중치 (기본: 0.1)
-    keywordDensity?: number; // 키워드 밀도 가중치 (기본: 0.05)
+    vectorSimilarity?: number;
+    keywordMatch?: number;
+    sectionTitle?: number;
+    documentTitle?: number;
+    keywordDensity?: number;
   };
-  /**
-   * 최소 관련성 점수 (이 점수 미만은 제외)
-   */
   minRelevanceScore?: number;
 }
 
+// 싱글톤 모델 캐시 (첫 번째 호출 시 로드)
+let rerankerPipeline: any = null;
+let rerankerLoading: Promise<any> | null = null;
+
+/** Vercel/서버리스 환경 여부 */
+const IS_SERVERLESS = process.env.VERCEL === '1' || process.env.VERCEL !== undefined;
+
 /**
- * TF-IDF 기반 키워드 점수 계산
+ * Cross-Encoder 파이프라인 로드 (싱글톤, 로컬 개발 전용)
  */
+async function getRerankerPipeline(): Promise<any> {
+  if (rerankerPipeline) return rerankerPipeline;
+  if (rerankerLoading) return rerankerLoading;
+
+  rerankerLoading = (async () => {
+    console.log('📦 Cross-Encoder 모델 로딩 중: Xenova/bge-reranker-base');
+    const { pipeline } = await import('@xenova/transformers');
+    rerankerPipeline = await pipeline('text-classification', 'Xenova/bge-reranker-base');
+    console.log('✅ Cross-Encoder 모델 로딩 완료');
+    return rerankerPipeline;
+  })();
+
+  try {
+    return await rerankerLoading;
+  } catch (err) {
+    rerankerLoading = null;
+    throw err;
+  }
+}
+
+/**
+ * Cross-Encoder 재랭킹 (비동기)
+ * - 로컬 개발: Xenova/bge-reranker-base ML 모델 사용
+ * - Vercel/서버리스: 규칙 기반 fallback 즉시 사용 (모델 다운로드 타임아웃 방지)
+ */
+export async function crossEncoderRerankAsync(
+  chunks: ChunkData[],
+  options: CrossEncoderRerankingOptions
+): Promise<ChunkData[]> {
+  if (chunks.length === 0) return chunks;
+
+  // Vercel 서버리스 환경에서는 모델 로드 생략 (25초 타임아웃 방지)
+  if (IS_SERVERLESS) {
+    console.log('🎯 Cross-Encoder 재랭킹 (규칙 기반 - 서버리스 환경)');
+    return crossEncoderRerank(chunks, options);
+  }
+
+  try {
+    const reranker = await getRerankerPipeline();
+
+    const inputs = chunks.map(chunk => ({
+      text: options.query,
+      text_pair: (chunk.content || '').substring(0, 512),
+    }));
+
+    const scores = await reranker(inputs, { function_to_apply: 'sigmoid', batch_size: 8 });
+
+    const scored = chunks.map((chunk, i) => ({
+      ...chunk,
+      similarity: Array.isArray(scores) ? (scores[i]?.score ?? 0) : (scores?.score ?? 0),
+    }));
+
+    const result = scored.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
+    console.log(`✅ ML Cross-Encoder 재랭킹 완료: ${result.length}개`);
+    return result;
+
+  } catch (error) {
+    console.warn('⚠️ ML Cross-Encoder 실패, 규칙 기반 fallback 사용:', (error as Error).message);
+    return crossEncoderRerank(chunks, options);
+  }
+}
+
+// ─── 규칙 기반 Fallback (동기) ───────────────────────────────────────────────
+
 function calculateTFIDFScore(
   queryKeywords: string[],
   content: string,
@@ -40,84 +108,46 @@ function calculateTFIDFScore(
   const contentLower = content.toLowerCase();
   const titleLower = documentTitle.toLowerCase();
   const combinedText = `${titleLower} ${contentLower}`;
-
-  let totalScore = 0;
-  const wordCounts = new Map<string, number>();
   const totalWords = combinedText.split(/\s+/).length;
 
-  // 각 키워드의 빈도 계산
+  let totalScore = 0;
   for (const keyword of queryKeywords) {
     const keywordLower = keyword.toLowerCase();
     const regex = new RegExp(`\\b${keywordLower}\\b`, 'gi');
     const matches = combinedText.match(regex);
     const frequency = matches ? matches.length : 0;
-    
+
     if (frequency > 0) {
-      // TF (Term Frequency): 키워드 빈도 / 전체 단어 수
       const tf = frequency / totalWords;
-      
-      // 제목에 있으면 가중치 증가
       const titleBoost = titleLower.includes(keywordLower) ? 2.0 : 1.0;
-      
-      // IDF는 간단히 역빈도로 근사 (실제로는 전체 문서 집합 필요)
-      // 여기서는 키워드 길이와 중요도를 고려
       const idf = keyword.length > 3 ? 1.5 : 1.0;
-      
-      const keywordScore = tf * idf * titleBoost;
-      wordCounts.set(keyword, keywordScore);
-      totalScore += keywordScore;
+      totalScore += tf * idf * titleBoost;
     }
   }
 
-  // 정규화 (0-1 범위)
   return Math.min(1.0, totalScore / queryKeywords.length);
 }
 
-/**
- * 문장 유사도 점수 계산 (간단한 Jaccard 유사도)
- */
 function calculateSentenceSimilarity(query: string, content: string): number {
-  const queryWords = new Set(
-    query.toLowerCase()
-      .split(/\s+/)
-      .filter(w => w.length > 1)
-  );
-  
-  const contentWords = new Set(
-    content.toLowerCase()
-      .split(/\s+/)
-      .filter(w => w.length > 1)
-  );
+  const queryWords = new Set(query.toLowerCase().split(/\s+/).filter(w => w.length > 1));
+  const contentWords = new Set(content.toLowerCase().split(/\s+/).filter(w => w.length > 1));
 
   if (queryWords.size === 0 || contentWords.size === 0) return 0;
 
-  // 교집합
   const intersection = new Set([...queryWords].filter(w => contentWords.has(w)));
-  
-  // 합집합
   const union = new Set([...queryWords, ...contentWords]);
-
-  // Jaccard 유사도
   return intersection.size / union.size;
 }
 
-/**
- * 키워드 밀도 계산 (쿼리 키워드가 콘텐츠에 포함된 비율)
- */
 function calculateKeywordDensity(queryKeywords: string[], content: string): number {
   if (queryKeywords.length === 0) return 0;
-
   const contentLower = content.toLowerCase();
-  const matchedKeywords = queryKeywords.filter(keyword =>
-    contentLower.includes(keyword.toLowerCase())
-  ).length;
-
-  return matchedKeywords / queryKeywords.length;
+  const matched = queryKeywords.filter(kw => contentLower.includes(kw.toLowerCase())).length;
+  return matched / queryKeywords.length;
 }
 
 /**
- * Cross-Encoder 스타일 재랭킹
- * 다양한 신호를 결합하여 관련성 점수를 계산하고 재정렬
+ * 규칙 기반 Cross-Encoder 재랭킹 (동기, fallback용)
  */
 export function crossEncoderRerank(
   chunks: ChunkData[],
@@ -127,10 +157,9 @@ export function crossEncoderRerank(
     query,
     queryKeywords = [],
     weights = {},
-    minRelevanceScore = 0.05, // 최소 관련성 점수 (더 많은 후보 확보를 위해 하향 조정)
+    minRelevanceScore = 0.05,
   } = options;
 
-  // 기본 가중치 최적화
   const {
     vectorSimilarity = 0.35,
     keywordMatch = 0.35,
@@ -139,84 +168,50 @@ export function crossEncoderRerank(
     keywordDensity = 0.05,
   } = weights;
 
-  // 키워드 추출
   const keywords = queryKeywords.length > 0
     ? queryKeywords
-    : query
-        .toLowerCase()
-        .split(/\s+/)
-        .filter(word => word.length > 1)
-        .filter(word => !['에', '를', '을', '의', '와', '과', '은', '는', '이', '가', '에 대해', '알려주세요', '어떻게', '무엇', '왜', '언제', '어디'].includes(word));
+    : query.toLowerCase().split(/\s+/)
+        .filter(w => w.length > 1)
+        .filter(w => !['에', '를', '을', '의', '와', '과', '은', '는', '이', '가', '어떻게', '무엇', '왜', '언제', '어디'].includes(w));
 
   const queryLower = query.toLowerCase();
   const importantKeywords = ['광고', '정책', '계정', '생성', '등록', '절차', '방법', '설정', '관리', '인증', '차단', '비활성화', '해제'];
 
-  // 각 청크에 관련성 점수 계산
   const scoredChunks = chunks.map(chunk => {
     const content = (chunk.content || '').toLowerCase();
     const docTitle = (chunk.metadata?.document_title || chunk.metadata?.source || '').toLowerCase();
     const sectionTitleText = (chunk.metadata?.section_title || '').toLowerCase();
-    
-    // 1. 벡터 유사도 점수
-    const vectorScore = Math.max(0, Math.min(1, chunk.similarity || 0));
 
-    // 2. TF-IDF 기반 키워드 매칭 점수
+    const vectorScore = Math.max(0, Math.min(1, chunk.similarity || 0));
     const tfidfScore = calculateTFIDFScore(keywords, content, docTitle);
 
-    // 3. 섹션 제목 일치 점수
-    let sectionTitleScore = 0;
-    if (sectionTitleText) {
-      const matchedKeywords = keywords.filter(keyword =>
-        sectionTitleText.includes(keyword.toLowerCase())
-      ).length;
-      sectionTitleScore = keywords.length > 0 ? matchedKeywords / keywords.length : 0;
-    }
+    const sectionTitleScore = sectionTitleText && keywords.length > 0
+      ? keywords.filter(kw => sectionTitleText.includes(kw.toLowerCase())).length / keywords.length
+      : 0;
 
-    // 4. 문서 제목 일치 점수
-    let docTitleScore = 0;
-    if (docTitle) {
-      const matchedKeywords = keywords.filter(keyword =>
-        docTitle.includes(keyword.toLowerCase())
-      ).length;
-      docTitleScore = keywords.length > 0 ? matchedKeywords / keywords.length : 0;
-    }
+    const docTitleScore = docTitle && keywords.length > 0
+      ? keywords.filter(kw => docTitle.includes(kw.toLowerCase())).length / keywords.length
+      : 0;
 
-    // 5. 키워드 밀도 및 문장 유사도
     const densityScore = calculateKeywordDensity(keywords, content);
     const sentenceSimilarity = calculateSentenceSimilarity(query, content);
 
-    // [추가] 수동 부스팅 로직 통합 (RAGProcessor에서 마이그레이션)
     let boost = 0;
-    
-    // 키워드 기반 부스팅
     for (const keyword of keywords) {
       const kw = keyword.toLowerCase();
-      
-      // 정확한 단어 매칭 (Word Boundary)
       const exactMatch = new RegExp(`\\b${kw}\\b`, 'i');
       if (exactMatch.test(content)) {
-        boost += 0.15; // 정확한 매칭
-        
-        // 중요 키워드인 경우 추가 부스팅
-        if (importantKeywords.some(ik => kw.includes(ik))) {
-          boost += 0.1;
-        }
+        boost += 0.15;
+        if (importantKeywords.some(ik => kw.includes(ik))) boost += 0.1;
       } else if (content.includes(kw)) {
-        boost += 0.08; // 부분 매칭
+        boost += 0.08;
       }
-
-      // 제목 매칭 부스팅
       if (docTitle.includes(kw)) boost += 0.1;
       if (sectionTitleText.includes(kw)) boost += 0.15;
     }
+    if (content.includes(queryLower)) boost += 0.25;
 
-    // 전체 쿼리 포함 부스팅
-    if (content.includes(queryLower)) {
-      boost += 0.25;
-    }
-
-    // 최종 관련성 점수 계산 (가중 평균 + 부스트)
-    const baseRelevanceScore =
+    const baseScore =
       vectorScore * vectorSimilarity +
       tfidfScore * keywordMatch +
       sectionTitleScore * sectionTitle +
@@ -224,26 +219,13 @@ export function crossEncoderRerank(
       densityScore * keywordDensity +
       sentenceSimilarity * 0.1;
 
-    const finalScore = Math.min(1.0, baseRelevanceScore + boost);
+    const finalScore = Math.min(1.0, baseScore + boost);
+    if (finalScore < minRelevanceScore) return null;
 
-    // 최소 관련성 점수 필터링
-    if (finalScore < minRelevanceScore) {
-      return null;
-    }
+    return { ...chunk, similarity: finalScore, _score: finalScore } as ChunkData & { _score: number };
+  }).filter((c): c is ChunkData & { _score: number } => c !== null);
 
-    return {
-      ...chunk,
-      similarity: finalScore,
-      _crossEncoderScore: finalScore,
-    } as ChunkData & { _crossEncoderScore: number };
-  }).filter((chunk): chunk is ChunkData & { _crossEncoderScore: number } => chunk !== null);
-
-  // 관련성 점수 기준으로 정렬
-  const reranked = scoredChunks.sort((a, b) => {
-    return b._crossEncoderScore - a._crossEncoderScore;
-  });
-
-  // 내부 점수 제거 및 결과 반환
-  return reranked.map(({ _crossEncoderScore, ...chunk }) => chunk);
+  return scoredChunks
+    .sort((a, b) => b._score - a._score)
+    .map(({ _score, ...chunk }) => chunk as ChunkData);
 }
-

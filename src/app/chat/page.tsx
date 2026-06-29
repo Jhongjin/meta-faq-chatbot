@@ -1479,38 +1479,51 @@ function GmailStyleLayout() {
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        h1: ({ children }) => <h1 className="text-xl font-extrabold text-[#7DD3FC] mb-4 mt-6 border-b border-blue-500/30 pb-2 tracking-tight">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-lg font-bold text-[#38BDF8] mb-3 mt-5 border-l-4 border-blue-400 pl-4 py-1 bg-blue-500/5 rounded-r-md">{children}</h2>,
-                        h3: ({ children }) => (
-                          <h3 className="text-[15px] sm:text-[16px] font-bold text-[#bae6fd] mb-2.5 mt-5 flex items-center bg-white/5 px-3 py-1.5 rounded-sm border-l-4 border-[#38BDF8] shadow-sm">
-                            {children}
-                          </h3>
-                        ),
-                        p: ({ children }) => <p className="mb-4 text-[14px] leading-[1.75] text-gray-200 last:mb-0">{children}</p>,
-                        strong: ({ children }) => <strong className="font-bold text-blue-300">{children}</strong>,
-                        ul: ({ children }) => <ul className="space-y-2 my-4 pl-6 list-disc marker:text-blue-400">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal list-inside space-y-2 my-4 pl-6 marker:text-blue-400 marker:font-bold">{children}</ol>,
-                        li: ({ children }) => <li className="mb-1 text-[14px]">{children}</li>,
-                        code: ({ children }) => (
-                          <code className="bg-gray-800 text-yellow-200 px-1.5 py-0.5 rounded text-xs font-mono">
-                            {children}
-                          </code>
+                        h1: ({ children }) => <h1 className="text-base font-bold text-white mb-3 mt-6 pb-2 border-b border-white/10">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-[12px] font-semibold text-sky-300 mb-2 mt-5 uppercase tracking-widest opacity-80">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-[14px] font-semibold text-white/90 mb-2 mt-4">{children}</h3>,
+                        h4: ({ children }) => <h4 className="text-[13px] font-medium text-gray-300 mb-1.5 mt-3">{children}</h4>,
+                        p: ({ children }) => <p className="mb-3 text-[14px] leading-[1.8] text-gray-200 last:mb-0">{children}</p>,
+                        strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                        ul: ({ children }) => <ul className="my-2.5 pl-4 space-y-1.5">{children}</ul>,
+                        ol: ({ children }) => <ol className="my-2.5 pl-5 space-y-1.5 list-decimal marker:text-gray-400 marker:text-[13px]">{children}</ol>,
+                        li: ({ children, ...props }: any) => {
+                          const isOrdered = props?.node?.parent?.tagName === 'ol';
+                          if (isOrdered) {
+                            return <li className="text-[14px] text-gray-200 leading-relaxed pl-1">{children}</li>;
+                          }
+                          return (
+                            <li className="text-[14px] text-gray-200 leading-relaxed flex gap-2 items-start list-none">
+                              <span className="mt-[7px] w-1.5 h-1.5 rounded-full bg-sky-400/70 flex-shrink-0" />
+                              <span>{children}</span>
+                            </li>
+                          );
+                        },
+                        code: ({ children }: any) => (
+                          <code className="bg-white/10 text-sky-200 px-1.5 py-0.5 rounded text-[12px] font-mono">{children}</code>
                         ),
                         blockquote: ({ children }) => (
-                          <blockquote className="border-l-2 border-blue-400 pl-4 py-2 my-4 bg-blue-900/20 rounded-r-md italic text-blue-100 text-sm">
+                          <blockquote className="border-l-2 border-sky-400/50 pl-4 py-1 my-3 text-gray-300/80 italic text-[14px] leading-relaxed">
                             {children}
                           </blockquote>
                         ),
-                        a: ({ href, children }) => {
-                          return (
-                            <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-                              {children}
-                            </a>
-                          );
-                        },
+                        a: ({ href, children }) => (
+                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:text-sky-300 underline underline-offset-2">
+                            {children}
+                          </a>
+                        ),
                       }}
                     >
-                      {message.content.replace(/\s*\[출처\s*\d+\]/g, '')}
+                      {(() => {
+                        let text = message.content;
+                        // [출처 X] 인라인 제거
+                        text = text.replace(/\s*\[출처\s*\d+\]/g, '');
+                        // 참고자료 섹션 전체 제거 (### [참고자료] 등 모든 패턴)
+                        text = text.replace(/(^|\n)(#{1,3}\s*[\[【]?참고자료[\]】]?|[\[【]참고자료[\]】]|\*\*[\[【]?참고자료[\]】]?\*\*)[\s\S]*/i, '');
+                        // "숫자.\n### 소제목" → "숫자. **소제목**" 한 줄로 병합
+                        text = text.replace(/(^|\n)(\d+\.)\s*\n+#{0,6}\s*\*{0,2}([^\n]+?)\*{0,2}\s*(?=\n|$)/g, '$1$2 **$3**');
+                        return text;
+                      })()}
                     </ReactMarkdown>
                   </div>
                   {message.sources && message.sources.length > 0 && (

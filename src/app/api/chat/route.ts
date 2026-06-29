@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 import { ragProcessor, ChunkData } from '@/lib/services/RAGProcessor';
-import { crossEncoderRerank } from '@/lib/services/search/CrossEncoderReranker';
+import { crossEncoderRerankAsync } from '@/lib/services/search/CrossEncoderReranker';
 import { promptBuilder, SearchResult as PromptSearchResult } from '@/lib/services/prompting/PromptBuilder';
 import { clarificationService, ClarificationResult } from '@/lib/services/search/ClarificationService';
 
@@ -678,6 +678,33 @@ JSON 배열 형태로 질문만 반환하세요. 설명이나 추가 텍스트 �
 }
 
 /**
+ * 대화 히스토리를 LLM API 메시지 형식으로 변환
+ * - type('user'|'assistant') → role
+ * - 최근 N쌍만 유지 (토큰 절약)
+ * - 각 메시지 길이 제한 (컨텍스트 오버플로 방지)
+ */
+function buildHistoryMessages(
+  conversationHistory: Array<{ type: string; content: string }> | undefined,
+  maxTurns: number = 3
+): Array<{ role: 'user' | 'assistant'; content: string }> {
+  if (!conversationHistory || conversationHistory.length === 0) return [];
+
+  // user/assistant 교대 메시지만 필터링
+  const valid = conversationHistory.filter(
+    m => m.type === 'user' || m.type === 'assistant'
+  );
+
+  // 최근 maxTurns*2 개 메시지 (user+assistant 쌍)
+  const recent = valid.slice(-(maxTurns * 2));
+
+  // Claude/GPT API 형식으로 변환 (긴 답변은 1500자로 자름)
+  return recent.map(m => ({
+    role: m.type as 'user' | 'assistant',
+    content: m.content.length > 1500 ? m.content.substring(0, 1500) + '...' : m.content,
+  }));
+}
+
+/**
  * 공통 프롬프트 생성 헬퍼
  */
 function prepareUnifiedPrompt(query: string, searchResults: SearchResult[], originalQuery?: string): string {
@@ -709,7 +736,8 @@ async function generateStreamAnswerWithClaude(
   query: string,
   searchResults: SearchResult[],
   controller: ReadableStreamDefaultController,
-  originalQuery?: string
+  originalQuery?: string,
+  conversationHistory?: Array<{ type: string; content: string }>
 ): Promise<string> {
   try {
     console.log('🤖 Claude 스트림 답변 생성 시작');
@@ -759,22 +787,34 @@ async function generateStreamAnswerWithClaude(
     });
 
     console.log('📝 Claude API 호출 시작');
+
+    // 대화 히스토리 빌드 (multi-turn 지원)
+    const historyMessages = buildHistoryMessages(conversationHistory);
+    const claudeMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+      ...historyMessages,
+      { role: 'user', content: query },
+    ];
+
+    console.log(`💬 Claude 대화 턴: ${historyMessages.length > 0 ? `히스토리 ${historyMessages.length}개 + 현재 질문` : '단일 턴'}`);
+
     let stream: any;
     try {
       try {
         console.log('🔄 Claude 4.6 Sonnet 스트림 호출 시도...');
         stream = await anthropic.messages.stream({
-          model: 'claude-3-5-sonnet-20241022', // 사용자의 시나리오(2025년 이후)에 대응하는 최신 모델로 수정
-          max_tokens: 4000,
-          messages: [{ role: 'user', content: prompt }]
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 8000,
+          system: prompt,
+          messages: claudeMessages,
         });
       } catch (sonnetError: any) {
         if (sonnetError.status === 404) {
           console.warn('⚠️ Claude 3.5 Sonnet 을 찾을 수 없음. Haiku로 폴백합니다.');
           stream = await anthropic.messages.stream({
             model: 'claude-3-haiku-20240307',
-            max_tokens: 4000,
-            messages: [{ role: 'user', content: prompt }]
+            max_tokens: 8000,
+            system: prompt,
+            messages: claudeMessages,
           });
         } else {
           throw sonnetError;
@@ -893,11 +933,12 @@ async function generateAnswerWithClaude(
     try {
       const message = await anthropic.messages.create({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 4096,
+        max_tokens: 8000,
+        system: prompt,
         messages: [
           {
             role: 'user',
-            content: prompt
+            content: query
           }
         ]
       });
@@ -1049,7 +1090,8 @@ async function generateStreamAnswerWithGPT(
   query: string,
   searchResults: SearchResult[],
   controller: ReadableStreamDefaultController,
-  originalQuery?: string
+  originalQuery?: string,
+  conversationHistory?: Array<{ type: string; content: string }>
 ): Promise<string> {
   try {
     console.log('🤖 GPT 스트림 답변 생성 시작 (우선순위 1)');
@@ -1058,7 +1100,7 @@ async function generateStreamAnswerWithGPT(
       console.log('⚠️ OpenAI API가 설정되지 않음. Claude로 fallback 시도');
       if (anthropic) {
         try {
-          return await generateStreamAnswerWithClaude(query, searchResults, controller, originalQuery);
+          return await generateStreamAnswerWithClaude(query, searchResults, controller, originalQuery, conversationHistory);
         } catch (claudeError) {
           console.error('❌ Claude fallback도 실패:', claudeError);
         }
@@ -1078,14 +1120,24 @@ async function generateStreamAnswerWithGPT(
     // [UNIFICATION] 공통 프롬프트 생성 헬퍼 사용
     const prompt = prepareUnifiedPrompt(query, searchResults, originalQuery);
 
+    // 대화 히스토리 빌드 (multi-turn 지원)
+    const historyMessages = buildHistoryMessages(conversationHistory);
+    const gptMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: prompt },
+      ...historyMessages,
+      { role: 'user', content: query },
+    ];
+
+    console.log(`💬 GPT 대화 턴: ${historyMessages.length > 0 ? `히스토리 ${historyMessages.length}개 + 현재 질문` : '단일 턴'}`);
+
     console.log('📝 GPT API 호출 시작');
     let stream: any;
     try {
       stream = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
+        messages: gptMessages,
         stream: true,
-        max_completion_tokens: 4000,
+        max_completion_tokens: 8000,
       });
       console.log('✅ GPT API 스트림 시작 완료');
     } catch (apiError) {
@@ -1093,7 +1145,7 @@ async function generateStreamAnswerWithGPT(
       if (anthropic) {
         console.log('🔄 GPT 실패 - Claude로 fallback 시도');
         try {
-          return await generateStreamAnswerWithClaude(query, searchResults, controller, originalQuery);
+          return await generateStreamAnswerWithClaude(query, searchResults, controller, originalQuery, conversationHistory);
         } catch (claudeError) {
           console.error('❌ Claude fallback도 실패:', claudeError);
         }
@@ -1130,7 +1182,7 @@ async function generateStreamAnswerWithGPT(
             const fallbackNotice = `\n\n(OpenAI 서버 부하로 인해 Claude로 전환하여 답변을 계속합니다...)\n\n`;
             controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: 'chunk', data: { content: fallbackNotice } })}\n\n`));
           }
-          return await generateStreamAnswerWithClaude(query, searchResults, controller, originalQuery);
+          return await generateStreamAnswerWithClaude(query, searchResults, controller, originalQuery, conversationHistory);
         } catch (claudeError) {
           console.error('❌ Claude 긴급 전환 폴백도 실패:', claudeError);
         }
@@ -1238,8 +1290,11 @@ async function generateAnswerWithGPT(
     console.log('📝 GPT API 호출 시작');
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      max_completion_tokens: 4000,
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: originalQuery || query },
+      ],
+      max_completion_tokens: 8000,
     });
 
     let answer = completion.choices[0]?.message?.content || '';
@@ -1740,7 +1795,7 @@ export async function POST(request: NextRequest) {
           // GPT 스트림 답변 생성 호출 (우선순위 변경: OpenAI 우선)
           console.log('✍️ [Stream] Calling generateStreamAnswerWithGPT...');
           const finalOriginalQuery = recoveredOriginalQuery || message;
-          const fullAnswer = await generateStreamAnswerWithGPT(message, filteredResultsForAnswer, controller, finalOriginalQuery);
+          const fullAnswer = await generateStreamAnswerWithGPT(message, filteredResultsForAnswer, controller, finalOriginalQuery, conversationHistory);
           console.log('✅ [Stream] Answer generation completed');
 
           const relatedQuestions = await relatedQuestionsPromise.catch(e => {

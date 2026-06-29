@@ -1,30 +1,125 @@
 /**
  * 하이브리드 검색 서비스
- * 벡터 검색과 키워드 검색을 결합하여 검색 품질 향상
- * 
+ * 벡터 검색(Dense)과 키워드 검색(Sparse)을 RRF로 결합하여 검색 품질 향상
+ *
  * 전략:
- * - 벡터 검색: 의미적 유사도 기반 (70% 가중치)
- * - 키워드 검색: 정확한 키워드 매칭 (30% 가중치)
- * - 결과 결합 및 재랭킹
+ * - Dense: 벡터 유사도 기반 (의미적 유사성)
+ * - Sparse: BM25 기반 키워드 매칭 (정확한 텍스트 매칭)
+ * - RRF (Reciprocal Rank Fusion)로 두 결과 통합
  */
 
 import type { ChunkData } from '../RAGProcessor';
 
 export interface HybridSearchResult extends ChunkData {
-  hybridScore?: number; // 결합된 점수 (0-1)
-  vectorScore?: number; // 벡터 검색 점수
-  keywordScore?: number; // 키워드 검색 점수
+  hybridScore?: number;
+  vectorScore?: number;
+  keywordScore?: number;
 }
 
 export interface HybridSearchOptions {
-  vectorWeight?: number; // 벡터 검색 가중치 (기본값: 0.7)
-  keywordWeight?: number; // 키워드 검색 가중치 (기본값: 0.3)
-  maxResults?: number; // 최대 결과 개수
-  deduplicate?: boolean; // 중복 제거 여부
+  vectorWeight?: number;
+  keywordWeight?: number;
+  maxResults?: number;
+  deduplicate?: boolean;
+  /** RRF k 상수 (기본값: 60, 높을수록 상위 랭크 가중치 감소) */
+  rrfK?: number;
 }
 
 /**
- * 하이브리드 검색 결과 결합 및 재랭킹
+ * BM25 파라미터
+ */
+const BM25_K1 = 1.5; // term saturation
+const BM25_B = 0.75; // length normalization
+
+/**
+ * BM25 점수 계산
+ */
+function calculateBM25Score(
+  queryKeywords: string[],
+  content: string,
+  avgDocLength: number
+): number {
+  if (queryKeywords.length === 0) return 0;
+
+  const terms = content.toLowerCase().split(/\s+/);
+  const docLength = terms.length || 1;
+  const termFreqMap = new Map<string, number>();
+
+  for (const term of terms) {
+    termFreqMap.set(term, (termFreqMap.get(term) || 0) + 1);
+  }
+
+  let score = 0;
+  for (const keyword of queryKeywords) {
+    const kw = keyword.toLowerCase();
+    // 정확 매칭 + 부분 매칭 (한국어 지원)
+    let tf = termFreqMap.get(kw) || 0;
+    if (tf === 0) {
+      // 부분 문자열 매칭 (한국어 형태소 대응)
+      for (const [term, freq] of termFreqMap) {
+        if (term.includes(kw) || kw.includes(term)) {
+          tf += freq * 0.5; // 부분 매칭은 절반 가중
+        }
+      }
+    }
+
+    if (tf === 0) continue;
+
+    // BM25 TF normalization
+    const tfNorm = (tf * (BM25_K1 + 1)) / (tf + BM25_K1 * (1 - BM25_B + BM25_B * (docLength / avgDocLength)));
+
+    // IDF 근사 (전체 컬렉션 없이): 키워드 길이와 중요도로 추정
+    const idf = keyword.length > 2 ? 1.5 : 1.0;
+
+    score += tfNorm * idf;
+  }
+
+  // 0~1 정규화
+  return Math.min(1.0, score / queryKeywords.length);
+}
+
+/**
+ * RRF (Reciprocal Rank Fusion)로 두 랭킹 결합
+ * score(d) = Σ 1/(k + rank_i(d))
+ */
+function reciprocalRankFusion(
+  vectorResults: ChunkData[],
+  keywordResults: ChunkData[],
+  k: number = 60
+): Map<string, { score: number; result: ChunkData }> {
+  const scores = new Map<string, { score: number; result: ChunkData }>();
+
+  // 벡터 검색 랭킹 반영
+  vectorResults.forEach((result, rank) => {
+    const id = result.chunkId || result.id || '';
+    if (!id) return;
+    const existing = scores.get(id);
+    const rrfScore = 1 / (k + rank + 1);
+    if (existing) {
+      existing.score += rrfScore;
+    } else {
+      scores.set(id, { score: rrfScore, result });
+    }
+  });
+
+  // 키워드 검색 랭킹 반영
+  keywordResults.forEach((result, rank) => {
+    const id = result.chunkId || result.id || '';
+    if (!id) return;
+    const existing = scores.get(id);
+    const rrfScore = 1 / (k + rank + 1);
+    if (existing) {
+      existing.score += rrfScore;
+    } else {
+      scores.set(id, { score: rrfScore, result });
+    }
+  });
+
+  return scores;
+}
+
+/**
+ * 하이브리드 검색 결과 결합 (RRF 방식)
  */
 export function combineHybridSearchResults(
   vectorResults: ChunkData[],
@@ -32,135 +127,60 @@ export function combineHybridSearchResults(
   options: HybridSearchOptions = {}
 ): ChunkData[] {
   const {
-    vectorWeight = 0.7,
-    keywordWeight = 0.3,
     maxResults = 10,
     deduplicate = true,
+    rrfK = 60,
   } = options;
 
-  // 벡터 검색 결과를 맵으로 변환 (chunk_id 기준)
-  const vectorMap = new Map<string, ChunkData>();
-  vectorResults.forEach(result => {
-    const chunkId = result.chunkId || result.id || '';
-    if (chunkId) {
-      vectorMap.set(chunkId, result);
-    }
-  });
+  // RRF로 결합
+  const rrfScores = reciprocalRankFusion(vectorResults, keywordResults, rrfK);
 
-  // 키워드 검색 결과를 맵으로 변환 (chunk_id 기준)
-  const keywordMap = new Map<string, ChunkData>();
-  keywordResults.forEach(result => {
-    const chunkId = result.chunkId || result.id || '';
-    if (chunkId) {
-      keywordMap.set(chunkId, result);
-    }
-  });
-
-  // 모든 고유한 chunk_id 수집
-  const allChunkIds = new Set<string>();
-  vectorResults.forEach(r => {
-    const id = r.chunkId || r.id || '';
-    if (id) allChunkIds.add(id);
-  });
-  keywordResults.forEach(r => {
-    const id = r.chunkId || r.id || '';
-    if (id) allChunkIds.add(id);
-  });
-
-  // 하이브리드 점수 계산
-  const hybridResults: ChunkData[] = [];
-
-  for (const chunkId of allChunkIds) {
-    const vectorResult = vectorMap.get(chunkId);
-    const keywordResult = keywordMap.get(chunkId);
-
-    // 벡터 점수 (유사도, 0-1 범위로 정규화)
-    const vectorScore = vectorResult
-      ? Math.min(1, Math.max(0, vectorResult.similarity || 0))
-      : 0;
-
-    // 키워드 점수 (키워드 매칭 개수 기반, 0-1 범위로 정규화)
-    // 키워드 검색 결과가 있으면 1.0, 없으면 0.0
-    // 여러 키워드가 매칭되면 더 높은 점수 (향후 개선 가능)
-    const keywordScore = keywordResult ? 1.0 : 0.0;
-
-    // 하이브리드 점수 계산
-    const hybridScore = (vectorScore * vectorWeight) + (keywordScore * keywordWeight);
-
-    // 결과 생성 (벡터 결과 우선, 없으면 키워드 결과 사용)
-    const baseResult = vectorResult || keywordResult;
-    if (!baseResult) continue;
-
-    hybridResults.push({
-      ...baseResult,
-      // 하이브리드 점수를 similarity로 사용 (재랭킹에 활용)
-      similarity: hybridScore,
-    });
-  }
-
-  // 하이브리드 점수 기준으로 정렬 (similarity 사용)
-  hybridResults.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
+  // 점수 기준 정렬
+  const hybridResults = Array.from(rrfScores.values())
+    .sort((a, b) => b.score - a.score)
+    .map(({ score, result }) => ({
+      ...result,
+      similarity: score, // RRF 점수를 similarity로 사용 (재랭킹에 활용)
+    }));
 
   // 중복 제거 (같은 문서의 여러 청크 중 최고 점수만 유지)
-  let finalResults: ChunkData[] = [];
+  let finalResults: ChunkData[] = hybridResults;
   if (deduplicate) {
     const documentMap = new Map<string, ChunkData>();
-    
     for (const result of hybridResults) {
       const docId = result.documentId || result.metadata?.document_id || '';
       if (!docId) {
         finalResults.push(result);
         continue;
       }
-
       const existing = documentMap.get(docId);
-      const resultScore = result.similarity || 0;
-      const existingScore = existing?.similarity || 0;
-      
-      if (!existing || resultScore > existingScore) {
+      if (!existing || (result.similarity || 0) > (existing.similarity || 0)) {
         documentMap.set(docId, result);
       }
     }
-
-    finalResults = Array.from(documentMap.values());
-    // 다시 정렬 (similarity 기준)
-    finalResults.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
-  } else {
-    finalResults = hybridResults;
+    finalResults = Array.from(documentMap.values())
+      .sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
   }
 
-  // 최대 결과 개수 제한
   return finalResults.slice(0, maxResults);
 }
 
 /**
- * 키워드 검색 결과에 점수 부여
- * (향후 개선: 키워드 매칭 개수, 위치, 빈도 등 고려)
+ * BM25 기반 키워드 점수 부여
  */
 export function scoreKeywordResults(
   results: ChunkData[],
   queryKeywords: string[]
 ): ChunkData[] {
-  return results.map(result => {
-    const content = (result.content || '').toLowerCase();
-    let matchCount = 0;
-    
-    // 키워드 매칭 개수 계산
-    queryKeywords.forEach(keyword => {
-      if (content.includes(keyword.toLowerCase())) {
-        matchCount++;
-      }
-    });
+  if (results.length === 0 || queryKeywords.length === 0) return results;
 
-    // 매칭 비율 기반 점수 (0-1)
-    const keywordScore = queryKeywords.length > 0
-      ? matchCount / queryKeywords.length
-      : 0;
+  // 평균 문서 길이 계산 (BM25 length normalization에 필요)
+  const avgDocLength = results.reduce((sum, r) => {
+    return sum + (r.content || '').split(/\s+/).length;
+  }, 0) / results.length;
 
-    return {
-      ...result,
-      similarity: keywordScore, // 키워드 점수를 similarity로 사용
-    };
-  });
+  return results.map(result => ({
+    ...result,
+    similarity: calculateBM25Score(queryKeywords, result.content || '', avgDocLength),
+  }));
 }
-

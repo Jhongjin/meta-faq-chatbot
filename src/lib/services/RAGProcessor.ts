@@ -2793,10 +2793,10 @@ export class RAGProcessor {
 
       console.log(`🔀 하이브리드 검색 결과: 벡터 ${vectorChunks.length}개, 키워드 ${keywordChunks.length}개 → 결합 ${chunks.length}개`);
 
-      // 3-1단계: Cross-Encoder 스타일 재랭킹 (관련성 점수 기반 재정렬)
+      // 3-1단계: Cross-Encoder ML 재랭킹 (쿼리-문서 쌍 신경망 스코어링)
       if (chunks.length > 0) {
-        console.log('🎯 Cross-Encoder 재랭킹 시작: 관련성 점수 기반 재정렬');
-        const { crossEncoderRerank } = await import('./search/CrossEncoderReranker');
+        console.log('🎯 Cross-Encoder ML 재랭킹 시작');
+        const { crossEncoderRerankAsync } = await import('./search/CrossEncoderReranker');
 
         // 쿼리 키워드 추출
         const queryKeywords = searchQuery
@@ -2805,7 +2805,7 @@ export class RAGProcessor {
           .filter(word => word.length > 1)
           .filter(word => !['에', '를', '을', '의', '와', '과', '은', '는', '이', '가', '에 대해', '알려주세요', '어떻게', '무엇', '왜', '언제', '어디'].includes(word));
 
-        chunks = crossEncoderRerank(chunks, {
+        chunks = await crossEncoderRerankAsync(chunks, {
           query: searchQuery,
           queryKeywords,
           weights: {
@@ -2815,7 +2815,7 @@ export class RAGProcessor {
             documentTitle: 0.1,
             keywordDensity: 0.05,
           },
-          minRelevanceScore: 0.05, // 더 많은 결과 허용
+          minRelevanceScore: 0.05,
         });
 
         // 잘린 텍스트 필터링 적용
@@ -2863,9 +2863,8 @@ export class RAGProcessor {
         );
 
         if (lowerThresholdChunks.length > 0) {
-          // Fallback 결과에도 Cross-Encoder 적용
-          const { crossEncoderRerank } = await import('./search/CrossEncoderReranker');
-          const rerankedFallback = crossEncoderRerank(lowerThresholdChunks, {
+          const { crossEncoderRerankAsync } = await import('./search/CrossEncoderReranker');
+          const rerankedFallback = await crossEncoderRerankAsync(lowerThresholdChunks, {
             query: searchQuery,
             queryKeywords,
             minRelevanceScore: 0.05
@@ -2894,8 +2893,8 @@ export class RAGProcessor {
         );
 
         if (veryLowThresholdChunks.length > 0) {
-          const { crossEncoderRerank } = await import('./search/CrossEncoderReranker');
-          const rerankedVeryLow = crossEncoderRerank(veryLowThresholdChunks, {
+          const { crossEncoderRerankAsync } = await import('./search/CrossEncoderReranker');
+          const rerankedVeryLow = await crossEncoderRerankAsync(veryLowThresholdChunks, {
             query: searchQuery,
             queryKeywords,
             minRelevanceScore: 0.05
@@ -2921,8 +2920,8 @@ export class RAGProcessor {
         );
 
         if (noFilterChunks.length > 0) {
-          const { crossEncoderRerank } = await import('./search/CrossEncoderReranker');
-          const rerankedNoFilter = crossEncoderRerank(noFilterChunks, {
+          const { crossEncoderRerankAsync } = await import('./search/CrossEncoderReranker');
+          const rerankedNoFilter = await crossEncoderRerankAsync(noFilterChunks, {
             query: searchQuery,
             queryKeywords,
             minRelevanceScore: 0.05
