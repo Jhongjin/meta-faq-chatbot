@@ -802,7 +802,7 @@ async function generateStreamAnswerWithClaude(
         console.log('🔄 Claude 4.6 Sonnet 스트림 호출 시도...');
         stream = await anthropic.messages.stream({
           model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 4000,
+          max_tokens: 8000,
           ...(historyMessages.length > 0 ? { system: prompt } : {}),
           messages: claudeMessages,
         });
@@ -811,7 +811,7 @@ async function generateStreamAnswerWithClaude(
           console.warn('⚠️ Claude 3.5 Sonnet 을 찾을 수 없음. Haiku로 폴백합니다.');
           stream = await anthropic.messages.stream({
             model: 'claude-3-haiku-20240307',
-            max_tokens: 4000,
+            max_tokens: 8000,
             ...(historyMessages.length > 0 ? { system: prompt } : {}),
             messages: claudeMessages,
           });
@@ -932,7 +932,7 @@ async function generateAnswerWithClaude(
     try {
       const message = await anthropic.messages.create({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 4096,
+        max_tokens: 8000,
         messages: [
           {
             role: 'user',
@@ -1137,7 +1137,7 @@ async function generateStreamAnswerWithGPT(
         model: 'gpt-4o-mini',
         messages: gptMessages,
         stream: true,
-        max_completion_tokens: 4000,
+        max_completion_tokens: 8000,
       });
       console.log('✅ GPT API 스트림 시작 완료');
     } catch (apiError) {
