@@ -790,9 +790,10 @@ async function generateStreamAnswerWithClaude(
 
     // 대화 히스토리 빌드 (multi-turn 지원)
     const historyMessages = buildHistoryMessages(conversationHistory);
-    const claudeMessages: Array<{ role: 'user' | 'assistant'; content: string }> = historyMessages.length > 0
-      ? [...historyMessages, { role: 'user', content: query }]
-      : [{ role: 'user', content: prompt }];
+    const claudeMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+      ...historyMessages,
+      { role: 'user', content: query },
+    ];
 
     console.log(`💬 Claude 대화 턴: ${historyMessages.length > 0 ? `히스토리 ${historyMessages.length}개 + 현재 질문` : '단일 턴'}`);
 
@@ -803,7 +804,7 @@ async function generateStreamAnswerWithClaude(
         stream = await anthropic.messages.stream({
           model: 'claude-3-5-sonnet-20241022',
           max_tokens: 8000,
-          ...(historyMessages.length > 0 ? { system: prompt } : {}),
+          system: prompt,
           messages: claudeMessages,
         });
       } catch (sonnetError: any) {
@@ -812,7 +813,7 @@ async function generateStreamAnswerWithClaude(
           stream = await anthropic.messages.stream({
             model: 'claude-3-haiku-20240307',
             max_tokens: 8000,
-            ...(historyMessages.length > 0 ? { system: prompt } : {}),
+            system: prompt,
             messages: claudeMessages,
           });
         } else {
@@ -933,10 +934,11 @@ async function generateAnswerWithClaude(
       const message = await anthropic.messages.create({
         model: 'claude-3-5-sonnet-20241022',
         max_tokens: 8000,
+        system: prompt,
         messages: [
           {
             role: 'user',
-            content: prompt
+            content: query
           }
         ]
       });
@@ -1120,13 +1122,11 @@ async function generateStreamAnswerWithGPT(
 
     // 대화 히스토리 빌드 (multi-turn 지원)
     const historyMessages = buildHistoryMessages(conversationHistory);
-    const gptMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = historyMessages.length > 0
-      ? [
-          { role: 'system', content: prompt },
-          ...historyMessages,
-          { role: 'user', content: query },
-        ]
-      : [{ role: 'user', content: prompt }];
+    const gptMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: prompt },
+      ...historyMessages,
+      { role: 'user', content: query },
+    ];
 
     console.log(`💬 GPT 대화 턴: ${historyMessages.length > 0 ? `히스토리 ${historyMessages.length}개 + 현재 질문` : '단일 턴'}`);
 
@@ -1290,8 +1290,11 @@ async function generateAnswerWithGPT(
     console.log('📝 GPT API 호출 시작');
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      max_completion_tokens: 4000,
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: originalQuery || query },
+      ],
+      max_completion_tokens: 8000,
     });
 
     let answer = completion.choices[0]?.message?.content || '';
